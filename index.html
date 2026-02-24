@@ -123,12 +123,14 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 .trend-generate-area { border: 2px dashed var(--border); border-radius: 12px; padding: 48px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px; }
 .trend-generate-area .big-icon { font-size: 48px; }
 .trend-generate-area p { font-size: 14px; color: var(--muted); max-width: 380px; line-height: 1.6; }
-.trend-meta { font-size: 11px; color: var(--muted); margin-top: 16px; text-align: center; }
 .pillar-filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
 .pillar-filter-btn { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
 .pillar-filter-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(79,110,247,0.1); }
+/* Source toggle buttons */
+.source-toggle { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+.source-toggle.active { border-color: var(--success); color: var(--success); background: rgba(16,185,129,0.1); }
 @media (max-width: 768px) { .app { grid-template-columns: 1fr; } .sidebar { display: none; } .settings-grid { grid-template-columns: 1fr; } }
-@media (max-width: 1100px) { #createGrid { grid-template-columns: 1fr !important; } }
+@media (max-width: 1100px) { #createGrid, #trendsInputGrid { grid-template-columns: 1fr !important; } }
 </style>
 </head>
 <body>
@@ -231,11 +233,56 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
     <!-- TRENDING IDEAS PAGE -->
     <div id="page-trends" class="page">
       <div class="section-title">🔥 Trending Ideas</div>
-      <div class="section-sub">Pull current headlines across your pillars and get 3 ready-to-write post angles — on demand.</div>
+      <div class="section-sub">Pull current headlines across your pillars — enhanced with custom keywords, priority sources, and URL context.</div>
+
+      <!-- Enhanced Input Panel -->
+      <div class="card" style="margin-bottom:20px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px" id="trendsInputGrid">
+
+          <!-- Keywords -->
+          <div>
+            <div class="card-title">🔍 Custom Keywords
+              <span style="font-size:10px;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(optional — clears after search)</span>
+            </div>
+            <textarea id="trendKeywords" placeholder="e.g. CMBS defaults, ghost kitchens, micro-fulfillment, adaptive reuse Chicago..." style="min-height:80px;font-size:13px"></textarea>
+          </div>
+
+          <!-- URL Context -->
+          <div>
+            <div class="card-title">🔗 URL Context
+              <span style="font-size:10px;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(optional — layers topic into search)</span>
+            </div>
+            <input type="url" id="trendUrl" placeholder="https://bisnow.com/some-article..." style="margin-bottom:10px" />
+            <div style="font-size:11px;color:var(--muted);line-height:1.6">Paste any article URL and I'll extract its topic and search for related discussion across the web, Twitter/X, LinkedIn, and your selected sources.</div>
+          </div>
+
+          <!-- Sources -->
+          <div style="grid-column:1/-1">
+            <div class="card-title">🌐 Priority Sources
+              <span style="font-size:10px;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(click to toggle — green = active)</span>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+              <button class="source-toggle active" onclick="toggleSource(this)" data-source="Twitter/X (twitter.com and x.com)">𝕏 Twitter/X</button>
+              <button class="source-toggle active" onclick="toggleSource(this)" data-source="LinkedIn (linkedin.com)">💼 LinkedIn</button>
+              <button class="source-toggle active" onclick="toggleSource(this)" data-source="CoStar, GlobeSt, and CommercialObserver">🏢 CoStar / CRE News</button>
+              <button class="source-toggle" onclick="toggleSource(this)" data-source="Bisnow (bisnow.com)">📰 Bisnow</button>
+              <button class="source-toggle" onclick="toggleSource(this)" data-source="The Real Deal (therealdeal.com)">📰 The Real Deal</button>
+              <button class="source-toggle" onclick="toggleSource(this)" data-source="Nation's Restaurant News (nrn.com)">🍽️ NRN</button>
+              <button class="source-toggle" onclick="toggleSource(this)" data-source="Retail Dive (retaildive.com)">🛍️ Retail Dive</button>
+              <input type="text" id="customSource" placeholder="+ Custom site (e.g. chicagobusiness.com)" style="width:240px;font-size:12px;padding:6px 12px;flex-shrink:0" />
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Generate row -->
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
         <button class="btn btn-primary" onclick="generateTrends()" id="trendBtn">🔥 Generate Trend Ideas</button>
         <div style="font-size:13px;color:var(--muted)" id="trendLastRun"></div>
       </div>
+
+      <!-- Pillar filter -->
       <div class="pillar-filter-row" id="pillarFilterRow">
         <button class="pillar-filter-btn active" onclick="filterTrends('all',this)">All Pillars</button>
         <button class="pillar-filter-btn" onclick="filterTrends('cre',this)">🏢 CRE</button>
@@ -243,11 +290,12 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
         <button class="pillar-filter-btn" onclick="filterTrends('fb',this)">🍽️ Chicago F&B</button>
         <button class="pillar-filter-btn" onclick="filterTrends('retail',this)">🛍️ Retail</button>
       </div>
+
       <div id="trendStatus" class="status-bar"></div>
       <div id="trendsOutput">
         <div class="trend-generate-area">
           <div class="big-icon">🔥</div>
-          <p>Hit <strong>Generate Trend Ideas</strong> to pull current headlines across your 4 pillars and get post angles ready to go.</p>
+          <p>Add optional keywords, a URL, or select sources above — then hit <strong>Generate Trend Ideas</strong> to get post angles ready to go.</p>
           <button class="btn btn-primary" onclick="generateTrends()">🔥 Generate Now</button>
         </div>
       </div>
@@ -335,8 +383,6 @@ let trelloListIds = {};
 let trendData = [];
 
 // ─── Models ─────────────────────────────────────────────────
-// Haiku 4.5  → web search / research / scoring (fast, cheap)
-// Sonnet 4.6 → post writing (quality creative output)
 const MODEL_RESEARCH = 'claude-haiku-4-5-20251001';  // trends + scoring
 const MODEL_WRITING  = 'claude-sonnet-4-6';           // post generation
 
@@ -351,7 +397,7 @@ function loadFromStorage() {
 }
 
 function saveSettings() {
-  ['trelloKey','trelloToken','anthropicKey','userName','userRole','userPov','coreHashtags'].forEach(f => {
+  ['trelloKey','trelloToken','anthropicKey','githubToken','userName','userRole','userPov','coreHashtags'].forEach(f => {
     const el = document.getElementById(f);
     if (el) localStorage.setItem(f, el.value);
   });
@@ -418,10 +464,7 @@ async function loadBrainstorms() {
   showStatus('brainstormStatus','info','Loading brainstorms...');
   const cards = await (await fetch(`https://api.trello.com/1/lists/${listId}/cards?key=${key}&token=${token}`)).json();
   const container = document.getElementById('brainstormsList');
-  if (!cards.length) {
-    container.innerHTML = '<div style="color:var(--muted);font-size:14px">No cards in Brainstorms yet.</div>';
-    hideStatus('brainstormStatus'); return;
-  }
+  if (!cards.length) { container.innerHTML = '<div style="color:var(--muted);font-size:14px">No cards in Brainstorms yet.</div>'; hideStatus('brainstormStatus'); return; }
   container.innerHTML = cards.map(c => `
     <div class="brainstorm-item" onclick="useBrainstorm('${c.id}','${escHtml(c.name)}','${escHtml(c.desc||'')}')">
       <div>
@@ -466,10 +509,7 @@ async function loadWorkingDrafts() {
   showStatus('workingDraftsStatus','info','Loading...');
   const cards = await (await fetch(`https://api.trello.com/1/lists/${listId}/cards?key=${key}&token=${token}`)).json();
   const container = document.getElementById('workingDraftsList');
-  if (!cards.length) {
-    container.innerHTML = '<div style="color:var(--muted);font-size:14px">No cards in Working Drafts yet.</div>';
-    hideStatus('workingDraftsStatus'); return;
-  }
+  if (!cards.length) { container.innerHTML = '<div style="color:var(--muted);font-size:14px">No cards in Working Drafts yet.</div>'; hideStatus('workingDraftsStatus'); return; }
   container.innerHTML = cards.map(c => `
     <div class="draft-card">
       <div style="font-weight:600;margin-bottom:6px">${c.name}</div>
@@ -488,8 +528,7 @@ async function moveToProduction(cardId) {
   const listId = trelloListIds['Production'];
   if (!listId) return;
   await fetch(`https://api.trello.com/1/cards/${cardId}?key=${key}&token=${token}`, {
-    method:'PUT', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ idList: listId })
+    method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ idList: listId })
   });
   loadWorkingDrafts();
 }
@@ -501,37 +540,71 @@ async function archiveBrainstormCard(cardId) {
   const listId = trelloListIds['Archive'];
   if (!listId) return;
   await fetch(`https://api.trello.com/1/cards/${cardId}?key=${key}&token=${token}`, {
-    method:'PUT', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ idList: listId })
+    method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ idList: listId })
   });
 }
 
-// ─── TREND INJECTION — uses MODEL_RESEARCH (Haiku 4.5) + web search ──
+// ─── Source Toggles ─────────────────────────────────────────
+function toggleSource(el) {
+  el.classList.toggle('active');
+}
+
+function getActiveSources() {
+  const active = Array.from(document.querySelectorAll('.source-toggle.active'))
+    .map(b => b.dataset.source);
+  const custom = document.getElementById('customSource')?.value.trim();
+  if (custom) active.push(custom);
+  return active;
+}
+
+// ─── TREND INJECTION — Haiku 4.5 + web search ───────────────
 async function generateTrends() {
   const anthropicKey = localStorage.getItem('anthropicKey');
   if (!anthropicKey) { showStatus('trendStatus','error','⚠️ Add your Anthropic API key in Settings first.'); return; }
+
   const btn = document.getElementById('trendBtn');
   btn.innerHTML = '<span class="spinner"></span> Scanning headlines...';
   btn.disabled = true;
   showStatus('trendStatus','info','🔥 Scanning current trends across your 4 pillars...');
   document.getElementById('trendsOutput').innerHTML = '';
+
   const userName = localStorage.getItem('userName') || 'Mike';
   const userRole = localStorage.getItem('userRole') || 'CRE & Retail Strategist';
   const userPov = localStorage.getItem('userPov') || 'Conversational thought leader in CRE, Creative Industrial, Chicago F&B, and Retail. I see the future before it arrives.';
+
+  // Pull enhanced inputs
+  const customKeywords = document.getElementById('trendKeywords')?.value.trim() || '';
+  const urlContext     = document.getElementById('trendUrl')?.value.trim() || '';
+  const activeSources  = getActiveSources();
+
+  const keywordsSection = customKeywords
+    ? `\nFOCUS KEYWORDS: Prioritize finding trends related to these specific topics: ${customKeywords}. Weight your search and results heavily toward these themes first.`
+    : '';
+
+  const sourcesSection = activeSources.length
+    ? `\nPRIORITY SOURCES: When searching, explicitly prioritize content from: ${activeSources.join(', ')}. Search these platforms and sites directly for relevant headlines and discussion.`
+    : '';
+
+  const urlSection = urlContext
+    ? `\nURL CONTEXT: The user has submitted this URL for context: ${urlContext}\nSearch the web for what people are saying about the topic in this URL. Look for related discussion on Twitter/X, LinkedIn, and news sites. Use the themes from this URL to enrich your trend ideas across the 4 pillars.`
+    : '';
+
   const prompt = `You are a trend researcher and content strategist for ${userName}, ${userRole}.
 Their voice: ${userPov}
-Today's date: ${new Date().toLocaleDateString('en-US', {weekday:'long', year:'numeric', month:'long', day:'numeric'})}.
+Today's date: ${new Date().toLocaleDateString('en-US', {weekday:'long', year:'numeric', month:'long', day:'numeric'})}.${keywordsSection}${sourcesSection}${urlSection}
+
 Search for the most current, relevant headlines and developments (within the last 2–4 weeks) across these 4 content pillars:
 1. CRE (Commercial Real Estate) — office, industrial, leasing, investment, cap rates, CMBS, urban real estate
 2. Creative Industrial — adaptive reuse, warehouse conversions, flex/maker space, creative office, live-work lofts
 3. Chicago F&B — Chicago restaurant scene, new openings/closings, food trends, hospitality, local chefs
 4. Retail Trends — brick & mortar, DTC brands, retail real estate, pop-ups, consumer behavior, experiential retail
+
 Generate exactly 4 trend ideas (one per pillar) in this EXACT format with no extra text:
 ---TREND---
 PILLAR: cre
-HEADLINE: [A specific, real-sounding current trend or development — be concrete and timely]
-CONTEXT: [2-3 sentences explaining what's happening, why it matters, and the market implication. Be specific with data or examples where possible.]
-HOOK: [A punchy 1-sentence post opener in Mike's voice — no "I" as first word, stops the scroll]
+HEADLINE: [specific, timely trend or development]
+CONTEXT: [2-3 sentences: what's happening, why it matters, market implication. Use data/examples.]
+HOOK: [punchy 1-sentence opener in Mike's voice — no "I" as first word, stops the scroll]
 STYLE: [hot|insight|story]
 ---END---
 ---TREND---
@@ -556,6 +629,7 @@ HOOK: [hook]
 STYLE: [hot|insight|story]
 ---END---
 Be specific, timely, and opinionated. Reference real market dynamics, named cities, real data points where possible.`;
+
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -566,7 +640,7 @@ Be specific, timely, and opinionated. Reference real market dynamics, named citi
         'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
-        model: MODEL_RESEARCH,  // Haiku 4.5 — fast research + web search
+        model: MODEL_RESEARCH,
         max_tokens: 2000,
         tools: [{ type: 'web_search_20250305', name: 'web_search' }],
         messages: [{ role: 'user', content: prompt }]
@@ -580,8 +654,12 @@ Be specific, timely, and opinionated. Reference real market dynamics, named citi
       renderTrends(text);
       hideStatus('trendStatus');
       document.getElementById('trendLastRun').textContent = '⏱ Last updated: ' + new Date().toLocaleTimeString();
+      // Clear one-time inputs after successful search
+      if (document.getElementById('trendKeywords')) document.getElementById('trendKeywords').value = '';
+      if (document.getElementById('trendUrl')) document.getElementById('trendUrl').value = '';
     }
   } catch(e) { showStatus('trendStatus','error','Error: ' + e.message); }
+
   btn.innerHTML = '🔥 Generate Trend Ideas';
   btn.disabled = false;
 }
@@ -593,7 +671,7 @@ function renderTrends(text) {
     return;
   }
   trendData = blocks.map((block, i) => {
-    const get = (key) => { const m = block.match(new RegExp(key + ':\\s*(.+)')); return m ? m[1].trim() : ''; };
+    const get = k => { const m = block.match(new RegExp(k + ':\\s*(.+)')); return m ? m[1].trim() : ''; };
     return { pillar: get('PILLAR'), headline: get('HEADLINE'), context: get('CONTEXT'), hook: get('HOOK'), style: get('STYLE'), index: i };
   });
   displayTrendCards(trendData);
@@ -601,8 +679,8 @@ function renderTrends(text) {
 
 function displayTrendCards(trends) {
   const pillarLabels = { cre:'🏢 CRE', ci:'🏗️ Creative Industrial', fb:'🍽️ Chicago F&B', retail:'🛍️ Retail' };
-  const styleIcons = { hot:'🔥', insight:'💡', story:'📖' };
-  const html = trends.map((t, i) => `
+  const styleIcons   = { hot:'🔥', insight:'💡', story:'📖' };
+  const html = trends.map(t => `
     <div class="trend-card" data-pillar="${t.pillar}">
       <div class="trend-header">
         <span class="trend-pillar-badge ${t.pillar}">${pillarLabels[t.pillar] || t.pillar}</span>
@@ -638,26 +716,25 @@ function useTrend(idx) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-create').classList.add('active');
   document.querySelectorAll('.nav-item')[0].classList.add('active');
-  showStatus('generateStatus','info','🔥 Trend loaded: "' + t.headline.substring(0,60) + '" — Pillar: ' + t.pillar.toUpperCase() + ' | Style: ' + (t.style||'').toUpperCase() + '. Hit Generate!');
+  showStatus('generateStatus','info','🔥 Trend loaded: "' + t.headline.substring(0,60) + '" — ' + t.pillar.toUpperCase() + ' | ' + (t.style||'').toUpperCase() + '. Hit Generate!');
 }
 
 function copyTrendHook(idx) {
   const t = trendData[idx];
-  if (!t) return;
-  navigator.clipboard.writeText(t.hook);
+  if (t) navigator.clipboard.writeText(t.hook);
 }
 
-// ─── GENERATE POSTS — uses MODEL_WRITING (Sonnet 4.6) ───────
+// ─── GENERATE POSTS — Sonnet 4.6 ────────────────────────────
 async function generatePosts() {
   const anthropicKey = localStorage.getItem('anthropicKey');
   if (!anthropicKey) { showStatus('generateStatus','error','⚠️ Add your Anthropic API key in Settings first.'); return; }
-  const draftText = document.getElementById('draftText').value.trim();
-  const linkInput = document.getElementById('linkInput').value.trim();
-  const pillar = document.getElementById('pillarSelect').value;
-  const style = document.getElementById('styleSelect').value;
-  const userName = localStorage.getItem('userName') || 'Mike';
-  const userRole = localStorage.getItem('userRole') || '';
-  const userPov = localStorage.getItem('userPov') || 'Conversational, non-transactional thought leader in CRE, Creative Industrial, Chicago F&B, and retail trends.';
+  const draftText   = document.getElementById('draftText').value.trim();
+  const linkInput   = document.getElementById('linkInput').value.trim();
+  const pillar      = document.getElementById('pillarSelect').value;
+  const style       = document.getElementById('styleSelect').value;
+  const userName    = localStorage.getItem('userName') || 'Mike';
+  const userRole    = localStorage.getItem('userRole') || '';
+  const userPov     = localStorage.getItem('userPov') || 'Conversational, non-transactional thought leader in CRE, Creative Industrial, Chicago F&B, and retail trends.';
   const coreHashtags = localStorage.getItem('coreHashtags') || '#CRE #RetailTrends #ChicagoCRE #CreativeIndustrial';
   if (!draftText && !linkInput && !imageBase64) { showStatus('generateStatus','error','⚠️ Add some raw material first.'); return; }
   const btn = document.getElementById('generateBtn');
@@ -667,9 +744,7 @@ async function generatePosts() {
   const pillarLabels = { cre:'Commercial Real Estate', ci:'Creative Industrial', fb:'Chicago Food & Beverage', retail:'Retail Trends', mixed:'Mixed topics' };
   const styleInstructions = {
     all: 'Generate 3 variants: 1) 🔥 Hot Take (bold, provocative), 2) 💡 Insight/Observation (data-informed), 3) 📖 Story/Celebration (personal, warm)',
-    hot: 'Generate 1 variant: 🔥 Hot Take',
-    insight: 'Generate 1 variant: 💡 Insight/Observation',
-    story: 'Generate 1 variant: 📖 Story/Celebration'
+    hot: 'Generate 1 variant: 🔥 Hot Take', insight: 'Generate 1 variant: 💡 Insight/Observation', story: 'Generate 1 variant: 📖 Story/Celebration'
   };
   const userContent = [];
   if (imageBase64) userContent.push({ type:'image', source:{ type:'base64', media_type:'image/jpeg', data:imageBase64 } });
@@ -691,17 +766,8 @@ HASHTAGS: [8-10 hashtags including some from: ${coreHashtags}]
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'x-api-key':anthropicKey,
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true'
-      },
-      body: JSON.stringify({
-        model: MODEL_WRITING,  // Sonnet 4.6 — best quality for post writing
-        max_tokens: 2000,
-        messages:[{ role:'user', content:userContent }]
-      })
+      headers:{ 'Content-Type':'application/json', 'x-api-key':anthropicKey, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
+      body: JSON.stringify({ model: MODEL_WRITING, max_tokens: 2000, messages:[{ role:'user', content:userContent }] })
     });
     const data = await res.json();
     if (!res.ok) showStatus('generateStatus','error','❌ ' + (data?.error?.message || res.statusText));
@@ -709,10 +775,7 @@ HASHTAGS: [8-10 hashtags including some from: ${coreHashtags}]
   } catch(e) { showStatus('generateStatus','error','Error: ' + e.message); }
   btn.innerHTML = '✦ Generate Post Drafts';
   btn.disabled = false;
-  if (window._activeBrainstormCardId) {
-    archiveBrainstormCard(window._activeBrainstormCardId);
-    window._activeBrainstormCardId = null;
-  }
+  if (window._activeBrainstormCardId) { archiveBrainstormCard(window._activeBrainstormCardId); window._activeBrainstormCardId = null; }
 }
 
 function renderDrafts(text, style) {
@@ -722,7 +785,7 @@ function renderDrafts(text, style) {
     scoreAndPreview(0, text.trim(), ''); return;
   }
   const typeColors = {'Hot Take':'hot','Insight':'insight','Story':'story'};
-  const typeIcons = {'Hot Take':'🔥','Insight':'💡','Story':'📖'};
+  const typeIcons  = {'Hot Take':'🔥','Insight':'💡','Story':'📖'};
   let html = `<div style="font-size:13px;color:var(--muted);margin-bottom:12px">✦ ${blocks.length} draft${blocks.length>1?'s':''} generated</div>`;
   blocks.forEach((block, i) => {
     const typeMatch = block.match(/TYPE:\s*(.+)/);
@@ -771,9 +834,7 @@ function populatePreview(i, post, hashtags) {
   const FOLD = 210;
   const pb = document.getElementById('previewBody'+i), ph = document.getElementById('previewHash'+i);
   if (!pb) return;
-  pb.innerHTML = post.length > FOLD
-    ? escHtmlFull(post.substring(0,FOLD)) + '<span style="color:#999">... </span><span class="lp-fold">see more</span>'
-    : escHtmlFull(post);
+  pb.innerHTML = post.length > FOLD ? escHtmlFull(post.substring(0,FOLD)) + '<span style="color:#999">... </span><span class="lp-fold">see more</span>' : escHtmlFull(post);
   if (ph) ph.textContent = hashtags;
 }
 
@@ -784,7 +845,7 @@ function togglePreview(i) {
   populatePreview(i, document.getElementById('draftBody'+i)?.innerText||'', document.getElementById('draftHash'+i)?.innerText||'');
 }
 
-// ─── SCORE & PREVIEW — uses MODEL_RESEARCH (Haiku 4.5) ──────
+// ─── SCORE & PREVIEW — Haiku 4.5 ────────────────────────────
 async function scoreAndPreview(i, post, hashtags) {
   const anthropicKey = localStorage.getItem('anthropicKey');
   if (!anthropicKey) return;
@@ -797,15 +858,11 @@ POST: ${post}`;
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':anthropicKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body: JSON.stringify({
-        model: MODEL_RESEARCH,  // Haiku 4.5 — fast scoring, no heavy writing needed
-        max_tokens: 200,
-        messages:[{ role:'user', content:prompt }]
-      })
+      body: JSON.stringify({ model: MODEL_RESEARCH, max_tokens: 200, messages:[{ role:'user', content:prompt }] })
     });
     const data = await res.json();
     const scores = JSON.parse((data.content?.[0]?.text||'{}').replace(/```json|```/g,'').trim());
-    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    const set  = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
     const setW = (id, pct) => { const el = document.getElementById(id); if (el) el.style.width = pct+'%'; };
     set('hookNum'+i, scores.hook?.score+'/10');
     set('engNum'+i, scores.engagement?.score+'/10');
@@ -844,11 +901,7 @@ function copyPost(idx) {
 }
 
 // ─── Utilities ──────────────────────────────────────────────
-function showStatus(id, type, msg) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.className='status-bar '+type; el.textContent=msg; el.style.display='block';
-}
+function showStatus(id, type, msg) { const el = document.getElementById(id); if (!el) return; el.className='status-bar '+type; el.textContent=msg; el.style.display='block'; }
 function hideStatus(id) { const el = document.getElementById(id); if (el) el.style.display='none'; }
 function escHtml(str) { return (str||'').replace(/'/g,"\\'").replace(/"/g,'&quot;').substring(0,200); }
 function escHtmlFull(str) { return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
