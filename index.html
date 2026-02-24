@@ -471,11 +471,40 @@ async function loadBrainstorms() {
   hideStatus('brainstormStatus');
 }
 
-function useBrainstorm(id, name, desc) {
-  document.getElementById('draftText').value = name + (desc ? '\n\n' + desc : '');
-  showPage('create');
+function useBrainstorm(cardId, name, desc) {
+  const fullText = name + (desc ? '\n\n' + desc : '');
+
+  // Auto-detect content pillar from text
+  const lower = fullText.toLowerCase();
+  let pillar = 'mixed';
+  if (/\b(cre|commercial real estate|office|industrial|retail leasing|landlord|tenant|cap rate|noi|lease)\b/.test(lower)) pillar = 'cre';
+  else if (/\b(ai|proptech|machine learning|data|tech|automation|software|algorithm)\b/.test(lower)) pillar = 'ai';
+  else if (/\b(food|beverage|restaurant|bar|cafe|dining|chef|chicago f&b|beer|cocktail|hospitality)\b/.test(lower)) pillar = 'fb';
+  else if (/\b(retail|store|brand|consumer|shopping|ecommerce|brick|mortar|pop.up)\b/.test(lower)) pillar = 'retail';
+
+  // Auto-detect post style from text
+  let style = 'all';
+  if (/\b(hot take|unpopular opinion|controversial|bold|provocative|fight me)\b/.test(lower)) style = 'hot';
+  else if (/\b(insight|data|trend|analysis|observation|according to|research)\b/.test(lower)) style = 'insight';
+  else if (/\b(story|celebrate|congrats|proud|shoutout|excited|announcing|personal)\b/.test(lower)) style = 'story';
+
+  // Pre-fill all fields
+  document.getElementById('draftText').value = fullText;
+  document.getElementById('pillarSelect').value = pillar;
+  document.getElementById('styleSelect').value = style;
+  document.getElementById('linkInput').value = '';
+
+  // Store card ID so we can archive it on generate
+  window._activeBrainstormCardId = cardId;
+
+  // Switch to Create Post page
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-create').classList.add('active');
   document.querySelectorAll('.nav-item')[0].classList.add('active');
-  document.querySelectorAll('.nav-item')[1].classList.remove('active');
+
+  // Show a banner so Mike knows the brainstorm is loaded
+  showStatus('generateStatus', 'info', '💡 Brainstorm loaded: "' + name.substring(0, 60) + (name.length > 60 ? '...' : '') + '" — Pillar: ' + pillar.toUpperCase() + ' | Style: ' + style.toUpperCase() + '. Hit Generate when ready!');
 }
 
 // ─── Load Working Drafts ───────────────────────────────────────
@@ -617,6 +646,12 @@ HASHTAGS: [8-10 relevant hashtags including some from: ${coreHashtags}]
 
   btn.innerHTML = '✦ Generate Post Drafts';
   btn.disabled = false;
+
+  // Archive the brainstorm card in Trello if one was active
+  if (window._activeBrainstormCardId) {
+    archiveBrainstormCard(window._activeBrainstormCardId);
+    window._activeBrainstormCardId = null;
+  }
 }
 
 function renderDrafts(text, style) {
@@ -816,6 +851,20 @@ async function saveToDraftsTrello(idx, type) {
   const card = await res.json();
   if (card.id) showStatus('draftSaveStatus' + idx, 'success', '✅ Saved to Working Drafts on Trello!');
   else showStatus('draftSaveStatus' + idx, 'error', '❌ Failed to save to Trello.');
+}
+
+async function archiveBrainstormCard(cardId) {
+  const key = localStorage.getItem('trelloKey');
+  const token = localStorage.getItem('trelloToken');
+  if (!key || !token) return;
+  await fetchTrelloListIds();
+  const listId = trelloListIds['Archive'];
+  if (!listId) { console.error('Archive list not found'); return; }
+  await fetch('https://api.trello.com/1/cards/' + cardId + '?key=' + key + '&token=' + token, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ idList: listId })
+  });
 }
 
 function copyPost(idx) {
