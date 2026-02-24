@@ -1000,7 +1000,7 @@ async function liHandleCallback(){
   const csec=localStorage.getItem('liClientSecret')||'';
   if(!csec){alert('Add your LinkedIn Client Secret in Settings first.');return;}
   try{
-    const res=await fetch('https://www.linkedin.com/oauth/v2/accessToken',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({grant_type:'authorization_code',code,redirect_uri:'https://placebatron.github.io/linkedin-bot-dashboard/',client_id:cid,client_secret:csec}).toString()});
+    const res=await fetch('https://worker-small-mountain-69ba.mike-3ac.workers.dev/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,redirect_uri:'https://placebatron.github.io/linkedin-bot-dashboard/',client_id:cid,client_secret:csec})});
     const data=await res.json();
     if(data.access_token){
       localStorage.setItem('liAccessToken',data.access_token);
