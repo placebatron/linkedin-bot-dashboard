@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LinkedIn Bot Dashboard</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3250;
+    --accent: #4f6ef7;
+    --accent2: #7c3aed;
+    --text: #e8eaf6;
+    --muted: #8b90b0;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --pillar1: #4f6ef7;
+    --pillar2: #7c3aed;
+    --pillar3: #f59e0b;
+    --pillar4: #10b981;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* Layout */
+  .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+  .sidebar { background: var(--surface); border-right: 1px solid var(--border); padding: 24px 16px; display: flex; flex-direction: column; gap: 24px; }
+  .main { padding: 24px; overflow-y: auto; }
+
+  /* Logo */
+  .logo { display: flex; align-items: center; gap: 10px; padding: 0 8px; }
+  .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .logo-text { font-size: 15px; font-weight: 700; color: var(--text); }
+  .logo-sub { font-size: 11px; color: var(--muted); }
+
+  /* Nav */
+  .nav-label { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; padding: 0 8px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 14px; color: var(--muted); transition: all 0.15s; }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: linear-gradient(135deg, rgba(79,110,247,0.2), rgba(124,58,237,0.2)); color: var(--text); border: 1px solid rgba(79,110,247,0.3); }
+  .nav-icon { font-size: 16px; }
+
+  /* Pillars */
+  .pillar-tag { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: all 0.15s; }
+  .pillar-tag.p1 { background: rgba(79,110,247,0.15); color: #818cf8; border-color: rgba(79,110,247,0.3); }
+  .pillar-tag.p2 { background: rgba(124,58,237,0.15); color: #a78bfa; border-color: rgba(124,58,237,0.3); }
+  .pillar-tag.p3 { background: rgba(245,158,11,0.15); color: #fbbf24; border-color: rgba(245,158,11,0.3); }
+  .pillar-tag.p4 { background: rgba(16,185,129,0.15); color: #34d399; border-color: rgba(16,185,129,0.3); }
+  .pillar-tag.active { opacity: 1; } .pillar-tag:not(.active) { opacity: 0.5; }
+  .pillars-grid { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 4px; }
+
+  /* Sections */
+  .section-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  .section-sub { font-size: 14px; color: var(--muted); margin-bottom: 24px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  .card-title { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+
+  /* Form elements */
+  input, textarea, select {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-size: 14px; padding: 10px 14px; outline: none; transition: border 0.15s;
+    font-family: inherit;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 90px; line-height: 1.5; }
+  label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px; }
+  .field { margin-bottom: 16px; }
+
+  /* Buttons */
+  .btn { padding: 10px 18px; border-radius: 8px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 8px; }
+  .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; }
+  .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-success { background: rgba(16,185,129,0.15); color: var(--success); border: 1px solid rgba(16,185,129,0.3); }
+  .btn-success:hover { background: rgba(16,185,129,0.25); }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+
+  /* Image upload */
+  .upload-area { border: 2px dashed var(--border); border-radius: 10px; padding: 30px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; }
+  .upload-area:hover, .upload-area.dragover { border-color: var(--accent); background: rgba(79,110,247,0.05); }
+  .upload-area input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-icon { font-size: 32px; margin-bottom: 8px; }
+  .upload-text { font-size: 14px; color: var(--muted); }
+  .upload-preview { width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; margin-top: 12px; display: none; }
+
+  /* Draft cards */
+  .draft-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 12px; position: relative; }
+  .draft-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .draft-label.hot { color: #f97316; }
+  .draft-label.insight { color: #818cf8; }
+  .draft-label.story { color: #34d399; }
+  .draft-body { font-size: 14px; line-height: 1.65; color: var(--text); white-space: pre-wrap; }
+  .draft-hashtags { margin-top: 10px; font-size: 13px; color: #818cf8; }
+  .draft-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+
+  /* Brainstorm cards */
+  .brainstorm-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: space-between; }
+  .brainstorm-item:hover { border-color: var(--accent); }
+  .brainstorm-name { font-size: 14px; font-weight: 500; }
+  .brainstorm-desc { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; margin-bottom: 20px; background: var(--surface); border-radius: 10px; padding: 4px; border: 1px solid var(--border); }
+  .tab { flex: 1; padding: 8px; text-align: center; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--muted); transition: all 0.15s; }
+  .tab.active { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+
+  /* Status */
+  .status-bar { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-top: 12px; display: none; }
+  .status-bar.info { background: rgba(79,110,247,0.1); color: #818cf8; border: 1px solid rgba(79,110,247,0.2); }
+  .status-bar.success { background: rgba(16,185,129,0.1); color: var(--success); border: 1px solid rgba(16,185,129,0.2); }
+  .status-bar.error { background: rgba(239,68,68,0.1); color: var(--danger); border: 1px solid rgba(239,68,68,0.2); }
+
+  /* Loading */
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.2); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Settings */
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .cred-row { display: flex; align-items: center; gap: 8px; }
+  .cred-row input { flex: 1; }
+
+  /* Page visibility */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .settings-grid { grid-template-columns: 1fr; }
+  }
+
+  .char-count { font-size: 11px; color: var(--muted); text-align: right; margin-top: 4px; }
+  .char-count.over { color: var(--danger); }
+  .editable { border: 1px solid transparent; border-radius: 6px; padding: 4px; transition: border 0.15s; }
+  .editable:focus { border-color: var(--accent); outline: none; background: rgba(79,110,247,0.05); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">✦</div>
+      <div>
+        <div class="logo-text">LinkedIn Bot</div>
+        <div class="logo-sub">Mike's Content Studio</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="nav-label" style="margin-bottom:8px">Menu</div>
+      <div class="nav-item active" onclick="showPage('create')"><span class="nav-icon">✍️</span> Create Post</div>
+      <div class="nav-item" onclick="showPage('brainstorms')"><span class="nav-icon">💡</span> Brainstorms</div>
+      <div class="nav-item" onclick="showPage('drafts')"><span class="nav-icon">📝</span> Working Drafts</div>
+      <div class="nav-item" onclick="showPage('settings')"><span class="nav-icon">⚙️</span> Settings</div>
+    </div>
+
+    <div>
+      <div class="nav-label" style="margin-bottom:10px">Content Pillars</div>
+      <div class="pillars-grid">
+        <div class="pillar-tag p1 active" onclick="togglePillar(this,'cre')">🏢 CRE</div>
+        <div class="pillar-tag p2 active" onclick="togglePillar(this,'ai')">🤖 AI & PropTech</div>
+        <div class="pillar-tag p3 active" onclick="togglePillar(this,'fb')">🍽️ Chicago F&B</div>
+        <div class="pillar-tag p4 active" onclick="togglePillar(this,'retail')">🛍️ Retail Trends</div>
+      </div>
+    </div>
+
+    <div style="margin-top:auto">
+      <div style="font-size:12px;color:var(--muted);padding:8px;background:var(--surface2);border-radius:8px;line-height:1.5">
+        🎯 Goal: Thought leadership<br>
+        📅 Cadence: 1–2x/week<br>
+        🎙️ Tone: Conversational
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main">
+
+    <!-- CREATE PAGE -->
+    <div id="page-create" class="page active">
+      <div class="section-title">Create a Post</div>
+      <div class="section-sub">Add your raw material and I'll draft LinkedIn posts in your voice.</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+        <!-- Left column: Inputs -->
+        <div>
+          <div class="card">
+            <div class="card-title">📸 Image</div>
+            <div class="upload-area" id="uploadArea">
+              <input type="file" accept="image/*" onchange="handleImage(this)">
+              <div class="upload-icon">🖼️</div>
+              <div class="upload-text">Drop an image or tap to browse</div>
+            </div>
+            <img id="imagePreview" class="upload-preview" />
+          </div>
+
+          <div class="card">
+            <div class="card-title">💭 Your Idea / Draft Text</div>
+            <div class="field">
+              <textarea id="draftText" placeholder="Share your raw idea, observation, or draft text here. Even a sentence or two works..." oninput="updateCharCount('draftText','draftCount',3000)"></textarea>
+              <div class="char-count" id="draftCount">0 / 3000</div>
+            </div>
+
+            <div class="field">
+              <label>🔗 Link (optional — I'll pull the key insights)</label>
+              <input type="url" id="linkInput" placeholder="https://..." />
+            </div>
+
+            <div class="field">
+              <label>🏷️ Content Pillar</label>
+              <select id="pillarSelect">
+                <option value="cre">🏢 Commercial Real Estate</option>
+                <option value="ai">🤖 AI & PropTech</option>
+                <option value="fb">🍽️ Chicago Food & Beverage</option>
+                <option value="retail">🛍️ Retail Trends</option>
+                <option value="mixed">✦ Mixed / Let AI decide</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>📝 Post Style Preference</label>
+              <select id="styleSelect">
+                <option value="all">Generate all 3 variants</option>
+                <option value="hot">🔥 Hot Take only</option>
+                <option value="insight">💡 Insight / Observation only</option>
+                <option value="story">📖 Story / Celebration only</option>
+              </select>
+            </div>
+
+            <button class="btn btn-primary" onclick="generatePosts()" id="generateBtn" style="width:100%">
+              ✦ Generate Post Drafts
+            </button>
+            <div id="generateStatus" class="status-bar"></div>
+          </div>
+        </div>
+
+        <!-- Right column: Drafts output -->
+        <div id="draftsOutput">
+          <div style="display:flex;align-items:center;justify-content:center;height:300px;color:var(--muted);flex-direction:column;gap:12px;border:1px dashed var(--border);border-radius:12px">
+            <div style="font-size:40px">✦</div>
+            <div style="font-size:14px">Your post drafts will appear here</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- BRAINSTORMS PAGE -->
+    <div id="page-brainstorms" class="page">
+      <div class="section-title">💡 Brainstorms</div>
+      <div class="section-sub">Cards from your Trello "Brainstorms" list. Click one to use it as post material.</div>
+      <div style="display:flex;gap:10px;margin-bottom:16px">
+        <button class="btn btn-secondary" onclick="loadBrainstorms()">🔄 Refresh from Trello</button>
+      </div>
+      <div id="brainstormsList">
+        <div style="color:var(--muted);font-size:14px">Click Refresh to load your Brainstorms from Trello.</div>
+      </div>
+      <div id="brainstormStatus" class="status-bar"></div>
+    </div>
+
+    <!-- WORKING DRAFTS PAGE -->
+    <div id="page-drafts" class="page">
+      <div class="section-title">📝 Working Drafts</div>
+      <div class="section-sub">Posts saved to your Trello "Working Drafts" list.</div>
+      <div style="display:flex;gap:10px;margin-bottom:16px">
+        <button class="btn btn-secondary" onclick="loadWorkingDrafts()">🔄 Refresh from Trello</button>
+      </div>
+      <div id="workingDraftsList">
+        <div style="color:var(--muted);font-size:14px">Click Refresh to load your Working Drafts from Trello.</div>
+      </div>
+      <div id="workingDraftsStatus" class="status-bar"></div>
+    </div>
+
+    <!-- SETTINGS PAGE -->
+    <div id="page-settings" class="page">
+      <div class="section-title">⚙️ Settings</div>
+      <div class="section-sub">Configure your API credentials. These are saved in your browser only.</div>
+
+      <div class="card">
+        <div class="card-title">🔑 API Credentials</div>
+        <div class="settings-grid">
+          <div class="field">
+            <label>Trello API Key</label>
+            <input type="password" id="trelloKey" placeholder="Your Trello API Key" />
+          </div>
+          <div class="field">
+            <label>Trello Token</label>
+            <input type="password" id="trelloToken" placeholder="Your Trello Token" />
+          </div>
+          <div class="field" style="grid-column:1/-1">
+            <label>Anthropic API Key</label>
+            <input type="password" id="anthropicKey" placeholder="sk-ant-..." />
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
+        <div id="settingsStatus" class="status-bar"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">👤 Your Voice Profile</div>
+        <div class="field">
+          <label>Your Name</label>
+          <input type="text" id="userName" placeholder="Mike" />
+        </div>
+        <div class="field">
+          <label>Your Role / Title</label>
+          <input type="text" id="userRole" placeholder="e.g. Principal at MAD Recruiting | CRE & Retail Strategist" />
+        </div>
+        <div class="field">
+          <label>Signature POV (used in AI prompts)</label>
+          <textarea id="userPov" placeholder="e.g. I see the future before it arrives. I share unique insights on CRE, AI, Chicago food & beverage, and retail trends — with great taste and a conversational voice."></textarea>
+        </div>
+        <div class="field">
+          <label>Always-on Hashtags (comma separated)</label>
+          <input type="text" id="coreHashtags" placeholder="#CRE, #ChicagoRealEstate, #RetailTrends, #PropTech" />
+        </div>
+        <button class="btn btn-primary" onclick="saveSettings()">💾 Save Profile</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ─── State ───────────────────────────────────────────────────
+let imageBase64 = null;
+let activePillars = ['cre','ai','fb','retail'];
+let trelloListIds = {};
+
+// ─── Init ────────────────────────────────────────────────────
+window.onload = () => {
+  loadFromStorage();
+  fetchTrelloListIds();
+};
+
+function loadFromStorage() {
+  const fields = ['trelloKey','trelloToken','anthropicKey','userName','userRole','userPov','coreHashtags'];
+  fields.forEach(f => {
+    const v = localStorage.getItem(f);
+    if (v && document.getElementById(f)) document.getElementById(f).value = v;
+  });
+}
+
+function saveSettings() {
+  const fields = ['trelloKey','trelloToken','anthropicKey','userName','userRole','userPov','coreHashtags'];
+  fields.forEach(f => {
+    const el = document.getElementById(f);
+    if (el) localStorage.setItem(f, el.value);
+  });
+  showStatus('settingsStatus', 'success', '✅ Settings saved!');
+}
+
+// ─── Navigation ───────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+// ─── Pillars ─────────────────────────────────────────────────
+function togglePillar(el, key) {
+  el.classList.toggle('active');
+  if (activePillars.includes(key)) activePillars = activePillars.filter(p => p !== key);
+  else activePillars.push(key);
+}
+
+// ─── Image Upload ─────────────────────────────────────────────
+function handleImage(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    imageBase64 = e.target.result.split(',')[1];
+    const preview = document.getElementById('imagePreview');
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    document.querySelector('.upload-text').textContent = '✅ ' + file.name;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ─── Char count ───────────────────────────────────────────────
+function updateCharCount(inputId, countId, max) {
+  const len = document.getElementById(inputId).value.length;
+  const el = document.getElementById(countId);
+  el.textContent = `${len} / ${max}`;
+  el.className = 'char-count' + (len > max ? ' over' : '');
+}
+
+// ─── Trello: fetch list IDs ────────────────────────────────────
+async function fetchTrelloListIds() {
+  const key = localStorage.getItem('trelloKey');
+  const token = localStorage.getItem('trelloToken');
+  if (!key || !token) return;
+  try {
+    // Get LinkedIn Bot board
+    const boardsRes = await fetch(`https://api.trello.com/1/members/me/boards?key=${key}&token=${token}&fields=name`);
+    const boards = await boardsRes.json();
+    const liBoard = boards.find(b => b.name === 'LinkedIN Bot');
+    if (!liBoard) return;
+
+    const listsRes = await fetch(`https://api.trello.com/1/boards/${liBoard.id}/lists?key=${key}&token=${token}`);
+    const lists = await listsRes.json();
+    lists.forEach(l => { trelloListIds[l.name] = l.id; });
+  } catch(e) { console.error('Trello init error', e); }
+}
+
+// ─── Load Brainstorms ──────────────────────────────────────────
+async function loadBrainstorms() {
+  const key = localStorage.getItem('trelloKey');
+  const token = localStorage.getItem('trelloToken');
+  if (!key || !token) { showStatus('brainstormStatus','error','⚠️ Add your Trello credentials in Settings first.'); return; }
+
+  await fetchTrelloListIds();
+  const listId = trelloListIds['Brainstorms'];
+  if (!listId) { showStatus('brainstormStatus','error','Could not find Brainstorms list on LinkedIN Bot board.'); return; }
+
+  showStatus('brainstormStatus','info','Loading brainstorms...');
+  const res = await fetch(`https://api.trello.com/1/lists/${listId}/cards?key=${key}&token=${token}`);
+  const cards = await res.json();
+
+  const container = document.getElementById('brainstormsList');
+  if (!cards.length) { container.innerHTML = '<div style="color:var(--muted);font-size:14px">No cards in Brainstorms yet.</div>'; hideStatus('brainstormStatus'); return; }
+
+  container.innerHTML = cards.map(c => `
+    <div class="brainstorm-item" onclick="useBrainstorm('${c.id}','${escHtml(c.name)}','${escHtml(c.desc || '')}')">
+      <div>
+        <div class="brainstorm-name">${c.name}</div>
+        ${c.desc ? `<div class="brainstorm-desc">${c.desc.substring(0,100)}${c.desc.length>100?'...':''}</div>` : ''}
+      </div>
+      <span style="color:var(--accent);font-size:18px">→</span>
+    </div>
+  `).join('');
+  hideStatus('brainstormStatus');
+}
+
+function useBrainstorm(id, name, desc) {
+  document.getElementById('draftText').value = name + (desc ? '\n\n' + desc : '');
+  showPage('create');
+  document.querySelectorAll('.nav-item')[0].classList.add('active');
+  document.querySelectorAll('.nav-item')[1].classList.remove('active');
+}
+
+// ─── Load Working Drafts ───────────────────────────────────────
+async function loadWorkingDrafts() {
+  const key = localStorage.getItem('trelloKey');
+  const token = localStorage.getItem('trelloToken');
+  if (!key || !token) { showStatus('workingDraftsStatus','error','⚠️ Add your Trello credentials in Settings first.'); return; }
+
+  await fetchTrelloListIds();
+  const listId = trelloListIds['Working Drafts'];
+  if (!listId) { showStatus('workingDraftsStatus','error','Could not find Working Drafts list.'); return; }
+
+  showStatus('workingDraftsStatus','info','Loading working drafts...');
+  const res = await fetch(`https://api.trello.com/1/lists/${listId}/cards?key=${key}&token=${token}`);
+  const cards = await res.json();
+
+  const container = document.getElementById('workingDraftsList');
+  if (!cards.length) { container.innerHTML = '<div style="color:var(--muted);font-size:14px">No cards in Working Drafts yet.</div>'; hideStatus('workingDraftsStatus'); return; }
+
+  container.innerHTML = cards.map(c => `
+    <div class="draft-card">
+      <div style="font-weight:600;margin-bottom:6px">${c.name}</div>
+      ${c.desc ? `<div class="draft-body">${c.desc}</div>` : ''}
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <a href="${c.shortUrl}" target="_blank" class="btn btn-secondary btn-sm">🔗 Open in Trello</a>
+        <button class="btn btn-secondary btn-sm" onclick="moveToProduction('${c.id}')">🚀 Move to Production</button>
+      </div>
+    </div>
+  `).join('');
+  hideStatus('workingDraftsStatus');
+}
+
+async function moveToProduction(cardId) {
+  const key = localStorage.getItem('trelloKey');
+  const token = localStorage.getItem('trelloToken');
+  await fetchTrelloListIds();
+  const listId = trelloListIds['Production'];
+  if (!listId) return;
+  await fetch(`https://api.trello.com/1/cards/${cardId}?key=${key}&token=${token}`, {
+    method: 'PUT', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ idList: listId })
+  });
+  loadWorkingDrafts();
+}
+
+// ─── Generate Posts ────────────────────────────────────────────
+async function generatePosts() {
+  const anthropicKey = localStorage.getItem('anthropicKey');
+  if (!anthropicKey) { showStatus('generateStatus','error','⚠️ Add your Anthropic API key in Settings first.'); return; }
+
+  const draftText = document.getElementById('draftText').value.trim();
+  const linkInput = document.getElementById('linkInput').value.trim();
+  const pillar = document.getElementById('pillarSelect').value;
+  const style = document.getElementById('styleSelect').value;
+  const userName = localStorage.getItem('userName') || 'Mike';
+  const userRole = localStorage.getItem('userRole') || '';
+  const userPov = localStorage.getItem('userPov') || 'I see the future before it arrives. Conversational, non-transactional thought leader in CRE, AI, Chicago F&B, and retail trends.';
+  const coreHashtags = localStorage.getItem('coreHashtags') || '#CRE #RetailTrends #PropTech #ChicagoFB';
+
+  if (!draftText && !linkInput && !imageBase64) {
+    showStatus('generateStatus','error','⚠️ Add some raw material first — text, a link, or an image.');
+    return;
+  }
+
+  const btn = document.getElementById('generateBtn');
+  btn.innerHTML = '<span class="spinner"></span> Generating...';
+  btn.disabled = true;
+  showStatus('generateStatus','info','✦ Drafting your posts...');
+
+  const pillarLabels = { cre:'Commercial Real Estate', ai:'AI & PropTech', fb:'Chicago Food & Beverage', retail:'Retail Trends', mixed:'Mixed topics' };
+  const styleInstructions = {
+    all: 'Generate 3 variants: 1) 🔥 Hot Take (bold, provocative, forward-looking), 2) 💡 Insight/Observation (data-informed, thoughtful), 3) 📖 Story/Celebration (personal, warm, generous)',
+    hot: 'Generate 1 variant: 🔥 Hot Take (bold, provocative, forward-looking)',
+    insight: 'Generate 1 variant: 💡 Insight/Observation (data-informed, thoughtful, future-focused)',
+    story: 'Generate 1 variant: 📖 Story/Celebration (personal, warm, generous to others)'
+  };
+
+  const messages = [];
+  const userContent = [];
+
+  if (imageBase64) {
+    userContent.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imageBase64 } });
+  }
+
+  userContent.push({ type: 'text', text: `
+You are a ghostwriter for ${userName}${userRole ? `, ${userRole}` : ''}. 
+
+VOICE & BRAND:
+${userPov}
+- Tone: Conversational and approachable, never corporate or stiff
+- Goal: Inspire comments, spark thinking — NOT transactional
+- Length: 150–250 words per post
+- NO hashtags in the body — list them separately at the end
+- Use line breaks generously for readability (LinkedIn style)
+- Start with a hook that stops the scroll — no "I" as the first word
+- End with a thought-provoking question or observation that invites comments
+
+CONTENT PILLAR: ${pillarLabels[pillar]}
+
+RAW MATERIAL:
+${draftText || '(See image/link)'}
+${linkInput ? `\nSOURCE LINK: ${linkInput}\nPull the most interesting insights from this link and frame them through Mike's unique POV.` : ''}
+
+TASK: ${styleInstructions[style]}
+
+For each variant, output in this exact format:
+---VARIANT---
+TYPE: [Hot Take | Insight | Story]
+POST:
+[post body here]
+HASHTAGS: [8-10 relevant hashtags including some from: ${coreHashtags}]
+---END---
+  `});
+
+  messages.push({ role: 'user', content: userContent });
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: 'claude-opus-4-20250514', max_tokens: 2000, messages })
+    });
+    const data = await res.json();
+    const text = data.content?.[0]?.text || '';
+    renderDrafts(text, style);
+    hideStatus('generateStatus');
+  } catch(e) {
+    showStatus('generateStatus','error','Error generating posts: ' + e.message);
+  }
+
+  btn.innerHTML = '✦ Generate Post Drafts';
+  btn.disabled = false;
+}
+
+function renderDrafts(text, style) {
+  const variants = text.split('---VARIANT---').filter(v => v.trim() && !v.includes('---END---') === false || v.includes('TYPE:'));
+  const blocks = text.split('---VARIANT---').slice(1);
+
+  const typeColors = { 'Hot Take': 'hot', 'Insight': 'insight', 'Story': 'story' };
+  const typeIcons = { 'Hot Take': '🔥', 'Insight': '💡', 'Story': '📖' };
+
+  let html = '<div style="font-size:13px;color:var(--muted);margin-bottom:12px">✦ ' + blocks.length + ' draft' + (blocks.length>1?'s':'') + ' generated — click ✏️ to edit, then save to Trello</div>';
+
+  blocks.forEach((block, i) => {
+    const typeMatch = block.match(/TYPE:\s*(.+)/);
+    const postMatch = block.match(/POST:\n([\s\S]+?)(?=HASHTAGS:|---END---|$)/);
+    const hashMatch = block.match(/HASHTAGS:\s*(.+)/);
+
+    const type = typeMatch ? typeMatch[1].trim() : 'Draft';
+    const post = postMatch ? postMatch[1].trim() : block;
+    const hashtags = hashMatch ? hashMatch[1].trim() : '';
+    const colorClass = typeColors[type] || 'hot';
+    const icon = typeIcons[type] || '✦';
+
+    html += `
+      <div class="draft-card">
+        <div class="draft-label ${colorClass}">${icon} ${type}</div>
+        <div class="draft-body" id="draftBody${i}" contenteditable="true" class="draft-body editable">${post}</div>
+        <div class="draft-hashtags" id="draftHash${i}">${hashtags}</div>
+        <div class="draft-actions">
+          <button class="btn btn-success btn-sm" onclick="saveToDraftsTrello(${i},'${escJs(type)}')">📋 Save to Working Drafts</button>
+          <button class="btn btn-secondary btn-sm" onclick="copyPost(${i})">📋 Copy</button>
+        </div>
+        <div id="draftSaveStatus${i}" class="status-bar"></div>
+      </div>
+    `;
+  });
+
+  document.getElementById('draftsOutput').innerHTML = html;
+}
+
+async function saveToDraftsTrello(idx, type) {
+  const key = localStorage.getItem('trelloKey');
+  const token = localStorage.getItem('trelloToken');
+  if (!key || !token) { showStatus('generateStatus','error','⚠️ Add Trello credentials in Settings.'); return; }
+
+  await fetchTrelloListIds();
+  const listId = trelloListIds['Working Drafts'];
+  if (!listId) { alert('Could not find Working Drafts list on LinkedIN Bot board.'); return; }
+
+  const body = document.getElementById('draftBody' + idx)?.innerText || '';
+  const hash = document.getElementById('draftHash' + idx)?.innerText || '';
+  const cardName = body.substring(0, 60) + (body.length > 60 ? '...' : '');
+  const desc = body + '\n\n' + hash;
+
+  const res = await fetch('https://api.trello.com/1/cards', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ name: `[${type}] ${cardName}`, desc, idList: listId, key, token })
+  });
+  const card = await res.json();
+  if (card.id) showStatus('draftSaveStatus' + idx, 'success', '✅ Saved to Working Drafts on Trello!');
+  else showStatus('draftSaveStatus' + idx, 'error', '❌ Failed to save to Trello.');
+}
+
+function copyPost(idx) {
+  const body = document.getElementById('draftBody' + idx)?.innerText || '';
+  const hash = document.getElementById('draftHash' + idx)?.innerText || '';
+  navigator.clipboard.writeText(body + '\n\n' + hash);
+}
+
+// ─── Utilities ─────────────────────────────────────────────────
+function showStatus(id, type, msg) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'status-bar ' + type;
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function hideStatus(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = 'none';
+}
+function escHtml(str) { return (str||'').replace(/'/g,"\\'").replace(/"/g,'&quot;').substring(0,200); }
+function escJs(str) { return (str||'').replace(/'/g,"\\'"); }
+</script>
+</body>
+</html>
