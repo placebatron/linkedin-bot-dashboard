@@ -568,13 +568,22 @@ HASHTAGS: [8-10 relevant hashtags including some from: ${coreHashtags}]
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-opus-4-20250514', max_tokens: 2000, messages })
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': anthropicKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 2000, messages })
     });
     const data = await res.json();
-    const text = data.content?.[0]?.text || '';
-    renderDrafts(text, style);
-    hideStatus('generateStatus');
+    if (!res.ok) {
+      showStatus('generateStatus', 'error', '❌ API error: ' + (data?.error?.message || res.statusText));
+    } else {
+      const text = data.content?.[0]?.text || '';
+      renderDrafts(text, style);
+      hideStatus('generateStatus');
+    }
   } catch(e) {
     showStatus('generateStatus','error','Error generating posts: ' + e.message);
   }
