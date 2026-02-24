@@ -134,6 +134,9 @@
     .sidebar { display: none; }
     .settings-grid { grid-template-columns: 1fr; }
   }
+  @media (max-width: 1100px) {
+    #createGrid { grid-template-columns: 1fr !important; }
+  }
 
   .char-count { font-size: 11px; color: var(--muted); text-align: right; margin-top: 4px; }
   .char-count.over { color: var(--danger); }
@@ -189,7 +192,7 @@
       <div class="section-title">Create a Post</div>
       <div class="section-sub">Add your raw material and I'll draft LinkedIn posts in your voice.</div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px" id="createGrid">
 
         <!-- Left column: Inputs -->
         <div>
@@ -593,8 +596,21 @@ HASHTAGS: [8-10 relevant hashtags including some from: ${coreHashtags}]
 }
 
 function renderDrafts(text, style) {
-  const variants = text.split('---VARIANT---').filter(v => v.trim() && !v.includes('---END---') === false || v.includes('TYPE:'));
+  // If no variants found, show raw text as a single draft
   const blocks = text.split('---VARIANT---').slice(1);
+  if (!blocks.length) {
+    document.getElementById('draftsOutput').innerHTML = `
+      <div class="draft-card">
+        <div class="draft-label hot">✦ Draft</div>
+        <div class="draft-body" id="draftBody0" contenteditable="true">${text.trim()}</div>
+        <div class="draft-actions">
+          <button class="btn btn-success btn-sm" onclick="saveToDraftsTrello(0,'Draft')">📋 Save to Working Drafts</button>
+          <button class="btn btn-secondary btn-sm" onclick="copyPost(0)">📋 Copy</button>
+        </div>
+        <div id="draftSaveStatus0" class="status-bar"></div>
+      </div>`;
+    return;
+  }
 
   const typeColors = { 'Hot Take': 'hot', 'Insight': 'insight', 'Story': 'story' };
   const typeIcons = { 'Hot Take': '🔥', 'Insight': '💡', 'Story': '📖' };
