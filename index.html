@@ -439,7 +439,7 @@ function loadFromStorage() {
 }
 
 function saveSettings() {
-  ['trelloKey','trelloToken','anthropicKey','githubToken','userName','userRole','userPov','coreHashtags'].forEach(f => {
+  ['trelloKey','trelloToken','anthropicKey','githubToken','liClientId','liClientSecret','userName','userRole','userPov','coreHashtags'].forEach(f => {
     const el = document.getElementById(f);
     if (el) localStorage.setItem(f, el.value);
   });
