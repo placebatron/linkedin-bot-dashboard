@@ -294,6 +294,10 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
             <label>Anthropic API Key</label>
             <input type="password" id="anthropicKey" placeholder="sk-ant-..." />
           </div>
+          <div class="field" style="grid-column:1/-1">
+            <label>🐙 GitHub Token <span style="font-size:11px;color:var(--success);margin-left:6px">✅ Enables Claude to push updates directly</span></label>
+            <input type="password" id="githubToken" placeholder="ghp_..." />
+          </div>
         </div>
         <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
         <div id="settingsStatus" class="status-bar"></div>
@@ -340,7 +344,7 @@ const MODEL_WRITING  = 'claude-sonnet-4-6';           // post generation
 window.onload = () => { loadFromStorage(); fetchTrelloListIds(); };
 
 function loadFromStorage() {
-  ['trelloKey','trelloToken','anthropicKey','userName','userRole','userPov','coreHashtags'].forEach(f => {
+  ['trelloKey','trelloToken','anthropicKey','githubToken','userName','userRole','userPov','coreHashtags'].forEach(f => {
     const v = localStorage.getItem(f);
     if (v && document.getElementById(f)) document.getElementById(f).value = v;
   });
