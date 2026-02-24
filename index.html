@@ -90,13 +90,37 @@
 
   /* Draft cards */
   .draft-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 12px; position: relative; }
-  .draft-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .draft-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
   .draft-label.hot { color: #f97316; }
   .draft-label.insight { color: #818cf8; }
   .draft-label.story { color: #34d399; }
   .draft-body { font-size: 14px; line-height: 1.65; color: var(--text); white-space: pre-wrap; }
   .draft-hashtags { margin-top: 10px; font-size: 13px; color: #818cf8; }
   .draft-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+
+  /* Preview */
+  .preview-toggle { font-size: 12px; color: var(--accent); cursor: pointer; margin-left: auto; }
+  .preview-toggle:hover { text-decoration: underline; }
+  .linkedin-preview { background: white; border-radius: 10px; padding: 16px; margin-top: 12px; display: none; color: #000; font-family: -apple-system, sans-serif; }
+  .linkedin-preview.visible { display: block; }
+  .lp-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .lp-avatar { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #0a66c2, #004182); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 16px; }
+  .lp-name { font-size: 14px; font-weight: 600; color: #000; }
+  .lp-title { font-size: 12px; color: #666; }
+  .lp-body { font-size: 14px; line-height: 1.6; color: #000; white-space: pre-wrap; }
+  .lp-fold { color: #0a66c2; font-size: 14px; cursor: pointer; }
+  .lp-hashtags { margin-top: 8px; font-size: 14px; color: #0a66c2; }
+  .lp-actions { display: flex; gap: 16px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #e0e0e0; }
+  .lp-action { font-size: 13px; color: #666; display: flex; align-items: center; gap: 5px; }
+
+  /* Scores */
+  .scores { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+  .score-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+  .score-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .score-bar-wrap { background: var(--border); border-radius: 4px; height: 6px; margin-bottom: 6px; }
+  .score-bar { height: 6px; border-radius: 4px; transition: width 0.5s ease; }
+  .score-num { font-size: 18px; font-weight: 700; }
+  .score-note { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
 
   /* Brainstorm cards */
   .brainstorm-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: space-between; }
@@ -596,7 +620,6 @@ HASHTAGS: [8-10 relevant hashtags including some from: ${coreHashtags}]
 }
 
 function renderDrafts(text, style) {
-  // If no variants found, show raw text as a single draft
   const blocks = text.split('---VARIANT---').slice(1);
   if (!blocks.length) {
     document.getElementById('draftsOutput').innerHTML = `
@@ -609,40 +632,167 @@ function renderDrafts(text, style) {
         </div>
         <div id="draftSaveStatus0" class="status-bar"></div>
       </div>`;
+    scoreAndPreview(0, text.trim(), '');
     return;
   }
 
   const typeColors = { 'Hot Take': 'hot', 'Insight': 'insight', 'Story': 'story' };
-  const typeIcons = { 'Hot Take': '🔥', 'Insight': '💡', 'Story': '📖' };
-
-  let html = '<div style="font-size:13px;color:var(--muted);margin-bottom:12px">✦ ' + blocks.length + ' draft' + (blocks.length>1?'s':'') + ' generated — click ✏️ to edit, then save to Trello</div>';
+  const typeIcons  = { 'Hot Take': '🔥', 'Insight': '💡', 'Story': '📖' };
+  let html = `<div style="font-size:13px;color:var(--muted);margin-bottom:12px">✦ ${blocks.length} draft${blocks.length>1?'s':''} generated</div>`;
 
   blocks.forEach((block, i) => {
     const typeMatch = block.match(/TYPE:\s*(.+)/);
     const postMatch = block.match(/POST:\n([\s\S]+?)(?=HASHTAGS:|---END---|$)/);
     const hashMatch = block.match(/HASHTAGS:\s*(.+)/);
-
-    const type = typeMatch ? typeMatch[1].trim() : 'Draft';
-    const post = postMatch ? postMatch[1].trim() : block;
-    const hashtags = hashMatch ? hashMatch[1].trim() : '';
+    const type      = typeMatch ? typeMatch[1].trim() : 'Draft';
+    const post      = postMatch ? postMatch[1].trim() : block.trim();
+    const hashtags  = hashMatch ? hashMatch[1].trim() : '';
     const colorClass = typeColors[type] || 'hot';
-    const icon = typeIcons[type] || '✦';
+    const icon       = typeIcons[type]  || '✦';
 
     html += `
-      <div class="draft-card">
-        <div class="draft-label ${colorClass}">${icon} ${type}</div>
-        <div class="draft-body" id="draftBody${i}" contenteditable="true" class="draft-body editable">${post}</div>
+      <div class="draft-card" id="draftCard${i}">
+        <div class="draft-label ${colorClass}" style="justify-content:space-between">
+          <span>${icon} ${type}</span>
+          <span class="preview-toggle" onclick="togglePreview(${i})">👁 LinkedIn Preview</span>
+        </div>
+        <div class="draft-body" id="draftBody${i}" contenteditable="true">${post}</div>
         <div class="draft-hashtags" id="draftHash${i}">${hashtags}</div>
+
+        <!-- LinkedIn Preview -->
+        <div class="linkedin-preview" id="preview${i}">
+          <div class="lp-header">
+            <div class="lp-avatar">MD</div>
+            <div>
+              <div class="lp-name">Michael Demetriou</div>
+              <div class="lp-title">President @ Baum Realty Group</div>
+            </div>
+          </div>
+          <div class="lp-body" id="previewBody${i}"></div>
+          <div class="lp-hashtags" id="previewHash${i}"></div>
+          <div class="lp-actions">
+            <span class="lp-action">👍 Like</span>
+            <span class="lp-action">💬 Comment</span>
+            <span class="lp-action">🔁 Repost</span>
+            <span class="lp-action">↗️ Send</span>
+          </div>
+        </div>
+
+        <!-- Scores -->
+        <div class="scores" id="scores${i}">
+          <div class="score-card">
+            <div class="score-label">🎣 Hook</div>
+            <div class="score-bar-wrap"><div class="score-bar" id="hookBar${i}" style="width:0%;background:#f97316"></div></div>
+            <div class="score-num" id="hookNum${i}">—</div>
+            <div class="score-note" id="hookNote${i}">Analyzing...</div>
+          </div>
+          <div class="score-card">
+            <div class="score-label">💬 Engagement</div>
+            <div class="score-bar-wrap"><div class="score-bar" id="engBar${i}" style="width:0%;background:#818cf8"></div></div>
+            <div class="score-num" id="engNum${i}">—</div>
+            <div class="score-note" id="engNote${i}">Analyzing...</div>
+          </div>
+          <div class="score-card">
+            <div class="score-label">✦ On-Brand</div>
+            <div class="score-bar-wrap"><div class="score-bar" id="brandBar${i}" style="width:0%;background:#34d399"></div></div>
+            <div class="score-num" id="brandNum${i}">—</div>
+            <div class="score-note" id="brandNote${i}">Analyzing...</div>
+          </div>
+        </div>
+
         <div class="draft-actions">
           <button class="btn btn-success btn-sm" onclick="saveToDraftsTrello(${i},'${escJs(type)}')">📋 Save to Working Drafts</button>
           <button class="btn btn-secondary btn-sm" onclick="copyPost(${i})">📋 Copy</button>
         </div>
         <div id="draftSaveStatus${i}" class="status-bar"></div>
-      </div>
-    `;
+      </div>`;
   });
 
   document.getElementById('draftsOutput').innerHTML = html;
+
+  // Populate previews and trigger scoring for each
+  blocks.forEach((block, i) => {
+    const postMatch = block.match(/POST:\n([\s\S]+?)(?=HASHTAGS:|---END---|$)/);
+    const hashMatch = block.match(/HASHTAGS:\s*(.+)/);
+    const post = postMatch ? postMatch[1].trim() : '';
+    const hashtags = hashMatch ? hashMatch[1].trim() : '';
+    populatePreview(i, post, hashtags);
+    scoreAndPreview(i, post, hashtags);
+  });
+}
+
+function populatePreview(i, post, hashtags) {
+  const FOLD = 210;
+  const pb = document.getElementById('previewBody' + i);
+  const ph = document.getElementById('previewHash' + i);
+  if (!pb) return;
+  if (post.length > FOLD) {
+    pb.innerHTML = escHtmlFull(post.substring(0, FOLD)) + '<span style="color:#999">... </span><span class="lp-fold">see more</span>';
+  } else {
+    pb.textContent = post;
+  }
+  if (ph) ph.textContent = hashtags;
+}
+
+function togglePreview(i) {
+  const el = document.getElementById('preview' + i);
+  if (!el) return;
+  el.classList.toggle('visible');
+  // refresh preview content from editable div
+  const post = document.getElementById('draftBody' + i)?.innerText || '';
+  const hash = document.getElementById('draftHash' + i)?.innerText || '';
+  populatePreview(i, post, hash);
+}
+
+async function scoreAndPreview(i, post, hashtags) {
+  const anthropicKey = localStorage.getItem('anthropicKey');
+  if (!anthropicKey) return;
+  const userName = localStorage.getItem('userName') || 'Mike';
+  const userPov  = localStorage.getItem('userPov') || 'Conversational CRE thought leader, Chicago-based, non-transactional.';
+
+  const prompt = `Score this LinkedIn post for ${userName} on 3 dimensions. Reply ONLY in this JSON format, no other text:
+{"hook":{"score":8,"note":"Strong opening question grabs attention"},"engagement":{"score":7,"note":"Ends with a question that invites comments"},"brand":{"score":9,"note":"Matches conversational, forward-looking tone perfectly"}}
+
+Voice profile: ${userPov}
+
+POST:
+${post}`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': anthropicKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 200, messages: [{ role: 'user', content: prompt }] })
+    });
+    const data = await res.json();
+    const raw  = data.content?.[0]?.text || '{}';
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const scores = JSON.parse(clean);
+
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    const setW = (id, pct) => { const el = document.getElementById(id); if (el) el.style.width = pct + '%'; };
+
+    set('hookNum'  + i, scores.hook?.score   + '/10');
+    set('engNum'   + i, scores.engagement?.score + '/10');
+    set('brandNum' + i, scores.brand?.score  + '/10');
+    set('hookNote' + i, scores.hook?.note   || '');
+    set('engNote'  + i, scores.engagement?.note || '');
+    set('brandNote'+ i, scores.brand?.note  || '');
+    setW('hookBar'  + i, (scores.hook?.score   || 0) * 10);
+    setW('engBar'   + i, (scores.engagement?.score || 0) * 10);
+    setW('brandBar' + i, (scores.brand?.score  || 0) * 10);
+  } catch(e) {
+    console.error('Scoring error', e);
+  }
+}
+
+function escHtmlFull(str) {
+  return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 async function saveToDraftsTrello(idx, type) {
