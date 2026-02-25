@@ -1052,7 +1052,7 @@ function updateLiConnectUI(){
   if(dis)dis.style.display=connected?'inline-flex':'none';
   document.querySelectorAll('.btn-post-li').forEach(b=>{b.disabled=!connected;b.title=connected?'Post to LinkedIn':'Connect LinkedIn first in Settings';});
 }
-async async function postToLinkedIn(idx){
+async function postToLinkedIn(idx){
   const tok=localStorage.getItem('liAccessToken'),exp=localStorage.getItem('liTokenExpiry');
   if(!tok){alert('Connect LinkedIn in Settings first.');return;}
   if(exp&&Date.now()>parseInt(exp)){alert('LinkedIn session expired. Please reconnect in Settings.');updateLiConnectUI();return;}
