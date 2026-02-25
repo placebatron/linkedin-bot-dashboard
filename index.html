@@ -45,7 +45,10 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 .btn { padding: 10px 18px; border-radius: 8px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 8px; }
 .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; }
 .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
-.btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+.btn-linkedin { background: #0a66c2; color: white; border: none; }
+    .btn-linkedin:hover { background: #004182; }
+    .btn-linkedin:disabled { background: #6b9dc2; }
+    .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
 .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
 .btn-success { background: rgba(16,185,129,0.15); color: var(--success); border: 1px solid rgba(16,185,129,0.3); }
 .btn-success:hover { background: rgba(16,185,129,0.25); }
@@ -132,7 +135,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 @media (max-width: 768px) { .app { grid-template-columns: 1fr; } .sidebar { display: none; } .settings-grid { grid-template-columns: 1fr; } }
 @media (max-width: 1100px) { #createGrid, #trendsInputGrid { grid-template-columns: 1fr !important; } }
 
-/* ── Collaboration Styles ─────────────────────────────────── */
+/* ââ Collaboration Styles âââââââââââââââââââââââââââââââââââ */
 .collab-bar { display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
 .status-badge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; }
 .status-badge.pending   { background:rgba(251,191,36,.18); color:#fbbf24; border:1px solid rgba(251,191,36,.35); }
@@ -160,7 +163,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
   <!-- Sidebar -->
   <div class="sidebar">
     <div class="logo">
-      <div class="logo-icon">â¦</div>
+      <div class="logo-icon">Ã¢ÂÂ¦</div>
       <div>
         <div class="logo-text">LinkedIn Bot</div>
         <div class="logo-sub">Mike's Content Studio</div>
@@ -168,26 +171,26 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
     </div>
     <div>
       <div class="nav-label" style="margin-bottom:8px">Menu</div>
-      <div class="nav-item active" onclick="showPage('create',this)"><span class="nav-icon">âï¸</span> Create Post</div>
-      <div class="nav-item" onclick="showPage('trends',this)"><span class="nav-icon">ð¥</span> Trending Ideas <span style="font-size:10px;background:linear-gradient(135deg,#f97316,#ef4444);color:white;padding:2px 6px;border-radius:10px;margin-left:4px">NEW</span></div>
-      <div class="nav-item" onclick="showPage('brainstorms',this)"><span class="nav-icon">ð¡</span> Brainstorms</div>
-      <div class="nav-item" onclick="showPage('drafts',this)"><span class="nav-icon">ð</span> Working Drafts</div>
-      <div class="nav-item" onclick="showPage('settings',this)"><span class="nav-icon">âï¸</span> Settings</div>
+      <div class="nav-item active" onclick="showPage('create',this)"><span class="nav-icon">Ã¢ÂÂÃ¯Â¸Â</span> Create Post</div>
+      <div class="nav-item" onclick="showPage('trends',this)"><span class="nav-icon">Ã°ÂÂÂ¥</span> Trending Ideas <span style="font-size:10px;background:linear-gradient(135deg,#f97316,#ef4444);color:white;padding:2px 6px;border-radius:10px;margin-left:4px">NEW</span></div>
+      <div class="nav-item" onclick="showPage('brainstorms',this)"><span class="nav-icon">Ã°ÂÂÂ¡</span> Brainstorms</div>
+      <div class="nav-item" onclick="showPage('drafts',this)"><span class="nav-icon">Ã°ÂÂÂ</span> Working Drafts</div>
+      <div class="nav-item" onclick="showPage('settings',this)"><span class="nav-icon">Ã¢ÂÂÃ¯Â¸Â</span> Settings</div>
     </div>
     <div>
       <div class="nav-label" style="margin-bottom:10px">Content Pillars</div>
       <div class="pillars-grid">
-        <div class="pillar-tag p1 active" onclick="togglePillar(this,'cre')">ð¢ CRE</div>
-        <div class="pillar-tag p2 active" onclick="togglePillar(this,'ci')">ðï¸ Creative Industrial</div>
-        <div class="pillar-tag p3 active" onclick="togglePillar(this,'fb')">ð½ï¸ Chicago F&B</div>
-        <div class="pillar-tag p4 active" onclick="togglePillar(this,'retail')">ðï¸ Retail Trends</div>
+        <div class="pillar-tag p1 active" onclick="togglePillar(this,'cre')">Ã°ÂÂÂ¢ CRE</div>
+        <div class="pillar-tag p2 active" onclick="togglePillar(this,'ci')">Ã°ÂÂÂÃ¯Â¸Â Creative Industrial</div>
+        <div class="pillar-tag p3 active" onclick="togglePillar(this,'fb')">Ã°ÂÂÂ½Ã¯Â¸Â Chicago F&B</div>
+        <div class="pillar-tag p4 active" onclick="togglePillar(this,'retail')">Ã°ÂÂÂÃ¯Â¸Â Retail Trends</div>
       </div>
     </div>
     <div style="margin-top:auto">
       <div style="font-size:12px;color:var(--muted);padding:8px;background:var(--surface2);border-radius:8px;line-height:1.5">
-        ð¯ Goal: Thought leadership<br>
-        ð Cadence: 1â2x/week<br>
-        ðï¸ Tone: Conversational
+        Ã°ÂÂÂ¯ Goal: Thought leadership<br>
+        Ã°ÂÂÂ Cadence: 1Ã¢ÂÂ2x/week<br>
+        Ã°ÂÂÂÃ¯Â¸Â Tone: Conversational
       </div>
     </div>
   </div>
@@ -202,50 +205,50 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px" id="createGrid">
         <div>
           <div class="card">
-            <div class="card-title">ð¸ Image</div>
+            <div class="card-title">Ã°ÂÂÂ¸ Image</div>
             <div class="upload-area" id="uploadArea">
               <input type="file" accept="image/*" onchange="handleImage(this)">
-              <div class="upload-icon">ð¼ï¸</div>
+              <div class="upload-icon">Ã°ÂÂÂ¼Ã¯Â¸Â</div>
               <div class="upload-text">Drop an image or tap to browse</div>
             </div>
             <img id="imagePreview" class="upload-preview" />
           </div>
           <div class="card">
-            <div class="card-title">ð­ Your Idea / Draft Text</div>
+            <div class="card-title">Ã°ÂÂÂ­ Your Idea / Draft Text</div>
             <div class="field">
               <textarea id="draftText" placeholder="Share your raw idea, observation, or draft text here..." oninput="updateCharCount('draftText','draftCount',3000)"></textarea>
               <div class="char-count" id="draftCount">0 / 3000</div>
             </div>
             <div class="field">
-              <label>ð Link (optional)</label>
+              <label>Ã°ÂÂÂ Link (optional)</label>
               <input type="url" id="linkInput" placeholder="https://..." />
             </div>
             <div class="field">
-              <label>ð·ï¸ Content Pillar</label>
+              <label>Ã°ÂÂÂ·Ã¯Â¸Â Content Pillar</label>
               <select id="pillarSelect">
-                <option value="cre">ð¢ Commercial Real Estate</option>
-                <option value="ci">ðï¸ Creative Industrial</option>
-                <option value="fb">ð½ï¸ Chicago Food & Beverage</option>
-                <option value="retail">ðï¸ Retail Trends</option>
-                <option value="mixed">â¦ Mixed / Let AI decide</option>
+                <option value="cre">Ã°ÂÂÂ¢ Commercial Real Estate</option>
+                <option value="ci">Ã°ÂÂÂÃ¯Â¸Â Creative Industrial</option>
+                <option value="fb">Ã°ÂÂÂ½Ã¯Â¸Â Chicago Food & Beverage</option>
+                <option value="retail">Ã°ÂÂÂÃ¯Â¸Â Retail Trends</option>
+                <option value="mixed">Ã¢ÂÂ¦ Mixed / Let AI decide</option>
               </select>
             </div>
             <div class="field">
-              <label>ð Post Style Preference</label>
+              <label>Ã°ÂÂÂ Post Style Preference</label>
               <select id="styleSelect">
                 <option value="all">Generate all 3 variants</option>
-                <option value="hot">ð¥ Hot Take only</option>
-                <option value="insight">ð¡ Insight / Observation only</option>
-                <option value="story">ð Story / Celebration only</option>
+                <option value="hot">Ã°ÂÂÂ¥ Hot Take only</option>
+                <option value="insight">Ã°ÂÂÂ¡ Insight / Observation only</option>
+                <option value="story">Ã°ÂÂÂ Story / Celebration only</option>
               </select>
             </div>
-            <button class="btn btn-primary" onclick="generatePosts()" id="generateBtn" style="width:100%">â¦ Generate Post Drafts</button>
+            <button class="btn btn-primary" onclick="generatePosts()" id="generateBtn" style="width:100%">Ã¢ÂÂ¦ Generate Post Drafts</button>
             <div id="generateStatus" class="status-bar"></div>
           </div>
         </div>
         <div id="draftsOutput">
           <div style="display:flex;align-items:center;justify-content:center;height:300px;color:var(--muted);flex-direction:column;gap:12px;border:1px dashed var(--border);border-radius:12px">
-            <div style="font-size:40px">â¦</div>
+            <div style="font-size:40px">Ã¢ÂÂ¦</div>
             <div style="font-size:14px">Your post drafts will appear here</div>
           </div>
         </div>
@@ -254,8 +257,8 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 
     <!-- TRENDING IDEAS PAGE -->
     <div id="page-trends" class="page">
-      <div class="section-title">ð¥ Trending Ideas</div>
-      <div class="section-sub">Pull current headlines across your pillars â enhanced with custom keywords, priority sources, and URL context.</div>
+      <div class="section-title">Ã°ÂÂÂ¥ Trending Ideas</div>
+      <div class="section-sub">Pull current headlines across your pillars Ã¢ÂÂ enhanced with custom keywords, priority sources, and URL context.</div>
 
       <!-- Enhanced Input Panel -->
       <div class="card" style="margin-bottom:20px">
@@ -263,16 +266,16 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 
           <!-- Keywords -->
           <div>
-            <div class="card-title">ð Custom Keywords
-              <span style="font-size:10px;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(optional â clears after search)</span>
+            <div class="card-title">Ã°ÂÂÂ Custom Keywords
+              <span style="font-size:10px;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(optional Ã¢ÂÂ clears after search)</span>
             </div>
             <textarea id="trendKeywords" placeholder="e.g. CMBS defaults, ghost kitchens, micro-fulfillment, adaptive reuse Chicago..." style="min-height:80px;font-size:13px"></textarea>
           </div>
 
           <!-- URL Context -->
           <div>
-            <div class="card-title">ð URL Context
-              <span style="font-size:10px;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(optional â layers topic into search)</span>
+            <div class="card-title">Ã°ÂÂÂ URL Context
+              <span style="font-size:10px;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(optional Ã¢ÂÂ layers topic into search)</span>
             </div>
             <input type="url" id="trendUrl" placeholder="https://bisnow.com/some-article..." style="margin-bottom:10px" />
             <div style="font-size:11px;color:var(--muted);line-height:1.6">Paste any article URL and I'll extract its topic and search for related discussion across the web, Twitter/X, LinkedIn, and your selected sources.</div>
@@ -280,17 +283,17 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 
           <!-- Sources -->
           <div style="grid-column:1/-1">
-            <div class="card-title">ð Priority Sources
-              <span style="font-size:10px;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(click to toggle â green = active)</span>
+            <div class="card-title">Ã°ÂÂÂ Priority Sources
+              <span style="font-size:10px;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(click to toggle Ã¢ÂÂ green = active)</span>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-              <button class="source-toggle active" onclick="toggleSource(this)" data-source="Twitter/X (twitter.com and x.com)">ð Twitter/X</button>
-              <button class="source-toggle active" onclick="toggleSource(this)" data-source="LinkedIn (linkedin.com)">ð¼ LinkedIn</button>
-              <button class="source-toggle active" onclick="toggleSource(this)" data-source="CoStar, GlobeSt, and CommercialObserver">ð¢ CoStar / CRE News</button>
-              <button class="source-toggle" onclick="toggleSource(this)" data-source="Bisnow (bisnow.com)">ð° Bisnow</button>
-              <button class="source-toggle" onclick="toggleSource(this)" data-source="The Real Deal (therealdeal.com)">ð° The Real Deal</button>
-              <button class="source-toggle" onclick="toggleSource(this)" data-source="Nation's Restaurant News (nrn.com)">ð½ï¸ NRN</button>
-              <button class="source-toggle" onclick="toggleSource(this)" data-source="Retail Dive (retaildive.com)">ðï¸ Retail Dive</button>
+              <button class="source-toggle active" onclick="toggleSource(this)" data-source="Twitter/X (twitter.com and x.com)">Ã°ÂÂÂ Twitter/X</button>
+              <button class="source-toggle active" onclick="toggleSource(this)" data-source="LinkedIn (linkedin.com)">Ã°ÂÂÂ¼ LinkedIn</button>
+              <button class="source-toggle active" onclick="toggleSource(this)" data-source="CoStar, GlobeSt, and CommercialObserver">Ã°ÂÂÂ¢ CoStar / CRE News</button>
+              <button class="source-toggle" onclick="toggleSource(this)" data-source="Bisnow (bisnow.com)">Ã°ÂÂÂ° Bisnow</button>
+              <button class="source-toggle" onclick="toggleSource(this)" data-source="The Real Deal (therealdeal.com)">Ã°ÂÂÂ° The Real Deal</button>
+              <button class="source-toggle" onclick="toggleSource(this)" data-source="Nation's Restaurant News (nrn.com)">Ã°ÂÂÂ½Ã¯Â¸Â NRN</button>
+              <button class="source-toggle" onclick="toggleSource(this)" data-source="Retail Dive (retaildive.com)">Ã°ÂÂÂÃ¯Â¸Â Retail Dive</button>
               <input type="text" id="customSource" placeholder="+ Custom site (e.g. chicagobusiness.com)" style="width:240px;font-size:12px;padding:6px 12px;flex-shrink:0" />
             </div>
           </div>
@@ -300,35 +303,35 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 
       <!-- Generate row -->
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
-        <button class="btn btn-primary" onclick="generateTrends()" id="trendBtn">ð¥ Generate Trend Ideas</button>
+        <button class="btn btn-primary" onclick="generateTrends()" id="trendBtn">Ã°ÂÂÂ¥ Generate Trend Ideas</button>
         <div style="font-size:13px;color:var(--muted)" id="trendLastRun"></div>
       </div>
 
       <!-- Pillar filter -->
       <div class="pillar-filter-row" id="pillarFilterRow">
         <button class="pillar-filter-btn active" onclick="filterTrends('all',this)">All Pillars</button>
-        <button class="pillar-filter-btn" onclick="filterTrends('cre',this)">ð¢ CRE</button>
-        <button class="pillar-filter-btn" onclick="filterTrends('ci',this)">ðï¸ Creative Industrial</button>
-        <button class="pillar-filter-btn" onclick="filterTrends('fb',this)">ð½ï¸ Chicago F&B</button>
-        <button class="pillar-filter-btn" onclick="filterTrends('retail',this)">ðï¸ Retail</button>
+        <button class="pillar-filter-btn" onclick="filterTrends('cre',this)">Ã°ÂÂÂ¢ CRE</button>
+        <button class="pillar-filter-btn" onclick="filterTrends('ci',this)">Ã°ÂÂÂÃ¯Â¸Â Creative Industrial</button>
+        <button class="pillar-filter-btn" onclick="filterTrends('fb',this)">Ã°ÂÂÂ½Ã¯Â¸Â Chicago F&B</button>
+        <button class="pillar-filter-btn" onclick="filterTrends('retail',this)">Ã°ÂÂÂÃ¯Â¸Â Retail</button>
       </div>
 
       <div id="trendStatus" class="status-bar"></div>
       <div id="trendsOutput">
         <div class="trend-generate-area">
-          <div class="big-icon">ð¥</div>
-          <p>Add optional keywords, a URL, or select sources above â then hit <strong>Generate Trend Ideas</strong> to get post angles ready to go.</p>
-          <button class="btn btn-primary" onclick="generateTrends()">ð¥ Generate Now</button>
+          <div class="big-icon">Ã°ÂÂÂ¥</div>
+          <p>Add optional keywords, a URL, or select sources above Ã¢ÂÂ then hit <strong>Generate Trend Ideas</strong> to get post angles ready to go.</p>
+          <button class="btn btn-primary" onclick="generateTrends()">Ã°ÂÂÂ¥ Generate Now</button>
         </div>
       </div>
     </div>
 
     <!-- BRAINSTORMS PAGE -->
     <div id="page-brainstorms" class="page">
-      <div class="section-title">ð¡ Brainstorms</div>
+      <div class="section-title">Ã°ÂÂÂ¡ Brainstorms</div>
       <div class="section-sub">Cards from your Trello "Brainstorms" list. Click one to use it as post material.</div>
       <div style="display:flex;gap:10px;margin-bottom:16px">
-        <button class="btn btn-secondary" onclick="loadBrainstorms()">ð Refresh from Trello</button>
+        <button class="btn btn-secondary" onclick="loadBrainstorms()">Ã°ÂÂÂ Refresh from Trello</button>
       </div>
       <div id="brainstormsList"><div style="color:var(--muted);font-size:14px">Click Refresh to load your Brainstorms from Trello.</div></div>
       <div id="brainstormStatus" class="status-bar"></div>
@@ -336,10 +339,10 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 
     <!-- WORKING DRAFTS PAGE -->
     <div id="page-drafts" class="page">
-      <div class="section-title">ð Working Drafts</div>
+      <div class="section-title">Ã°ÂÂÂ Working Drafts</div>
       <div class="section-sub">Posts saved to your Trello "Working Drafts" list.</div>
       <div style="display:flex;gap:10px;margin-bottom:16px">
-        <button class="btn btn-secondary" onclick="loadWorkingDrafts()">ð Refresh from Trello</button>
+        <button class="btn btn-secondary" onclick="loadWorkingDrafts()">Ã°ÂÂÂ Refresh from Trello</button>
       </div>
       <div id="workingDraftsList"><div style="color:var(--muted);font-size:14px">Click Refresh to load your Working Drafts from Trello.</div></div>
       <div id="workingDraftsStatus" class="status-bar"></div>
@@ -347,10 +350,10 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 
     <!-- SETTINGS PAGE -->
     <div id="page-settings" class="page">
-      <div class="section-title">âï¸ Settings</div>
+      <div class="section-title">Ã¢ÂÂÃ¯Â¸Â Settings</div>
       <div class="section-sub">Configure your API credentials. Saved in your browser only.</div>
       <div class="card">
-        <div class="card-title">ð API Credentials</div>
+        <div class="card-title">Ã°ÂÂÂ API Credentials</div>
         <div class="settings-grid">
           <div class="field">
             <label>Trello API Key</label>
@@ -365,15 +368,15 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
             <input type="password" id="anthropicKey" placeholder="sk-ant-..." />
           </div>
           <div class="field" style="grid-column:1/-1">
-            <label>ð GitHub Token <span style="font-size:11px;color:var(--success);margin-left:6px">â Enables Claude to push updates directly</span></label>
+            <label>Ã°ÂÂÂ GitHub Token <span style="font-size:11px;color:var(--success);margin-left:6px">Ã¢ÂÂ Enables Claude to push updates directly</span></label>
             <input type="password" id="githubToken" placeholder="ghp_..." />
           </div>
         </div>
-        <button class="btn btn-primary" onclick="saveSettings()">ð¾ Save Settings</button>
+        <button class="btn btn-primary" onclick="saveSettings()">Ã°ÂÂÂ¾ Save Settings</button>
         <div id="settingsStatus" class="status-bar"></div>
       </div>
       <div class="card">
-        <div class="card-title">ð¤ Your Voice Profile</div>
+        <div class="card-title">Ã°ÂÂÂ¤ Your Voice Profile</div>
         <div class="field">
           <label>Your Name</label>
           <input type="text" id="userName" placeholder="Mike" />
@@ -390,7 +393,26 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
           <label>Always-on Hashtags (comma separated)</label>
           <input type="text" id="coreHashtags" placeholder="#CRE, #ChicagoRealEstate, #RetailTrends" />
         </div>
-        <button class="btn btn-primary" onclick="saveSettings()">ð¾ Save Profile</button>
+        <button class="btn btn-primary" onclick="saveSettings()">Ã°ÂÂÂ¾ Save Profile</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔗 LinkedIn Connection</div>
+      <div class="settings-grid">
+        <div class="form-group">
+          <label>LinkedIn Status</label>
+          <div id="liStatusDisplay" style="padding:8px;border-radius:6px;background:var(--surface2);font-size:14px;">Checking...</div>
+        </div>
+        <div class="form-group">
+          <label>Actions</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-linkedin btn-sm" onclick="connectLinkedIn()">🔗 Connect LinkedIn</button>
+            <button class="btn btn-secondary btn-sm" onclick="disconnectLinkedIn()">✕ Disconnect</button>
+          </div>
+        </div>
+      </div>
+      <div id="liSettingsStatus" class="status-msg"></div>
       </div>
     </div>
 
@@ -398,17 +420,17 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 </div>
 
 <script>
-// âââ State ââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ State Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 let imageBase64 = null;
 let activePillars = ['cre','ci','fb','retail'];
 let trelloListIds = {};
 let trendData = [];
 
-// âââ Models âââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Models Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 const MODEL_RESEARCH = 'claude-haiku-4-5-20251001';  // trends + scoring
 const MODEL_WRITING  = 'claude-sonnet-4-6';           // post generation
 
-// âââ Init âââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Init Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 window.onload = () => { loadFromStorage(); fetchTrelloListIds(); };
 
 function loadFromStorage() {
@@ -423,10 +445,10 @@ function saveSettings() {
     const el = document.getElementById(f);
     if (el) localStorage.setItem(f, el.value);
   });
-  showStatus('settingsStatus','success','â Settings saved!');
+  showStatus('settingsStatus','success','Ã¢ÂÂ Settings saved!');
 }
 
-// âââ Nav ââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Nav Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 function showPage(name, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -434,7 +456,7 @@ function showPage(name, el) {
   if (el) el.classList.add('active');
 }
 
-// âââ Pillars ââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Pillars Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 function togglePillar(el, key) {
   el.classList.toggle('active');
   activePillars = activePillars.includes(key)
@@ -442,7 +464,7 @@ function togglePillar(el, key) {
     : [...activePillars, key];
 }
 
-// âââ Image Upload âââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Image Upload Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 function handleImage(input) {
   const file = input.files[0];
   if (!file) return;
@@ -452,7 +474,7 @@ function handleImage(input) {
     const preview = document.getElementById('imagePreview');
     preview.src = e.target.result;
     preview.style.display = 'block';
-    document.querySelector('.upload-text').textContent = 'â ' + file.name;
+    document.querySelector('.upload-text').textContent = 'Ã¢ÂÂ ' + file.name;
   };
   reader.readAsDataURL(file);
 }
@@ -464,7 +486,7 @@ function updateCharCount(inputId, countId, max) {
   el.className = 'char-count' + (len > max ? ' over' : '');
 }
 
-// âââ Trello âââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Trello Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 async function fetchTrelloListIds() {
   const key = localStorage.getItem('trelloKey'), token = localStorage.getItem('trelloToken');
   if (!key || !token) return;
@@ -479,7 +501,7 @@ async function fetchTrelloListIds() {
 
 async function loadBrainstorms() {
   const key = localStorage.getItem('trelloKey'), token = localStorage.getItem('trelloToken');
-  if (!key || !token) { showStatus('brainstormStatus','error','â ï¸ Add Trello credentials in Settings.'); return; }
+  if (!key || !token) { showStatus('brainstormStatus','error','Ã¢ÂÂ Ã¯Â¸Â Add Trello credentials in Settings.'); return; }
   await fetchTrelloListIds();
   const listId = trelloListIds['Brainstorms'];
   if (!listId) { showStatus('brainstormStatus','error','Could not find Brainstorms list.'); return; }
@@ -493,7 +515,7 @@ async function loadBrainstorms() {
         <div class="brainstorm-name">${c.name}</div>
         ${c.desc ? `<div class="brainstorm-desc">${c.desc.substring(0,100)}${c.desc.length>100?'...':''}</div>` : ''}
       </div>
-      <span style="color:var(--accent);font-size:18px">â</span>
+      <span style="color:var(--accent);font-size:18px">Ã¢ÂÂ</span>
     </div>`).join('');
   hideStatus('brainstormStatus');
 }
@@ -519,12 +541,12 @@ function useBrainstorm(cardId, name, desc) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-create').classList.add('active');
   document.querySelectorAll('.nav-item')[0].classList.add('active');
-  showStatus('generateStatus','info','ð¡ Brainstorm loaded: "' + name.substring(0,60) + '" â Hit Generate when ready!');
+  showStatus('generateStatus','info','Ã°ÂÂÂ¡ Brainstorm loaded: "' + name.substring(0,60) + '" Ã¢ÂÂ Hit Generate when ready!');
 }
 
 async function loadWorkingDrafts() {
   const key = localStorage.getItem('trelloKey'), token = localStorage.getItem('trelloToken');
-  if (!key || !token) { showStatus('workingDraftsStatus','error','⚠️ Add Trello credentials in Settings.'); return; }
+  if (!key || !token) { showStatus('workingDraftsStatus','error','â ï¸ Add Trello credentials in Settings.'); return; }
   await fetchTrelloListIds();
   const listId = trelloListIds['Working Drafts'];
   if (!listId) { showStatus('workingDraftsStatus','error','Could not find Working Drafts list.'); return; }
@@ -542,9 +564,9 @@ async function loadWorkingDrafts() {
   }));
   container.innerHTML = cards.map(c => {
     const labelNames = (c.labels||[]).map(l => l.name.toLowerCase());
-    let statusClass = 'pending', statusText = '🕐 Pending Review';
-    if (labelNames.some(l => l.includes('approved'))) { statusClass='approved'; statusText='✅ Approved'; }
-    else if (labelNames.some(l => l.includes('edit') || l.includes('revision'))) { statusClass='needs-edits'; statusText='✏️ Needs Edits'; }
+    let statusClass = 'pending', statusText = 'ð Pending Review';
+    if (labelNames.some(l => l.includes('approved'))) { statusClass='approved'; statusText='â Approved'; }
+    else if (labelNames.some(l => l.includes('edit') || l.includes('revision'))) { statusClass='needs-edits'; statusText='âï¸ Needs Edits'; }
     const comments = commentsByCard[c.id] || [];
     const commentsHtml = comments.length
       ? comments.map(a => `<div class="comment-item"><div><span class="comment-author">${escHtmlFull(a.memberCreator&&a.memberCreator.fullName||'Team')}</span><span class="comment-date">${new Date(a.date).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</span></div><div class="comment-text">${escHtmlFull(a.data&&a.data.text||'')}</div></div>`).join('')
@@ -553,15 +575,15 @@ async function loadWorkingDrafts() {
       <div class="collab-bar">
         <span class="status-badge ${statusClass}">${statusText}</span>
         <div class="collab-actions">
-          <button class="btn btn-sm btn-approve" onclick="setDraftStatus('${c.id}','approved')">✅ Approve</button>
-          <button class="btn btn-sm btn-edits" onclick="setDraftStatus('${c.id}','needs-edits')">✏️ Request Edits</button>
-          <button class="collab-refresh" onclick="loadWorkingDrafts()">↻ Refresh</button>
+          <button class="btn btn-sm btn-approve" onclick="setDraftStatus('${c.id}','approved')">â Approve</button>
+          <button class="btn btn-sm btn-edits" onclick="setDraftStatus('${c.id}','needs-edits')">âï¸ Request Edits</button>
+          <button class="collab-refresh" onclick="loadWorkingDrafts()">â» Refresh</button>
         </div>
       </div>
       <div style="font-weight:600;margin-bottom:6px">${c.name}</div>
       ${c.desc ? `<div class="draft-body">${c.desc.substring(0,300)}${c.desc.length>300?'...':''}</div>` : ''}
       <div class="comments-section">
-        <div class="comments-label">💬 Team Comments (${comments.length})</div>
+        <div class="comments-label">ð¬ Team Comments (${comments.length})</div>
         ${commentsHtml}
         <div class="comment-input-wrap">
           <textarea id="commentInput-${c.id}" placeholder="Add a comment for your team..."></textarea>
@@ -569,8 +591,8 @@ async function loadWorkingDrafts() {
         </div>
       </div>
       <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-        <a href="${c.shortUrl}" target="_blank" class="btn btn-secondary btn-sm">🔗 Open in Trello</a>
-        <button class="btn btn-secondary btn-sm" onclick="moveToProduction('${c.id}')">🚀 Move to Production</button>
+        <a href="${c.shortUrl}" target="_blank" class="btn btn-secondary btn-sm">ð Open in Trello</a>
+        <button class="btn btn-secondary btn-sm" onclick="moveToProduction('${c.id}')">ð Move to Production</button>
       </div>
       <div id="collabStatus-${c.id}" class="status-bar" style="display:none"></div>
     </div>`;
@@ -609,8 +631,8 @@ async function setDraftStatus(cardId, status) {
   });
   const userName = localStorage.getItem('userName') || 'Mike';
   const commentText = status === 'approved'
-    ? `✅ Approved by ${userName} on ${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`
-    : `✏️ Edits requested by ${userName} on ${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
+    ? `â Approved by ${userName} on ${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`
+    : `âï¸ Edits requested by ${userName} on ${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
   await fetch(`https://api.trello.com/1/cards/${cardId}/actions/comments?key=${key}&token=${token}`, {
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({ text: commentText })
@@ -630,7 +652,7 @@ async function postTrelloComment(cardId) {
     body: JSON.stringify({ text })
   });
   if (input) input.value = '';
-  if (statusEl) { statusEl.className='status-bar success'; statusEl.textContent='✅ Comment posted!'; setTimeout(()=>{ statusEl.style.display='none'; },2000); }
+  if (statusEl) { statusEl.className='status-bar success'; statusEl.textContent='â Comment posted!'; setTimeout(()=>{ statusEl.style.display='none'; },2000); }
   loadWorkingDrafts();
 }
 
@@ -656,7 +678,7 @@ async function archiveBrainstormCard(cardId) {
   });
 }
 
-// âââ Source Toggles âââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Source Toggles Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 function toggleSource(el) {
   el.classList.toggle('active');
 }
@@ -669,15 +691,15 @@ function getActiveSources() {
   return active;
 }
 
-// âââ TREND INJECTION â Haiku 4.5 + web search âââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ TREND INJECTION Ã¢ÂÂ Haiku 4.5 + web search Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 async function generateTrends() {
   const anthropicKey = localStorage.getItem('anthropicKey');
-  if (!anthropicKey) { showStatus('trendStatus','error','â ï¸ Add your Anthropic API key in Settings first.'); return; }
+  if (!anthropicKey) { showStatus('trendStatus','error','Ã¢ÂÂ Ã¯Â¸Â Add your Anthropic API key in Settings first.'); return; }
 
   const btn = document.getElementById('trendBtn');
   btn.innerHTML = '<span class="spinner"></span> Scanning headlines...';
   btn.disabled = true;
-  showStatus('trendStatus','info','ð¥ Scanning current trends across your 4 pillars...');
+  showStatus('trendStatus','info','Ã°ÂÂÂ¥ Scanning current trends across your 4 pillars...');
   document.getElementById('trendsOutput').innerHTML = '';
 
   const userName = localStorage.getItem('userName') || 'Mike';
@@ -705,18 +727,18 @@ async function generateTrends() {
 Their voice: ${userPov}
 Today's date: ${new Date().toLocaleDateString('en-US', {weekday:'long', year:'numeric', month:'long', day:'numeric'})}.${keywordsSection}${sourcesSection}${urlSection}
 
-Search for the most current, relevant headlines and developments (within the last 2â4 weeks) across these 4 content pillars:
-1. CRE (Commercial Real Estate) â office, industrial, leasing, investment, cap rates, CMBS, urban real estate
-2. Creative Industrial â adaptive reuse, warehouse conversions, flex/maker space, creative office, live-work lofts
-3. Chicago F&B â Chicago restaurant scene, new openings/closings, food trends, hospitality, local chefs
-4. Retail Trends â brick & mortar, DTC brands, retail real estate, pop-ups, consumer behavior, experiential retail
+Search for the most current, relevant headlines and developments (within the last 2Ã¢ÂÂ4 weeks) across these 4 content pillars:
+1. CRE (Commercial Real Estate) Ã¢ÂÂ office, industrial, leasing, investment, cap rates, CMBS, urban real estate
+2. Creative Industrial Ã¢ÂÂ adaptive reuse, warehouse conversions, flex/maker space, creative office, live-work lofts
+3. Chicago F&B Ã¢ÂÂ Chicago restaurant scene, new openings/closings, food trends, hospitality, local chefs
+4. Retail Trends Ã¢ÂÂ brick & mortar, DTC brands, retail real estate, pop-ups, consumer behavior, experiential retail
 
 Generate exactly 4 trend ideas (one per pillar) in this EXACT format with no extra text:
 ---TREND---
 PILLAR: cre
 HEADLINE: [specific, timely trend or development]
 CONTEXT: [2-3 sentences: what's happening, why it matters, market implication. Use data/examples.]
-HOOK: [punchy 1-sentence opener in Mike's voice â no "I" as first word, stops the scroll]
+HOOK: [punchy 1-sentence opener in Mike's voice Ã¢ÂÂ no "I" as first word, stops the scroll]
 STYLE: [hot|insight|story]
 ---END---
 ---TREND---
@@ -760,19 +782,19 @@ Be specific, timely, and opinionated. Reference real market dynamics, named citi
     });
     const data = await res.json();
     if (!res.ok) {
-      showStatus('trendStatus','error','â API error: ' + (data?.error?.message || res.statusText));
+      showStatus('trendStatus','error','Ã¢ÂÂ API error: ' + (data?.error?.message || res.statusText));
     } else {
       const text = data.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
       renderTrends(text);
       hideStatus('trendStatus');
-      document.getElementById('trendLastRun').textContent = 'â± Last updated: ' + new Date().toLocaleTimeString();
+      document.getElementById('trendLastRun').textContent = 'Ã¢ÂÂ± Last updated: ' + new Date().toLocaleTimeString();
       // Clear one-time inputs after successful search
       if (document.getElementById('trendKeywords')) document.getElementById('trendKeywords').value = '';
       if (document.getElementById('trendUrl')) document.getElementById('trendUrl').value = '';
     }
   } catch(e) { showStatus('trendStatus','error','Error: ' + e.message); }
 
-  btn.innerHTML = 'ð¥ Generate Trend Ideas';
+  btn.innerHTML = 'Ã°ÂÂÂ¥ Generate Trend Ideas';
   btn.disabled = false;
 }
 
@@ -790,21 +812,21 @@ function renderTrends(text) {
 }
 
 function displayTrendCards(trends) {
-  const pillarLabels = { cre:'ð¢ CRE', ci:'ðï¸ Creative Industrial', fb:'ð½ï¸ Chicago F&B', retail:'ðï¸ Retail' };
-  const styleIcons   = { hot:'ð¥', insight:'ð¡', story:'ð' };
+  const pillarLabels = { cre:'Ã°ÂÂÂ¢ CRE', ci:'Ã°ÂÂÂÃ¯Â¸Â Creative Industrial', fb:'Ã°ÂÂÂ½Ã¯Â¸Â Chicago F&B', retail:'Ã°ÂÂÂÃ¯Â¸Â Retail' };
+  const styleIcons   = { hot:'Ã°ÂÂÂ¥', insight:'Ã°ÂÂÂ¡', story:'Ã°ÂÂÂ' };
   const html = trends.map(t => `
     <div class="trend-card" data-pillar="${t.pillar}">
       <div class="trend-header">
         <span class="trend-pillar-badge ${t.pillar}">${pillarLabels[t.pillar] || t.pillar}</span>
-        <span class="trend-number">${styleIcons[t.style] || 'â¦'} ${(t.style||'').toUpperCase()}</span>
+        <span class="trend-number">${styleIcons[t.style] || 'Ã¢ÂÂ¦'} ${(t.style||'').toUpperCase()}</span>
       </div>
       <div class="trend-headline">${t.headline}</div>
       <div class="trend-context">${t.context}</div>
       <div class="trend-hook-label">Suggested Hook</div>
       <div class="trend-hook">${t.hook}</div>
       <div class="trend-actions">
-        <button class="btn btn-primary btn-sm" onclick="useTrend(${t.index})">âï¸ Write This Post</button>
-        <button class="btn btn-secondary btn-sm" onclick="copyTrendHook(${t.index})">ð Copy Hook</button>
+        <button class="btn btn-primary btn-sm" onclick="useTrend(${t.index})">Ã¢ÂÂÃ¯Â¸Â Write This Post</button>
+        <button class="btn btn-secondary btn-sm" onclick="copyTrendHook(${t.index})">Ã°ÂÂÂ Copy Hook</button>
       </div>
     </div>`).join('');
   document.getElementById('trendsOutput').innerHTML = html || '<div style="color:var(--muted)">No trends parsed. Try generating again.</div>';
@@ -828,7 +850,7 @@ function useTrend(idx) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-create').classList.add('active');
   document.querySelectorAll('.nav-item')[0].classList.add('active');
-  showStatus('generateStatus','info','ð¥ Trend loaded: "' + t.headline.substring(0,60) + '" â ' + t.pillar.toUpperCase() + ' | ' + (t.style||'').toUpperCase() + '. Hit Generate!');
+  showStatus('generateStatus','info','Ã°ÂÂÂ¥ Trend loaded: "' + t.headline.substring(0,60) + '" Ã¢ÂÂ ' + t.pillar.toUpperCase() + ' | ' + (t.style||'').toUpperCase() + '. Hit Generate!');
 }
 
 function copyTrendHook(idx) {
@@ -836,10 +858,10 @@ function copyTrendHook(idx) {
   if (t) navigator.clipboard.writeText(t.hook);
 }
 
-// âââ GENERATE POSTS â Sonnet 4.6 ââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ GENERATE POSTS Ã¢ÂÂ Sonnet 4.6 Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 async function generatePosts() {
   const anthropicKey = localStorage.getItem('anthropicKey');
-  if (!anthropicKey) { showStatus('generateStatus','error','â ï¸ Add your Anthropic API key in Settings first.'); return; }
+  if (!anthropicKey) { showStatus('generateStatus','error','Ã¢ÂÂ Ã¯Â¸Â Add your Anthropic API key in Settings first.'); return; }
   const draftText   = document.getElementById('draftText').value.trim();
   const linkInput   = document.getElementById('linkInput').value.trim();
   const pillar      = document.getElementById('pillarSelect').value;
@@ -848,23 +870,23 @@ async function generatePosts() {
   const userRole    = localStorage.getItem('userRole') || '';
   const userPov     = localStorage.getItem('userPov') || 'Conversational, non-transactional thought leader in CRE, Creative Industrial, Chicago F&B, and retail trends.';
   const coreHashtags = localStorage.getItem('coreHashtags') || '#CRE #RetailTrends #ChicagoCRE #CreativeIndustrial';
-  if (!draftText && !linkInput && !imageBase64) { showStatus('generateStatus','error','â ï¸ Add some raw material first.'); return; }
+  if (!draftText && !linkInput && !imageBase64) { showStatus('generateStatus','error','Ã¢ÂÂ Ã¯Â¸Â Add some raw material first.'); return; }
   const btn = document.getElementById('generateBtn');
   btn.innerHTML = '<span class="spinner"></span> Generating...';
   btn.disabled = true;
-  showStatus('generateStatus','info','â¦ Drafting your posts...');
+  showStatus('generateStatus','info','Ã¢ÂÂ¦ Drafting your posts...');
   const pillarLabels = { cre:'Commercial Real Estate', ci:'Creative Industrial', fb:'Chicago Food & Beverage', retail:'Retail Trends', mixed:'Mixed topics' };
   const styleInstructions = {
-    all: 'Generate 3 variants: 1) ð¥ Hot Take (bold, provocative), 2) ð¡ Insight/Observation (data-informed), 3) ð Story/Celebration (personal, warm)',
-    hot: 'Generate 1 variant: ð¥ Hot Take', insight: 'Generate 1 variant: ð¡ Insight/Observation', story: 'Generate 1 variant: ð Story/Celebration'
+    all: 'Generate 3 variants: 1) Ã°ÂÂÂ¥ Hot Take (bold, provocative), 2) Ã°ÂÂÂ¡ Insight/Observation (data-informed), 3) Ã°ÂÂÂ Story/Celebration (personal, warm)',
+    hot: 'Generate 1 variant: Ã°ÂÂÂ¥ Hot Take', insight: 'Generate 1 variant: Ã°ÂÂÂ¡ Insight/Observation', story: 'Generate 1 variant: Ã°ÂÂÂ Story/Celebration'
   };
   const userContent = [];
   if (imageBase64) userContent.push({ type:'image', source:{ type:'base64', media_type:'image/jpeg', data:imageBase64 } });
   userContent.push({ type:'text', text:`
 You are a ghostwriter for ${userName}${userRole ? ', '+userRole : ''}.
 VOICE: ${userPov}
-- Conversational, never corporate. 150â250 words. No hashtags in body. Line breaks for readability.
-- Hook that stops the scroll â no "I" as first word. End with a thought-provoking question.
+- Conversational, never corporate. 150Ã¢ÂÂ250 words. No hashtags in body. Line breaks for readability.
+- Hook that stops the scroll Ã¢ÂÂ no "I" as first word. End with a thought-provoking question.
 PILLAR: ${pillarLabels[pillar]}
 RAW MATERIAL: ${draftText || '(See image/link)'}
 ${linkInput ? `LINK: ${linkInput}` : ''}
@@ -882,10 +904,10 @@ HASHTAGS: [8-10 hashtags including some from: ${coreHashtags}]
       body: JSON.stringify({ model: MODEL_WRITING, max_tokens: 2000, messages:[{ role:'user', content:userContent }] })
     });
     const data = await res.json();
-    if (!res.ok) showStatus('generateStatus','error','â ' + (data?.error?.message || res.statusText));
+    if (!res.ok) showStatus('generateStatus','error','Ã¢ÂÂ ' + (data?.error?.message || res.statusText));
     else { renderDrafts(data.content?.[0]?.text || '', style); hideStatus('generateStatus'); }
   } catch(e) { showStatus('generateStatus','error','Error: ' + e.message); }
-  btn.innerHTML = 'â¦ Generate Post Drafts';
+  btn.innerHTML = 'Ã¢ÂÂ¦ Generate Post Drafts';
   btn.disabled = false;
   if (window._activeBrainstormCardId) { archiveBrainstormCard(window._activeBrainstormCardId); window._activeBrainstormCardId = null; }
 }
@@ -893,12 +915,12 @@ HASHTAGS: [8-10 hashtags including some from: ${coreHashtags}]
 function renderDrafts(text, style) {
   const blocks = text.split('---VARIANT---').slice(1);
   if (!blocks.length) {
-    document.getElementById('draftsOutput').innerHTML = `<div class="draft-card"><div class="draft-label hot">â¦ Draft</div><div class="draft-body" id="draftBody0" contenteditable="true">${text.trim()}</div><div class="draft-actions"><button class="btn btn-success btn-sm" onclick="saveToDraftsTrello(0,'Draft')">ð Save to Working Drafts</button><button class="btn btn-secondary btn-sm" onclick="copyPost(0)">ð Copy</button></div><div id="draftSaveStatus0" class="status-bar"></div></div>`;
+    document.getElementById('draftsOutput').innerHTML = `<div class="draft-card"><div class="draft-label hot">Ã¢ÂÂ¦ Draft</div><div class="draft-body" id="draftBody0" contenteditable="true">${text.trim()}</div><div class="draft-actions"><button class="btn btn-success btn-sm" onclick="saveToDraftsTrello(0,'Draft')">Ã°ÂÂÂ Save to Working Drafts</button><button class="btn btn-secondary btn-sm" onclick="copyPost(0)">Ã°ÂÂÂ Copy</button><button class="btn btn-linkedin btn-sm" onclick="postToLinkedIn(0)" id="liBtn0" title="Post this draft to LinkedIn">🔗 Post to LinkedIn</button></div><div id="draftSaveStatus0" class="status-bar"></div></div>`;
     scoreAndPreview(0, text.trim(), ''); return;
   }
   const typeColors = {'Hot Take':'hot','Insight':'insight','Story':'story'};
-  const typeIcons  = {'Hot Take':'ð¥','Insight':'ð¡','Story':'ð'};
-  let html = `<div style="font-size:13px;color:var(--muted);margin-bottom:12px">â¦ ${blocks.length} draft${blocks.length>1?'s':''} generated</div>`;
+  const typeIcons  = {'Hot Take':'Ã°ÂÂÂ¥','Insight':'Ã°ÂÂÂ¡','Story':'Ã°ÂÂÂ'};
+  let html = `<div style="font-size:13px;color:var(--muted);margin-bottom:12px">Ã¢ÂÂ¦ ${blocks.length} draft${blocks.length>1?'s':''} generated</div>`;
   blocks.forEach((block, i) => {
     const typeMatch = block.match(/TYPE:\s*(.+)/);
     const postMatch = block.match(/POST:\n([\s\S]+?)(?=HASHTAGS:|---END---|$)/);
@@ -907,11 +929,11 @@ function renderDrafts(text, style) {
     const post = postMatch ? postMatch[1].trim() : block.trim();
     const hashtags = hashMatch ? hashMatch[1].trim() : '';
     const colorClass = typeColors[type] || 'hot';
-    const icon = typeIcons[type] || 'â¦';
+    const icon = typeIcons[type] || 'Ã¢ÂÂ¦';
     html += `<div class="draft-card" id="draftCard${i}">
       <div class="draft-label ${colorClass}" style="justify-content:space-between">
         <span>${icon} ${type}</span>
-        <span class="preview-toggle" onclick="togglePreview(${i})">ð LinkedIn Preview</span>
+        <span class="preview-toggle" onclick="togglePreview(${i})">Ã°ÂÂÂ LinkedIn Preview</span>
       </div>
       <div class="draft-body" id="draftBody${i}" contenteditable="true">${post}</div>
       <div class="draft-hashtags" id="draftHash${i}">${hashtags}</div>
@@ -919,16 +941,16 @@ function renderDrafts(text, style) {
         <div class="lp-header"><div class="lp-avatar">MD</div><div><div class="lp-name">Michael Demetriou</div><div class="lp-title">President @ Baum Realty Group</div></div></div>
         <div class="lp-body" id="previewBody${i}"></div>
         <div class="lp-hashtags" id="previewHash${i}"></div>
-        <div class="lp-actions"><span class="lp-action">ð Like</span><span class="lp-action">ð¬ Comment</span><span class="lp-action">ð Repost</span><span class="lp-action">âï¸ Send</span></div>
+        <div class="lp-actions"><span class="lp-action">Ã°ÂÂÂ Like</span><span class="lp-action">Ã°ÂÂÂ¬ Comment</span><span class="lp-action">Ã°ÂÂÂ Repost</span><span class="lp-action">Ã¢ÂÂÃ¯Â¸Â Send</span></div>
       </div>
       <div class="scores" id="scores${i}">
-        <div class="score-card"><div class="score-label">ð£ Hook</div><div class="score-bar-wrap"><div class="score-bar" id="hookBar${i}" style="width:0%;background:#f97316"></div></div><div class="score-num" id="hookNum${i}">â</div><div class="score-note" id="hookNote${i}">Analyzing...</div></div>
-        <div class="score-card"><div class="score-label">ð¬ Engagement</div><div class="score-bar-wrap"><div class="score-bar" id="engBar${i}" style="width:0%;background:#818cf8"></div></div><div class="score-num" id="engNum${i}">â</div><div class="score-note" id="engNote${i}">Analyzing...</div></div>
-        <div class="score-card"><div class="score-label">â¦ On-Brand</div><div class="score-bar-wrap"><div class="score-bar" id="brandBar${i}" style="width:0%;background:#34d399"></div></div><div class="score-num" id="brandNum${i}">â</div><div class="score-note" id="brandNote${i}">Analyzing...</div></div>
+        <div class="score-card"><div class="score-label">Ã°ÂÂÂ£ Hook</div><div class="score-bar-wrap"><div class="score-bar" id="hookBar${i}" style="width:0%;background:#f97316"></div></div><div class="score-num" id="hookNum${i}">Ã¢ÂÂ</div><div class="score-note" id="hookNote${i}">Analyzing...</div></div>
+        <div class="score-card"><div class="score-label">Ã°ÂÂÂ¬ Engagement</div><div class="score-bar-wrap"><div class="score-bar" id="engBar${i}" style="width:0%;background:#818cf8"></div></div><div class="score-num" id="engNum${i}">Ã¢ÂÂ</div><div class="score-note" id="engNote${i}">Analyzing...</div></div>
+        <div class="score-card"><div class="score-label">Ã¢ÂÂ¦ On-Brand</div><div class="score-bar-wrap"><div class="score-bar" id="brandBar${i}" style="width:0%;background:#34d399"></div></div><div class="score-num" id="brandNum${i}">Ã¢ÂÂ</div><div class="score-note" id="brandNote${i}">Analyzing...</div></div>
       </div>
       <div class="draft-actions">
-        <button class="btn btn-success btn-sm" onclick="saveToDraftsTrello(${i},'${escJs(type)}')">ð Save to Working Drafts</button>
-        <button class="btn btn-secondary btn-sm" onclick="copyPost(${i})">ð Copy</button>
+        <button class="btn btn-success btn-sm" onclick="saveToDraftsTrello(${i},'${escJs(type)}')">Ã°ÂÂÂ Save to Working Drafts</button>
+        <button class="btn btn-secondary btn-sm" onclick="copyPost(${i})">Ã°ÂÂÂ Copy</button>
       </div>
       <div id="draftSaveStatus${i}" class="status-bar"></div>
     </div>`;
@@ -957,7 +979,7 @@ function togglePreview(i) {
   populatePreview(i, document.getElementById('draftBody'+i)?.innerText||'', document.getElementById('draftHash'+i)?.innerText||'');
 }
 
-// âââ SCORE & PREVIEW â Haiku 4.5 ââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ SCORE & PREVIEW Ã¢ÂÂ Haiku 4.5 Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 async function scoreAndPreview(i, post, hashtags) {
   const anthropicKey = localStorage.getItem('anthropicKey');
   if (!anthropicKey) return;
@@ -990,7 +1012,7 @@ POST: ${post}`;
 
 async function saveToDraftsTrello(idx, type) {
   const key = localStorage.getItem('trelloKey'), token = localStorage.getItem('trelloToken');
-  if (!key || !token) { showStatus('generateStatus','error','â ï¸ Add Trello credentials in Settings.'); return; }
+  if (!key || !token) { showStatus('generateStatus','error','Ã¢ÂÂ Ã¯Â¸Â Add Trello credentials in Settings.'); return; }
   await fetchTrelloListIds();
   const listId = trelloListIds['Working Drafts'];
   if (!listId) { alert('Could not find Working Drafts list.'); return; }
@@ -1002,8 +1024,8 @@ async function saveToDraftsTrello(idx, type) {
     body: JSON.stringify({ name:`[${type}] ${cardName}`, desc: body+'\n\n'+hash, idList: listId, key, token })
   });
   const card = await res.json();
-  if (card.id) showStatus('draftSaveStatus'+idx,'success','â Saved to Working Drafts on Trello!');
-  else showStatus('draftSaveStatus'+idx,'error','â Failed to save to Trello.');
+  if (card.id) showStatus('draftSaveStatus'+idx,'success','Ã¢ÂÂ Saved to Working Drafts on Trello!');
+  else showStatus('draftSaveStatus'+idx,'error','Ã¢ÂÂ Failed to save to Trello.');
 }
 
 function copyPost(idx) {
@@ -1012,12 +1034,92 @@ function copyPost(idx) {
   navigator.clipboard.writeText(body+'\n\n'+hash);
 }
 
-// âââ Utilities ââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Utilities Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 function showStatus(id, type, msg) { const el = document.getElementById(id); if (!el) return; el.className='status-bar '+type; el.textContent=msg; el.style.display='block'; }
 function hideStatus(id) { const el = document.getElementById(id); if (el) el.style.display='none'; }
 function escHtml(str) { return (str||'').replace(/'/g,"\\'").replace(/"/g,'&quot;').substring(0,200); }
 function escHtmlFull(str) { return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function escJs(str) { return (str||'').replace(/'/g,"\\'"); }
+
+
+// ── LinkedIn Integration ──
+const LI_WORKER = 'https://worker-small-mountain-69ba.mike-3ac.workers.dev';
+
+function connectLinkedIn() {
+  window.open(LI_WORKER + '/auth', 'linkedin-auth', 'width=600,height=700');
+  window.addEventListener('message', function handler(e) {
+    if (e.data && e.data.linkedinToken) {
+      localStorage.setItem('linkedinToken', e.data.linkedinToken);
+      window.removeEventListener('message', handler);
+      updateLiStatus();
+      showStatus('liSettingsStatus', 'success', '✅ LinkedIn connected!');
+    }
+  });
+}
+
+function disconnectLinkedIn() {
+  localStorage.removeItem('linkedinToken');
+  updateLiStatus();
+  showStatus('liSettingsStatus', 'success', 'Disconnected from LinkedIn.');
+}
+
+function updateLiStatus() {
+  const el = document.getElementById('liStatusDisplay');
+  if (!el) return;
+  const token = localStorage.getItem('linkedinToken');
+  if (token) {
+    el.style.background = '#1a3a1a';
+    el.style.color = '#4ade80';
+    el.innerHTML = '✅ Connected — token stored in browser';
+  } else {
+    el.style.background = 'var(--surface2)';
+    el.style.color = 'var(--muted)';
+    el.innerHTML = '⚠️ Not connected — click Connect LinkedIn below';
+  }
+}
+
+async function postToLinkedIn(idx) {
+  const token = localStorage.getItem('linkedinToken');
+  if (!token) {
+    alert('Please connect your LinkedIn account in Settings first.');
+    showSection('page-settings');
+    return;
+  }
+  const draftEl = document.getElementById('draftBody' + idx) || document.querySelector('#draftCard' + idx + ' .draft-body');
+  if (!draftEl) { alert('Could not find draft text.'); return; }
+  const text = draftEl.innerText || draftEl.textContent;
+  if (!text || text.trim().length < 10) { alert('Draft appears empty.'); return; }
+  
+  const btn = document.getElementById('liBtn' + idx);
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Posting...'; }
+  
+  try {
+    const res = await fetch(LI_WORKER + '/post', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ access_token: token, text: text.trim() })
+    });
+    const data = await res.json();
+    if (data.success || data.postId || data.id) {
+      if (btn) { btn.textContent = '✅ Posted!'; btn.style.background = '#16a34a'; }
+      setTimeout(() => { if (btn) { btn.disabled = false; btn.textContent = '🔗 Post to LinkedIn'; btn.style.background = ''; } }, 4000);
+    } else if (data.error && data.error.includes('expired')) {
+      localStorage.removeItem('linkedinToken');
+      updateLiStatus();
+      if (btn) { btn.disabled = false; btn.textContent = '🔗 Post to LinkedIn'; }
+      alert('LinkedIn token expired. Please reconnect in Settings.');
+    } else {
+      throw new Error(data.error || data.message || JSON.stringify(data));
+    }
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = '🔗 Post to LinkedIn'; }
+    alert('Post failed: ' + e.message);
+  }
+}
+
+// Check LI status on settings page load
+document.addEventListener('DOMContentLoaded', updateLiStatus);
+// Also update when settings tab is clicked
 </script>
 </body>
 </html>
