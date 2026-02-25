@@ -1016,32 +1016,31 @@ function escHtmlFull(str) { return (str||'').replace(/&/g,'&amp;').replace(/</g,
 function escJs(str) { return (str||'').replace(/'/g,"\\'"); }
 
 function liConnectStart(){
-  const cid=localStorage.getItem('liClientId')||'86aqcg4woo7er4';
-  const st=Math.random().toString(36).substring(2);
-  localStorage.setItem('li_oauth_state',st);
-  window.location.href='https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id='+cid+'&redirect_uri='+encodeURIComponent('https://placebatron.github.io/linkedin-bot-dashboard/')+'&scope='+encodeURIComponent('openid profile email w_member_social')+'&state='+st;
+  localStorage.setItem('li_oauth_state','pending');
+  window.location.href='https://worker-small-mountain-69ba.mike-3ac.workers.dev/auth';
 }
 async function liHandleCallback(){
-  const p=new URLSearchParams(window.location.search);
-  const code=p.get('code'),state=p.get('state'),saved=localStorage.getItem('li_oauth_state');
-  if(!code||state!==saved)return;
+  const hash=window.location.hash;
+  if(!hash.includes('linkedin_token='))return;
+  const params=new URLSearchParams(hash.substring(1));
+  const tok=params.get('linkedin_token'),exp=params.get('expires_in');
+  const err=params.get('linkedin_error');
   window.history.replaceState({},'',window.location.pathname);
-  localStorage.removeItem('li_oauth_state');
-  const cid=localStorage.getItem('liClientId')||'86aqcg4woo7er4';
-  const csec=localStorage.getItem('liClientSecret')||'';
-  if(!csec){alert('Add your LinkedIn Client Secret in Settings first.');return;}
-  try{
-    const res=await fetch('https://worker-small-mountain-69ba.mike-3ac.workers.dev/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,redirect_uri:'https://placebatron.github.io/linkedin-bot-dashboard/',client_id:cid,client_secret:csec})});
-    const data=await res.json();
-    if(data.access_token){
-      localStorage.setItem('liAccessToken',data.access_token);
-      localStorage.setItem('liTokenExpiry',Date.now()+(data.expires_in*1000));
-      const pr=await fetch('https://api.linkedin.com/v2/userinfo',{headers:{'Authorization':'Bearer '+data.access_token}});
-      const prof=await pr.json();
-      if(prof.sub){localStorage.setItem('liUserUrn','urn:li:person:'+prof.sub);localStorage.setItem('liUserName',prof.name||'');}
-      updateLiConnectUI();
-    }else{alert('LinkedIn auth failed: '+(data.error_description||JSON.stringify(data)));}
-  }catch(e){alert('LinkedIn error: '+e.message);}
+  if(err){alert('LinkedIn connection failed: '+err);return;}
+  if(tok){
+    localStorage.setItem('liAccessToken',tok);
+    localStorage.setItem('liTokenDate',Date.now());
+    if(exp)localStorage.setItem('liTokenExpiry',Date.now()+(parseInt(exp)*1000));
+    // Fetch profile via Worker /post will get urn on first post; fetch userinfo now
+    try{
+      const pr=await fetch('https://worker-small-mountain-69ba.mike-3ac.workers.dev/status');
+      // Get profile from LinkedIn userinfo via a lightweight check
+      const uRes=await fetch('https://api.linkedin.com/v2/userinfo',{headers:{Authorization:'Bearer '+tok}});
+      if(uRes.ok){const u=await uRes.json();if(u.sub){localStorage.setItem('liUserUrn','urn:li:person:'+u.sub);localStorage.setItem('liUserName',u.name||'');}}
+    }catch(e){}
+    updateLiConnectUI();
+    showToast('✅ LinkedIn connected successfully!','success');
+  }
 }
 function liDisconnect(){['liAccessToken','liTokenExpiry','liUserUrn','liUserName'].forEach(k=>localStorage.removeItem(k));updateLiConnectUI();}
 function updateLiConnectUI(){
@@ -1053,17 +1052,26 @@ function updateLiConnectUI(){
   if(dis)dis.style.display=connected?'inline-flex':'none';
   document.querySelectorAll('.btn-post-li').forEach(b=>{b.disabled=!connected;b.title=connected?'Post to LinkedIn':'Connect LinkedIn first in Settings';});
 }
-async function postToLinkedIn(idx){
-  const tok=localStorage.getItem('liAccessToken'),urn=localStorage.getItem('liUserUrn');
-  if(!tok||!urn){alert('Connect LinkedIn in Settings first.');return;}
+async async function postToLinkedIn(idx){
+  const tok=localStorage.getItem('liAccessToken'),exp=localStorage.getItem('liTokenExpiry');
+  if(!tok){alert('Connect LinkedIn in Settings first.');return;}
+  if(exp&&Date.now()>parseInt(exp)){alert('LinkedIn session expired. Please reconnect in Settings.');updateLiConnectUI();return;}
   const body=document.getElementById('draftBody'+idx)?.innerText||'';
   const hash=document.getElementById('draftHash'+idx)?.innerText||'';
-  const full=body+(hash?'\n\n'+hash:'');
-  if(!full.trim())return;
+  const full=(body+(hash?'
+
+'+hash:'')).trim();
+  if(!full){alert('No content to post.');return;}
   const btn=document.querySelector('[onclick="postToLinkedIn('+idx+')"]');
+  const statusEl=document.getElementById('draftSaveStatus'+idx);
   if(btn){btn.disabled=true;btn.textContent='Posting...';}
+  if(statusEl){statusEl.textContent='📤 Posting to LinkedIn...';statusEl.style.color='var(--accent)';}
   try{
-    const res=await fetch('https://api.linkedin.com/v2/ugcPosts',{method:'POST',headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json','X-Restli-Protocol-Version':'2.0.0'},body:JSON.stringify({author:urn,lifecycleState:'PUBLISHED',specificContent:{'com.linkedin.ugc.ShareContent':{shareCommentary:{text:full},shareMediaCategory:'NONE'}},visibility:{'com.linkedin.ugc.MemberNetworkVisibility':'PUBLIC'}})});
+    const res=await fetch('https://worker-small-mountain-69ba.mike-3ac.workers.dev/post',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({access_token:tok,text:full})
+    });,body:JSON.stringify({author:urn,lifecycleState:'PUBLISHED',specificContent:{'com.linkedin.ugc.ShareContent':{shareCommentary:{text:full},shareMediaCategory:'NONE'}},visibility:{'com.linkedin.ugc.MemberNetworkVisibility':'PUBLIC'}})});
     if(res.ok||res.status===201){showStatus('draftSaveStatus'+idx,'success','ð Posted to LinkedIn!');if(btn)btn.textContent='â Posted!';}
     else{const e=await res.json().catch(()=>({}));showStatus('draftSaveStatus'+idx,'error','Post failed: '+(e.message||res.status));if(btn){btn.disabled=false;btn.textContent='Post to LinkedIn';}}
   }catch(e){showStatus('draftSaveStatus'+idx,'error','Error: '+e.message);if(btn){btn.disabled=false;btn.textContent='Post to LinkedIn';}}
@@ -1071,6 +1079,14 @@ async function postToLinkedIn(idx){
 
         handleLinkedInCallback();
         updateLinkedInStatus();
-    </script>
+    function showToast(msg,type='info'){
+  let t=document.getElementById('globalToast');
+  if(!t){t=document.createElement('div');t.id='globalToast';t.style.cssText='position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:600;z-index:9999;transition:opacity .3s;';document.body.appendChild(t);}
+  t.textContent=msg;
+  t.style.background=type==='success'?'#10b981':type==='error'?'#ef4444':'#4f6ef7';
+  t.style.color='#fff';t.style.opacity='1';
+  clearTimeout(t._to);t._to=setTimeout(()=>{t.style.opacity='0';},3500);
+}
+</script>
 </body>
 </html>
