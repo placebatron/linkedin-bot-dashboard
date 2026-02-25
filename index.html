@@ -1,19 +1,45 @@
-(async () => {
-  const token = localStorage.getItem('githubToken');
-  if (!token) { console.error('No GitHub token in localStorage!'); return; }
+✦
+LinkedIn Bot
+Mike's Content Studio
+MENU
+✏️
+Create Post
+🔥
+Trending Ideas
+NEW
+💡
+Brainstorms
+📄
+Working Drafts
+⚙️
+Settings
+CONTENT PILLARS
+🏢 CRE ǳ­️ Creative Industrial 🍽️ Chicago F&B 🛍️ Retail Trends
+🎯 Goal: Thought leadership
+📅 Cadence: 1–2x/week
+💬 Tone: Conversational
+Create a Post
+Add your raw material and I'll draft LinkedIn posts in your voice.
+🖼 IMAGE
 
-  // Step 1: Get current file SHA
-  const getRes = await fetch('https://api.github.com/repos/placebatron/linkedin-bot-dashboard/contents/index.html', {
-    headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
-  });
-  const fileData = await getRes.json();
-  console.log('SHA:', fileData.sha);
-  if (!fileData.sha) { console.error('Could not get SHA:', fileData); return; }
-
-  // Step 2: Fetch the new file content
-  const newRes = await fetch('https://placebatron.github.io/linkedin-bot-dashboard/index_new.html');
-  console.log('Fetched new content');
-
-  console.log('SHA retrieved:', fileData.sha, '- paste this in the next step');
-  return fileData.sha;
-})();
+📼️
+Drop an image or tap to browse
+💭 YOUR IDEA / DRAFT TEXT
+0 / 3000
+🔗 Link (optional)
+🏷️ Content Pillar
+                🏢 Commercial Real Estate
+                ǳ­️ Creative Industrial
+                🍽️ Chicago Food & Beverage
+                🛍️ Retail Trends
+                … Mixed / Let AI decide
+              
+📝 Post Style Preference
+                Generate all 3 variants
+                🔥 Hot Take only
+                💡 Insight / Observation only
+                📖 Story / Celebration only
+              
+✨ Generate Post Drafts
+✨
+Your post drafts will appear here
