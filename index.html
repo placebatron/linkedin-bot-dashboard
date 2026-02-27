@@ -413,6 +413,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 <script>
 // ── State ──────────────────────────────────────────────────────
 let imageBase64 = null;
+        let imageMimeType = 'image/jpeg';
 let activePillars = ['cre','ci','fb','retail'];
 let trelloListIds = {};
 let trendData = [];
@@ -464,15 +465,56 @@ function togglePillar(el, key) {
 function handleImage(input) {
   const file = input.files[0];
   if (!file) return;
+
+  const supportedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+  const fileType = file.type.toLowerCase();
+  const isHEIC = fileType === 'image/heic' || fileType === 'image/heif'
+    || file.name.toLowerCase().endsWith('.heic')
+    || file.name.toLowerCase().endsWith('.heif');
+
+  if (!supportedTypes.includes(fileType) && !isHEIC) {
+    showStatus('generateStatus', 'error', '\u274c Unsupported image type. Please use JPEG, PNG, GIF, WebP, or HEIC.');
+    return;
+  }
+
+  if (isHEIC) {
+    // Convert HEIC to JPEG via canvas (works natively in Safari on Mac/iPhone)
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      imageBase64 = dataUrl.split(',')[1];
+      imageMimeType = 'image/jpeg';
+      const preview = document.getElementById('imagePreview');
+      preview.src = dataUrl;
+      preview.style.display = 'block';
+      document.querySelector('.upload-text').textContent = '\u2705 ' + file.name + ' (converted to JPEG)';
+      URL.revokeObjectURL(url);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      showStatus('generateStatus', 'error', '\u274c Could not process HEIC file. Please convert it to JPEG in the Photos app (File > Export > Export as JPEG) and try again.');
+    };
+    img.src = url;
+    return;
+  }
+
+  // Standard supported format
+  imageMimeType = fileType;
   const reader = new FileReader();
   reader.onload = e => {
     imageBase64 = e.target.result.split(',')[1];
     const preview = document.getElementById('imagePreview');
     preview.src = e.target.result;
     preview.style.display = 'block';
-    document.querySelector('.upload-text').textContent = '✅ ' + file.name;
+    document.querySelector('.upload-text').textContent = '\u2705 ' + file.name;
   };
   reader.readAsDataURL(file);
+}
 }
 
 function updateCharCount(inputId, countId, max) {
@@ -861,7 +903,7 @@ async function generatePosts() {
     story: 'Generate 1 variant: 📖 Story/Celebration'
   };
   const userContent = [];
-  if (imageBase64) userContent.push({ type:'image', source:{ type:'base64', media_type:'image/jpeg', data:imageBase64 } });
+  if (imageBase64) userContent.push({ type:'image', source:{ type:'base64', media_type: imageMimeType, data:imageBase64 } });
   userContent.push({ type:'text', text:`
 You are a ghostwriter for ${userName}${userRole ? ', '+userRole : ''}.
 VOICE: ${userPov}
