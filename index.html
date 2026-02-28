@@ -548,6 +548,19 @@ let pendingScheduleDate = null;
 
 // ── Init ───────────────────────────────────────────────────────
 window.onload = () => {
+  // OAuth popup callback: worker redirects popup to #linkedin_token=...
+  // Detect that, relay to opener via postMessage, then close.
+  const hash = window.location.hash;
+  if (hash.includes('linkedin_token=') && window.opener) {
+    const params = new URLSearchParams(hash.substring(1));
+    const token = params.get('linkedin_token');
+    if (token) {
+      window.opener.postMessage({ linkedinToken: decodeURIComponent(token) }, '*');
+      window.close();
+      return;
+    }
+  }
+
   const now = new Date();
   calYear  = now.getFullYear();
   calMonth = now.getMonth();
