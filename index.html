@@ -232,6 +232,7 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
       <div class="nav-item" onclick="showPage('trends',this)"><span class="nav-icon">🔥</span> Trending Ideas <span style="font-size:10px;background:linear-gradient(135deg,#f97316,#ef4444);color:white;padding:2px 6px;border-radius:10px;margin-left:4px">LIVE</span></div>
       <div class="nav-item" onclick="showPage('brainstorms',this)"><span class="nav-icon">💡</span> Brainstorms</div>
       <div class="nav-item" onclick="showPage('drafts',this)"><span class="nav-icon">📄</span> Working Drafts</div>
+      <div class="nav-item" onclick="showPage('production',this)"><span class="nav-icon">🚀</span> Production</div>
       <div class="nav-item" onclick="showPage('calendar',this)"><span class="nav-icon">📅</span> Content Calendar</div>
       <div class="nav-item" onclick="showPage('performance',this)"><span class="nav-icon">📊</span> Performance</div>
       <div class="nav-item" onclick="showPage('settings',this)"><span class="nav-icon">⚙️</span> Settings</div>
@@ -375,14 +376,15 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
       <button class="btn" onclick="loadWorkingDrafts()" style="margin-bottom:16px">↻ Load Working Drafts</button>
       <div class="status-bar" id="workingDraftsStatus"></div>
       <div id="workingDraftsList"></div>
+    </div>
 
-      <div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--border)">
-        <div class="section-title">🚀 Production</div>
-        <div class="section-sub">Cards moved to your Trello "Production" list — approved and ready to post.</div>
-        <button class="btn" onclick="loadProductionCards()" style="margin-bottom:16px">↻ Load Production Cards</button>
-        <div class="status-bar" id="productionStatus"></div>
-        <div id="productionList"></div>
-      </div>
+    <!-- PRODUCTION -->
+    <div class="page" id="page-production">
+      <div class="section-title">🚀 Production</div>
+      <div class="section-sub">Cards approved and moved to your Trello "Production" list. Click <strong>Edit in Bot</strong> to load any card into the editor for final edits, scoring, preview, and publishing.</div>
+      <button class="btn" onclick="loadProductionCards()" style="margin-bottom:16px">↻ Load Production Cards</button>
+      <div class="status-bar" id="productionStatus"></div>
+      <div id="productionList"></div>
     </div>
 
     <!-- CONTENT CALENDAR -->
@@ -548,6 +550,7 @@ let imageBase64 = null;
 let imageMimeType = 'image/jpeg';
 let trendData = [];
 let trelloListIds = {};
+let trelloCardCache = {}; // { cardId: { name, desc, listName } } — avoids special-char issues in onclick
 let calYear, calMonth;
 let calendarData    = {}; // { "2026-02-15": [{ text, pillar, type, id }] }
 let savedDrafts     = []; // persisted generated drafts
@@ -601,11 +604,15 @@ function persistDrafts()     { localStorage.setItem('savedDrafts',    JSON.strin
 function persistPublished()  { localStorage.setItem('publishedPosts', JSON.stringify(publishedPosts)); }
 
 // ── Nav ────────────────────────────────────────────────────────
+function navItemFor(pageName) {
+  return [...document.querySelectorAll('.nav-item')].find(n => (n.getAttribute('onclick')||'').includes("'" + pageName + "'")) || null;
+}
 function showPage(name, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
-  if (el) el.classList.add('active');
+  const navEl = el || navItemFor(name);
+  if (navEl) navEl.classList.add('active');
   if (name === 'settings')    updateLiStatus();
   if (name === 'calendar')    { renderCalendar(); renderDraftPool(); }
   if (name === 'performance') renderPerformance();
@@ -770,7 +777,7 @@ function useBrainstorm(cardId, name, desc) {
   document.getElementById('styleSelect').value = style;
   document.getElementById('linkInput').value = '';
   window._activeBrainstormCardId = cardId;
-  showPage('create', document.querySelectorAll('.nav-item')[0]);
+  showPage('create');
   showStatus('generateStatus','info','💡 Brainstorm loaded: "' + name.substring(0,60) + '" — Hit Generate when ready!');
 }
 
@@ -795,6 +802,8 @@ async function loadWorkingDrafts() {
         commentsByCard[c.id] = actions;
       } catch(e) { commentsByCard[c.id] = []; }
     }));
+    // Cache card data by ID to avoid quoting issues in onclick attributes
+    cards.forEach(c => { trelloCardCache[c.id] = { name: c.name, desc: c.desc || '', listName: 'Working Drafts' }; });
     container.innerHTML = cards.map(c => {
       const labelNames = (c.labels||[]).map(l => l.name.toLowerCase());
       let statusClass = 'pending', statusText = '⏳ Pending Review';
@@ -813,7 +822,7 @@ async function loadWorkingDrafts() {
             <button class="collab-refresh" onclick="loadWorkingDrafts()">↻</button>
           </div>
         </div>
-        <div style="font-weight:600;margin-bottom:6px">${c.name}</div>
+        <div style="font-weight:600;margin-bottom:6px">${escHtmlFull(c.name)}</div>
         ${c.desc ? `<div class="draft-body">${escHtmlFull(c.desc.substring(0,300))}${c.desc.length>300?'...':''}</div>` : ''}
         <div class="comments-section">
           <div class="comments-label">💬 Team Comments (${comments.length})</div>
@@ -826,7 +835,7 @@ async function loadWorkingDrafts() {
         <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
           <a href="${c.shortUrl}" target="_blank" class="btn btn-sm">📋 Open in Trello</a>
           <button class="btn btn-sm" onclick="moveToProduction('${c.id}')">🚀 Move to Production</button>
-          <button class="btn btn-linkedin btn-sm" onclick="loadTrelloDraftIntoBot(${JSON.stringify(c.name)},${JSON.stringify(c.desc||'')},'Working Drafts')">✏️ Edit in Bot</button>
+          <button class="btn btn-linkedin btn-sm" onclick="loadTrelloDraftFromCache('${c.id}')">✏️ Edit in Bot</button>
         </div>
         <div id="collabStatus-${c.id}" class="status-bar" style="display:none"></div>
       </div>`;
@@ -1046,7 +1055,7 @@ function useTrend(idx) {
   document.getElementById('styleSelect').value = t.style === 'hot' ? 'hot' : t.style === 'story' ? 'story' : 'insight';
   document.getElementById('linkInput').value = '';
   window._activeBrainstormCardId = null;
-  showPage('create', document.querySelectorAll('.nav-item')[0]);
+  showPage('create');
   showStatus('generateStatus','info','🔥 Trend loaded: "' + t.headline.substring(0,60) + '" — Hit Generate!');
 }
 
@@ -1453,12 +1462,18 @@ function scheduleDraftToDate(draftId) {
   pendingScheduleDate = '_pick_' + draftId;
   document.getElementById('scheduleModal').classList.remove('open');
   // Highlight calendar cells on hover — just go to calendar tab
-  showPage('calendar', document.querySelectorAll('.nav-item')[4]);
+  showPage('calendar');
 }
 
 function scheduleFromDraft(draftId) { scheduleDraftToDate(draftId); }
 
 // ── TRELLO → BOT EDITOR ────────────────────────────────────────
+function loadTrelloDraftFromCache(cardId) {
+  const card = trelloCardCache[cardId];
+  if (!card) { alert('Card data not cached — please reload the list and try again.'); return; }
+  loadTrelloDraftIntoBot(card.name, card.desc, card.listName);
+}
+
 function parseTrelloCardContent(desc) {
   // Separate hashtags (last block of #tags) from body text
   const parts = desc.split('\n\n');
@@ -1479,7 +1494,7 @@ function parseTrelloCardContent(desc) {
 function loadTrelloDraftIntoBot(cardName, cardDesc, listName) {
   const { body, hashtags } = parseTrelloCardContent(cardDesc || '');
   // Navigate to Create Post page
-  showPage('create', document.querySelectorAll('.nav-item')[0]);
+  showPage('create');
   const id = 'trello_' + Date.now() + '_0';
   const draftObj = { id, text: body, hashtags, type: listName || 'Trello', pillar: 'mixed', createdAt: new Date().toISOString() };
   savedDrafts.unshift(draftObj);
@@ -1532,14 +1547,16 @@ async function loadProductionCards() {
       container.innerHTML = '<div style="color:var(--muted);font-size:14px">No cards in Production yet.</div>';
       hideStatus('productionStatus'); return;
     }
+    // Cache card data by ID to avoid quoting issues in onclick attributes
+    cards.forEach(c => { trelloCardCache[c.id] = { name: c.name, desc: c.desc || '', listName: 'Production' }; });
     container.innerHTML = cards.map(c => {
       const preview = (c.desc || '').substring(0, 200);
       return `<div class="draft-card">
         <div style="font-weight:600;margin-bottom:6px">${escHtmlFull(c.name)}</div>
-        ${preview ? `<div class="draft-body" style="cursor:default">${escHtmlFull(preview)}${c.desc.length > 200 ? '...' : ''}</div>` : ''}
+        ${preview ? `<div class="draft-body" style="cursor:default">${escHtmlFull(preview)}${(c.desc||'').length > 200 ? '...' : ''}</div>` : ''}
         <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
           <a href="${c.shortUrl}" target="_blank" class="btn btn-sm">📋 Open in Trello</a>
-          <button class="btn btn-linkedin btn-sm" onclick="loadTrelloDraftIntoBot(${JSON.stringify(c.name)},${JSON.stringify(c.desc||'')},'Production')">✏️ Edit in Bot</button>
+          <button class="btn btn-linkedin btn-sm" onclick="loadTrelloDraftFromCache('${c.id}')">✏️ Edit in Bot</button>
         </div>
       </div>`;
     }).join('');
@@ -1582,7 +1599,7 @@ function updateLiStatus() {
 async function postToLinkedIn(idx) {
   const token = localStorage.getItem('linkedinToken');
   if (!token) {
-    showPage('settings', document.querySelectorAll('.nav-item')[5]);
+    showPage('settings');
     showStatus('liSettingsStatus','error','⚠️ Please connect your LinkedIn account first.');
     return;
   }
