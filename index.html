@@ -142,6 +142,36 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
 .settings-section { margin-bottom: 28px; padding-bottom: 28px; border-bottom: 1px solid var(--border); }
 .settings-section:last-child { border-bottom: none; }
 
+/* Performance styles */
+.perf-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+.perf-stat { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; text-align: center; }
+.perf-stat-num { font-size: 28px; font-weight: 800; margin-bottom: 2px; }
+.perf-stat-label { font-size: 12px; color: var(--muted); font-weight: 500; }
+.perf-stat-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.perf-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.perf-chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.perf-chart-title { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 14px; }
+.perf-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.perf-bar-label { font-size: 12px; width: 110px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.perf-bar-wrap { flex: 1; background: var(--surface2); border-radius: 4px; height: 8px; overflow: hidden; }
+.perf-bar-fill { height: 8px; border-radius: 4px; transition: width 0.8s ease; }
+.perf-bar-val { font-size: 12px; font-weight: 700; width: 32px; text-align: right; flex-shrink: 0; }
+.perf-posts-list { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.perf-posts-header { display: grid; grid-template-columns: 1fr 80px 80px 80px 80px 100px; gap: 8px; padding: 10px 16px; background: var(--surface2); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.perf-post-row { display: grid; grid-template-columns: 1fr 80px 80px 80px 80px 100px; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--border); align-items: center; transition: background 0.1s; }
+.perf-post-row:last-child { border-bottom: none; }
+.perf-post-row:hover { background: rgba(79,110,247,0.04); }
+.perf-post-preview { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.perf-post-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.perf-num { font-size: 14px; font-weight: 700; text-align: center; }
+.perf-num.likes { color: #818cf8; }
+.perf-num.comments { color: #34d399; }
+.perf-num.shares { color: #fbbf24; }
+.perf-refresh-btn { font-size: 11px; padding: 3px 8px; }
+.perf-empty { padding: 40px; text-align: center; color: var(--muted); font-size: 14px; }
+.perf-fetching { color: var(--muted); font-size: 12px; animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
 /* Calendar styles */
 .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .cal-nav-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text); width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
@@ -202,6 +232,7 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
       <div class="nav-item" onclick="showPage('brainstorms',this)"><span class="nav-icon">💡</span> Brainstorms</div>
       <div class="nav-item" onclick="showPage('drafts',this)"><span class="nav-icon">📄</span> Working Drafts</div>
       <div class="nav-item" onclick="showPage('calendar',this)"><span class="nav-icon">📅</span> Content Calendar</div>
+      <div class="nav-item" onclick="showPage('performance',this)"><span class="nav-icon">📊</span> Performance</div>
       <div class="nav-item" onclick="showPage('settings',this)"><span class="nav-icon">⚙️</span> Settings</div>
     </div>
     <div>
@@ -371,6 +402,64 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
       </div>
     </div>
 
+    <!-- PERFORMANCE -->
+    <div class="page" id="page-performance">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+        <div class="section-title">📊 Performance</div>
+        <button class="btn btn-sm" onclick="refreshAllStats()" id="refreshAllBtn">↻ Refresh All Stats</button>
+      </div>
+      <div class="section-sub">Engagement data pulled live from LinkedIn for every post you've published through this tool.</div>
+      <div class="status-bar" id="perfStatus"></div>
+
+      <!-- Summary stats -->
+      <div class="perf-summary" id="perfSummary">
+        <div class="perf-stat">
+          <div class="perf-stat-num" id="perfTotalPosts">—</div>
+          <div class="perf-stat-label">Posts Published</div>
+        </div>
+        <div class="perf-stat">
+          <div class="perf-stat-num" style="color:#818cf8" id="perfTotalLikes">—</div>
+          <div class="perf-stat-label">Total Likes</div>
+          <div class="perf-stat-sub" id="perfAvgLikes"></div>
+        </div>
+        <div class="perf-stat">
+          <div class="perf-stat-num" style="color:#34d399" id="perfTotalComments">—</div>
+          <div class="perf-stat-label">Total Comments</div>
+          <div class="perf-stat-sub" id="perfAvgComments"></div>
+        </div>
+        <div class="perf-stat">
+          <div class="perf-stat-num" style="color:#f59e0b" id="perfTopPillar">—</div>
+          <div class="perf-stat-label">Top Pillar</div>
+          <div class="perf-stat-sub" id="perfTopPillarSub"></div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="perf-charts">
+        <div class="perf-chart-card">
+          <div class="perf-chart-title">Avg Likes by Pillar</div>
+          <div id="chartPillarLikes"></div>
+        </div>
+        <div class="perf-chart-card">
+          <div class="perf-chart-title">Avg Likes by Post Style</div>
+          <div id="chartStyleLikes"></div>
+        </div>
+        <div class="perf-chart-card">
+          <div class="perf-chart-title">Avg Comments by Pillar</div>
+          <div id="chartPillarComments"></div>
+        </div>
+        <div class="perf-chart-card">
+          <div class="perf-chart-title">Engagement Rate by Style</div>
+          <div id="chartStyleEngagement"></div>
+        </div>
+      </div>
+
+      <!-- Post list -->
+      <div class="perf-posts-list" id="perfPostsList">
+        <div class="perf-empty">No published posts yet. Posts you publish through this tool will appear here automatically.</div>
+      </div>
+    </div>
+
     <!-- SETTINGS -->
     <div class="page" id="page-settings">
       <div class="section-title">⚙️ Settings</div>
@@ -451,8 +540,9 @@ let imageMimeType = 'image/jpeg';
 let trendData = [];
 let trelloListIds = {};
 let calYear, calMonth;
-let calendarData = {}; // { "2026-02-15": [{ text, pillar, type, id }] }
-let savedDrafts  = []; // persisted generated drafts
+let calendarData    = {}; // { "2026-02-15": [{ text, pillar, type, id }] }
+let savedDrafts     = []; // persisted generated drafts
+let publishedPosts  = []; // posts published to LinkedIn { id, liPostId, text, pillar, type, publishedAt, stats }
 let pendingScheduleDate = null;
 
 // ── Init ───────────────────────────────────────────────────────
@@ -471,8 +561,9 @@ function loadFromStorage() {
     const v = localStorage.getItem(f);
     if (v && document.getElementById(f)) document.getElementById(f).value = v;
   });
-  try { calendarData = JSON.parse(localStorage.getItem('calendarData') || '{}'); } catch(e) { calendarData = {}; }
-  try { savedDrafts  = JSON.parse(localStorage.getItem('savedDrafts')  || '[]'); } catch(e) { savedDrafts = []; }
+  try { calendarData   = JSON.parse(localStorage.getItem('calendarData')   || '{}'); } catch(e) { calendarData = {}; }
+  try { savedDrafts    = JSON.parse(localStorage.getItem('savedDrafts')    || '[]'); } catch(e) { savedDrafts = []; }
+  try { publishedPosts = JSON.parse(localStorage.getItem('publishedPosts') || '[]'); } catch(e) { publishedPosts = []; }
 }
 
 function saveSettings() {
@@ -483,8 +574,9 @@ function saveSettings() {
   showStatus('settingsStatus','success','✅ Settings saved!');
 }
 
-function persistCalendar() { localStorage.setItem('calendarData', JSON.stringify(calendarData)); }
-function persistDrafts()   { localStorage.setItem('savedDrafts',  JSON.stringify(savedDrafts)); }
+function persistCalendar()   { localStorage.setItem('calendarData',   JSON.stringify(calendarData)); }
+function persistDrafts()     { localStorage.setItem('savedDrafts',    JSON.stringify(savedDrafts)); }
+function persistPublished()  { localStorage.setItem('publishedPosts', JSON.stringify(publishedPosts)); }
 
 // ── Nav ────────────────────────────────────────────────────────
 function showPage(name, el) {
@@ -492,8 +584,9 @@ function showPage(name, el) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
   if (el) el.classList.add('active');
-  if (name === 'settings')  updateLiStatus();
-  if (name === 'calendar')  { renderCalendar(); renderDraftPool(); }
+  if (name === 'settings')    updateLiStatus();
+  if (name === 'calendar')    { renderCalendar(); renderDraftPool(); }
+  if (name === 'performance') renderPerformance();
 }
 
 // ── Pillars ────────────────────────────────────────────────────
@@ -1365,6 +1458,22 @@ async function postToLinkedIn(idx) {
     if (data.success || data.postId || data.id) {
       if (btn) { btn.textContent='✅ Posted!'; btn.style.background='#16a34a'; }
       showStatus('draftSaveStatus'+idx,'success','✅ Successfully posted to LinkedIn!');
+      // Record published post for performance tracking
+      const liPostId = data.postId || data.id || null;
+      const draftBody = document.getElementById('draftBody'+idx)?.innerText || '';
+      const draftHash = document.getElementById('draftHash'+idx)?.innerText || '';
+      publishedPosts.unshift({
+        id:          'pub_' + Date.now(),
+        liPostId,
+        text:        draftBody,
+        hashtags:    draftHash,
+        pillar:      document.getElementById('pillarSelect')?.value || 'mixed',
+        type:        (document.querySelector('#draftCard'+idx+' .draft-label span')?.textContent || 'Post').replace(/^[^\w]+/,'').trim(),
+        publishedAt: new Date().toISOString(),
+        stats:       { likes: 0, comments: 0, shares: 0, lastFetched: null },
+      });
+      publishedPosts = publishedPosts.slice(0, 100);
+      persistPublished();
       setTimeout(() => { if (btn) { btn.disabled=false; btn.textContent='🔗 Post to LinkedIn'; btn.style.background=''; } }, 4000);
     } else if (data.error && data.error.includes('expired')) {
       localStorage.removeItem('linkedinToken');
@@ -1379,6 +1488,197 @@ async function postToLinkedIn(idx) {
     showStatus('draftSaveStatus'+idx,'error','❌ Post failed: ' + e.message);
   }
 }
+
+// ── PERFORMANCE TRACKING ───────────────────────────────────────
+function renderPerformance() {
+  if (!publishedPosts.length) {
+    document.getElementById('perfPostsList').innerHTML = '<div class="perf-empty">No published posts yet. Posts you publish through this tool will appear here automatically.</div>';
+    ['perfTotalPosts','perfTotalLikes','perfTotalComments','perfTopPillar'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.textContent = '0';
+    });
+    ['perfAvgLikes','perfAvgComments','perfTopPillarSub'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.textContent = '';
+    });
+    ['chartPillarLikes','chartStyleLikes','chartPillarComments','chartStyleEngagement'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px 0">No data yet.</div>';
+    });
+    return;
+  }
+
+  const posts = publishedPosts;
+  const totalLikes    = posts.reduce((s,p) => s + (p.stats?.likes    || 0), 0);
+  const totalComments = posts.reduce((s,p) => s + (p.stats?.comments || 0), 0);
+  const avgLikes    = posts.length ? (totalLikes    / posts.length).toFixed(1) : 0;
+  const avgComments = posts.length ? (totalComments / posts.length).toFixed(1) : 0;
+
+  // Top pillar by avg likes
+  const pillarGroups = {};
+  posts.forEach(p => {
+    if (!pillarGroups[p.pillar]) pillarGroups[p.pillar] = { likes: 0, count: 0 };
+    pillarGroups[p.pillar].likes += (p.stats?.likes || 0);
+    pillarGroups[p.pillar].count++;
+  });
+  const pillarLabels = { cre:'🏢 CRE', ci:'🎭 Creative Ind.', fb:'🍽️ F&B', retail:'🛍️ Retail', mixed:'🔀 Mixed' };
+  const topPillar = Object.entries(pillarGroups).sort((a,b) => (b[1].likes/b[1].count) - (a[1].likes/a[1].count))[0];
+
+  // Summary
+  setText('perfTotalPosts',    posts.length);
+  setText('perfTotalLikes',    totalLikes);
+  setText('perfTotalComments', totalComments);
+  setText('perfAvgLikes',      avgLikes + ' avg per post');
+  setText('perfAvgComments',   avgComments + ' avg per post');
+  setText('perfTopPillar',     topPillar ? pillarLabels[topPillar[0]] || topPillar[0] : '—');
+  setText('perfTopPillarSub',  topPillar ? (topPillar[1].likes/topPillar[1].count).toFixed(1) + ' avg likes' : '');
+
+  // Charts
+  renderBarChart('chartPillarLikes',  Object.entries(pillarGroups).map(([k,v]) => ({ label: pillarLabels[k]||k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#818cf8');
+  const styleGroups = {};
+  posts.forEach(p => {
+    const t = p.type || 'Post';
+    if (!styleGroups[t]) styleGroups[t] = { likes: 0, comments: 0, count: 0 };
+    styleGroups[t].likes    += (p.stats?.likes    || 0);
+    styleGroups[t].comments += (p.stats?.comments || 0);
+    styleGroups[t].count++;
+  });
+  renderBarChart('chartStyleLikes',       Object.entries(styleGroups).map(([k,v]) => ({ label: k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#f97316');
+  renderBarChart('chartPillarComments',   Object.entries(pillarGroups).map(([k,v]) => ({ label: pillarLabels[k]||k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#34d399');
+  renderBarChart('chartStyleEngagement',  Object.entries(styleGroups).map(([k,v]) => ({ label: k, val: v.count ? +((v.likes+v.comments)/v.count).toFixed(1) : 0 })), '#a78bfa');
+
+  // Post list
+  const header = `<div class="perf-posts-header">
+    <div>Post</div><div style="text-align:center">👍 Likes</div><div style="text-align:center">💬 Comments</div><div style="text-align:center">🔄 Shares</div><div style="text-align:center">Pillar</div><div style="text-align:center">Actions</div>
+  </div>`;
+  const rows = posts.map((p, i) => {
+    const date = new Date(p.publishedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    const fetched = p.stats?.lastFetched ? 'Updated ' + new Date(p.stats.lastFetched).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : 'Not fetched yet';
+    return `<div class="perf-post-row">
+      <div>
+        <div class="perf-post-preview">${escHtmlFull((p.text||'').substring(0,70))}…</div>
+        <div class="perf-post-meta">${p.type || 'Post'} · ${date} · <span id="fetchedLabel${i}">${fetched}</span></div>
+      </div>
+      <div class="perf-num likes" id="perfLikes${i}">${p.stats?.likes ?? '—'}</div>
+      <div class="perf-num comments" id="perfComments${i}">${p.stats?.comments ?? '—'}</div>
+      <div class="perf-num" style="color:#fbbf24" id="perfShares${i}">${p.stats?.shares ?? '—'}</div>
+      <div style="text-align:center"><span style="font-size:12px">${pillarLabels[p.pillar]||p.pillar||'—'}</span></div>
+      <div style="text-align:center;display:flex;gap:4px;justify-content:center">
+        ${p.liPostId ? `<button class="btn btn-sm perf-refresh-btn" onclick="fetchPostStats(${i})">↻</button>` : '<span style="font-size:11px;color:var(--muted)">No ID</span>'}
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('perfPostsList').innerHTML = header + rows;
+}
+
+function renderBarChart(containerId, data, color) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  if (!data.length) { el.innerHTML = '<div style="color:var(--muted);font-size:12px">No data yet.</div>'; return; }
+  const max = Math.max(...data.map(d => d.val), 1);
+  el.innerHTML = data.sort((a,b) => b.val - a.val).map(d => `
+    <div class="perf-bar-row">
+      <div class="perf-bar-label" title="${d.label}">${d.label}</div>
+      <div class="perf-bar-wrap"><div class="perf-bar-fill" style="width:${(d.val/max*100).toFixed(1)}%;background:${color}"></div></div>
+      <div class="perf-bar-val" style="color:${color}">${d.val}</div>
+    </div>`).join('');
+}
+
+async function fetchPostStats(idx) {
+  const post = publishedPosts[idx];
+  if (!post || !post.liPostId) return;
+  const token = localStorage.getItem('linkedinToken');
+  if (!token) { showStatus('perfStatus','error','⚠️ LinkedIn not connected. Reconnect in Settings.'); return; }
+
+  const btn = document.querySelector(`[onclick="fetchPostStats(${idx})"]`);
+  if (btn) { btn.textContent = '…'; btn.disabled = true; }
+  const label = document.getElementById('fetchedLabel'+idx);
+  if (label) label.innerHTML = '<span class="perf-fetching">Fetching…</span>';
+
+  try {
+    const res = await fetchWithTimeout(LI_WORKER + '/analytics', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ access_token: token, postId: post.liPostId }),
+    }, 15000);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error + (data.detail ? ': ' + JSON.stringify(data.detail) : ''));
+
+    publishedPosts[idx].stats = {
+      likes:       data.likes    || 0,
+      comments:    data.comments || 0,
+      shares:      data.shares   || 0,
+      lastFetched: new Date().toISOString(),
+    };
+    persistPublished();
+
+    setText('perfLikes'+idx,    data.likes    || 0);
+    setText('perfComments'+idx, data.comments || 0);
+    setText('perfShares'+idx,   data.shares   || 0);
+    if (label) label.textContent = 'Updated just now';
+    renderPerformanceSummary(); // re-render summary + charts only
+  } catch(e) {
+    showStatus('perfStatus','error','❌ Could not fetch stats: ' + e.message);
+    if (label) label.textContent = 'Fetch failed';
+  }
+  if (btn) { btn.textContent = '↻'; btn.disabled = false; }
+}
+
+async function refreshAllStats() {
+  const token = localStorage.getItem('linkedinToken');
+  if (!token) { showStatus('perfStatus','error','⚠️ LinkedIn not connected. Reconnect in Settings.'); return; }
+  const btn = document.getElementById('refreshAllBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '↻ Refreshing…'; }
+  showStatus('perfStatus','info','🔄 Refreshing stats for all posts with LinkedIn IDs…');
+  const withIds = publishedPosts.filter(p => p.liPostId);
+  let updated = 0;
+  for (let i = 0; i < withIds.length; i++) {
+    const idx = publishedPosts.indexOf(withIds[i]);
+    try {
+      const res = await fetchWithTimeout(LI_WORKER + '/analytics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ access_token: token, postId: withIds[i].liPostId }),
+      }, 15000);
+      const data = await res.json();
+      if (!data.error) {
+        publishedPosts[idx].stats = { likes: data.likes||0, comments: data.comments||0, shares: data.shares||0, lastFetched: new Date().toISOString() };
+        updated++;
+      }
+    } catch(e) { /* skip failures */ }
+    await new Promise(r => setTimeout(r, 400)); // rate-limit requests
+  }
+  persistPublished();
+  renderPerformance();
+  showStatus('perfStatus','success',`✅ Updated ${updated} post${updated!==1?'s':''}.`);
+  if (btn) { btn.disabled = false; btn.textContent = '↻ Refresh All Stats'; }
+}
+
+function renderPerformanceSummary() {
+  // Re-render just the summary cards and charts without rebuilding the post list
+  const posts = publishedPosts;
+  if (!posts.length) return;
+  const totalLikes    = posts.reduce((s,p) => s + (p.stats?.likes    || 0), 0);
+  const totalComments = posts.reduce((s,p) => s + (p.stats?.comments || 0), 0);
+  const avgLikes    = (totalLikes    / posts.length).toFixed(1);
+  const avgComments = (totalComments / posts.length).toFixed(1);
+  setText('perfTotalLikes',    totalLikes);
+  setText('perfTotalComments', totalComments);
+  setText('perfAvgLikes',      avgLikes + ' avg per post');
+  setText('perfAvgComments',   avgComments + ' avg per post');
+  const pillarLabels = { cre:'🏢 CRE', ci:'🎭 Creative Ind.', fb:'🍽️ F&B', retail:'🛍️ Retail', mixed:'🔀 Mixed' };
+  const pillarGroups = {}, styleGroups = {};
+  posts.forEach(p => {
+    if (!pillarGroups[p.pillar]) pillarGroups[p.pillar] = { likes: 0, comments: 0, count: 0 };
+    pillarGroups[p.pillar].likes += (p.stats?.likes||0); pillarGroups[p.pillar].count++;
+    const t = p.type || 'Post';
+    if (!styleGroups[t]) styleGroups[t] = { likes: 0, comments: 0, count: 0 };
+    styleGroups[t].likes += (p.stats?.likes||0); styleGroups[t].comments += (p.stats?.comments||0); styleGroups[t].count++;
+  });
+  renderBarChart('chartPillarLikes',     Object.entries(pillarGroups).map(([k,v]) => ({ label: pillarLabels[k]||k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#818cf8');
+  renderBarChart('chartStyleLikes',      Object.entries(styleGroups).map(([k,v])  => ({ label: k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#f97316');
+  renderBarChart('chartPillarComments',  Object.entries(pillarGroups).map(([k,v]) => ({ label: pillarLabels[k]||k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#34d399');
+  renderBarChart('chartStyleEngagement', Object.entries(styleGroups).map(([k,v])  => ({ label: k, val: v.count ? +((v.likes+v.comments)/v.count).toFixed(1) : 0 })), '#a78bfa');
+}
+
+function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
 
 // ── Utilities ──────────────────────────────────────────────────
 function showStatus(id, type, msg) {
