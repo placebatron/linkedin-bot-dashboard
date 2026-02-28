@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LinkedIn Bot Dashboard</title>
+<title>LinkedIn Bot Dashboard — Baum Realty</title>
 <style>
 :root {
   --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a; --border: #2e3250;
@@ -14,7 +14,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
-.sidebar { background: var(--surface); border-right: 1px solid var(--border); padding: 24px 16px; display: flex; flex-direction: column; gap: 24px; }
+.sidebar { background: var(--surface); border-right: 1px solid var(--border); padding: 24px 16px; display: flex; flex-direction: column; gap: 24px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
 .main { padding: 24px; overflow-y: auto; }
 .logo { display: flex; align-items: center; gap: 10px; padding: 0 8px; }
 .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
@@ -31,418 +31,460 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .pillar-tag.p3 { background: rgba(245,158,11,0.15); color: #fbbf24; border-color: rgba(245,158,11,0.3); }
 .pillar-tag.p4 { background: rgba(16,185,129,0.15); color: #34d399; border-color: rgba(16,185,129,0.3); }
 .pillar-tag.active { opacity: 1; }
-.pillar-tag:not(.active) { opacity: 0.5; }
+.pillar-tag:not(.active) { opacity: 0.4; }
 .pillars-grid { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 4px; }
 .section-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
 .section-sub { font-size: 14px; color: var(--muted); margin-bottom: 24px; }
-.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
-.card-title { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-input, textarea, select { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px; padding: 10px 14px; outline: none; transition: border 0.15s; font-family: inherit; }
-input:focus, textarea:focus, select:focus { border-color: var(--accent); }
-textarea { resize: vertical; min-height: 90px; line-height: 1.5; }
-label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px; }
-.field { margin-bottom: 16px; }
-.btn { padding: 10px 18px; border-radius: 8px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 8px; }
-.btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; }
-.btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
-.btn-linkedin { background: #0a66c2; color: white; border: none; }
-.btn-linkedin:hover { background: #004182; }
-.btn-linkedin:disabled { background: #6b9dc2; cursor: not-allowed; }
-.btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-.btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
-.btn-success { background: rgba(16,185,129,0.15); color: var(--success); border: 1px solid rgba(16,185,129,0.3); }
-.btn-success:hover { background: rgba(16,185,129,0.25); }
-.btn-sm { padding: 6px 12px; font-size: 12px; }
-.btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
-.upload-area { border: 2px dashed var(--border); border-radius: 10px; padding: 30px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; }
-.upload-area:hover, .upload-area.dragover { border-color: var(--accent); background: rgba(79,110,247,0.05); }
-.upload-area input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-.upload-icon { font-size: 32px; margin-bottom: 8px; }
-.upload-text { font-size: 14px; color: var(--muted); }
-.upload-preview { width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; margin-top: 12px; display: none; }
-.draft-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 12px; position: relative; }
-.draft-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-.draft-label.hot { color: #f97316; }
-.draft-label.insight { color: #818cf8; }
-.draft-label.story { color: #34d399; }
-.draft-body { font-size: 14px; line-height: 1.65; color: var(--text); white-space: pre-wrap; }
-.draft-hashtags { margin-top: 10px; font-size: 13px; color: #818cf8; }
-.draft-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-.preview-toggle { font-size: 12px; color: var(--accent); cursor: pointer; margin-left: auto; }
-.preview-toggle:hover { text-decoration: underline; }
-.linkedin-preview { background: white; border-radius: 10px; padding: 16px; margin-top: 12px; display: none; color: #000; font-family: -apple-system, sans-serif; }
-.linkedin-preview.visible { display: block; }
-.lp-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.lp-avatar { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #0a66c2, #004182); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 16px; }
-.lp-name { font-size: 14px; font-weight: 600; color: #000; }
-.lp-title { font-size: 12px; color: #666; }
-.lp-body { font-size: 14px; line-height: 1.6; color: #000; white-space: pre-wrap; }
-.lp-fold { color: #0a66c2; font-size: 14px; cursor: pointer; }
-.lp-hashtags { margin-top: 8px; font-size: 14px; color: #0a66c2; }
-.lp-actions { display: flex; gap: 16px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #e0e0e0; }
-.lp-action { font-size: 13px; color: #666; display: flex; align-items: center; gap: 5px; }
-.scores { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
-.score-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
-.score-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
-.score-bar-wrap { background: var(--border); border-radius: 4px; height: 6px; margin-bottom: 6px; }
-.score-bar { height: 6px; border-radius: 4px; transition: width 0.5s ease; }
-.score-num { font-size: 18px; font-weight: 700; }
-.score-note { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
-.brainstorm-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: space-between; }
-.brainstorm-item:hover { border-color: var(--accent); }
-.brainstorm-name { font-size: 14px; font-weight: 500; }
-.brainstorm-desc { font-size: 12px; color: var(--muted); margin-top: 3px; }
+.page { display: none; }
+.page.active { display: block; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.btn { padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; }
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; color: white; }
+.btn-primary:hover { opacity: 0.9; color: white; border: none; }
+.btn-success { background: var(--success); border: none; color: #0a0a0a; font-weight: 600; }
+.btn-success:hover { opacity: 0.85; color: #0a0a0a; border: none; }
+.btn-linkedin { background: #0077b5; border: none; color: white; font-weight: 600; }
+.btn-linkedin:hover { background: #006097; color: white; border: none; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-approve { background:#34d399 !important; color:#0a0a0a !important; border:none !important; }
+.btn-edits   { background:#f87171 !important; color:#0a0a0a !important; border:none !important; }
+.spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.status-bar { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-top: 10px; display: none; }
+.status-bar.info    { background: rgba(79,110,247,0.15); border: 1px solid rgba(79,110,247,0.3); color: #818cf8; }
+.status-bar.success { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: #34d399; }
+.status-bar.error   { background: rgba(239,68,68,0.15);  border: 1px solid rgba(239,68,68,0.3);  color: #f87171; }
+.status-bar.warning { background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); color: #fbbf24; }
+input, textarea, select { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px; padding: 10px 12px; width: 100%; font-family: inherit; transition: border 0.15s; }
+input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; margin-bottom: 6px; }
+.form-group { margin-bottom: 16px; }
+.char-count { font-size: 11px; color: var(--muted); text-align: right; margin-top: 4px; }
+.char-count.over { color: var(--danger); }
 .tabs { display: flex; gap: 4px; margin-bottom: 20px; background: var(--surface); border-radius: 10px; padding: 4px; border: 1px solid var(--border); }
 .tab { flex: 1; padding: 8px; text-align: center; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--muted); transition: all 0.15s; }
 .tab.active { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-.status-bar { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-top: 12px; display: none; }
-.status-bar.info { background: rgba(79,110,247,0.1); color: #818cf8; border: 1px solid rgba(79,110,247,0.2); }
-.status-bar.success { background: rgba(16,185,129,0.1); color: var(--success); border: 1px solid rgba(16,185,129,0.2); }
-.status-bar.error { background: rgba(239,68,68,0.1); color: var(--danger); border: 1px solid rgba(239,68,68,0.2); }
-.spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.2); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.page { display: none; }
-.page.active { display: block; }
-.char-count { font-size: 11px; color: var(--muted); text-align: right; margin-top: 4px; }
-.char-count.over { color: var(--danger); }
-.editable { border: 1px solid transparent; border-radius: 6px; padding: 4px; transition: border 0.15s; }
-.editable:focus { border-color: var(--accent); outline: none; background: rgba(79,110,247,0.05); }
-.trend-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 14px; transition: border-color 0.2s; }
-.trend-card:hover { border-color: var(--accent); }
-.trend-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.upload-zone { border: 2px dashed var(--border); border-radius: 10px; padding: 20px; text-align: center; cursor: pointer; transition: border 0.15s; }
+.upload-zone:hover { border-color: var(--accent); }
+.upload-text { font-size: 13px; color: var(--muted); margin-top: 8px; }
+.draft-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+.draft-label { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 4px 10px; border-radius: 6px; margin-bottom: 12px; width: fit-content; }
+.draft-label.hot     { background: rgba(239,68,68,0.15); color: #f87171; }
+.draft-label.insight { background: rgba(79,110,247,0.15); color: #818cf8; }
+.draft-label.story   { background: rgba(16,185,129,0.15); color: #34d399; }
+.draft-body { font-size: 14px; line-height: 1.7; white-space: pre-wrap; border: 1px solid transparent; border-radius: 6px; padding: 8px; transition: border 0.15s; min-height: 60px; }
+.draft-body:focus { border-color: var(--accent); outline: none; background: rgba(79,110,247,0.04); }
+.draft-hashtags { font-size: 12px; color: #818cf8; margin-top: 8px; padding: 6px 8px; }
+.draft-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.linkedin-preview { display: none; background: white; border-radius: 12px; padding: 16px; margin: 12px 0; }
+.linkedin-preview.visible { display: block; }
+.lp-header { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
+.lp-avatar { width: 40px; height: 40px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+.lp-name { font-weight: 700; color: #000; font-size: 14px; }
+.lp-title { color: #666; font-size: 12px; }
+.lp-body { font-size: 14px; color: #1a1a1a; line-height: 1.6; white-space: pre-wrap; }
+.lp-hashtags { color: #0077b5; font-size: 13px; margin-top: 8px; }
+.lp-actions { display: flex; gap: 16px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #e0e0e0; }
+.lp-action { color: #666; font-size: 13px; cursor: pointer; }
+.lp-fold { color: #999; cursor: pointer; }
+.preview-toggle { cursor: pointer; color: var(--muted); font-size: 11px; font-weight: 500; }
+.scores { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 12px 0; }
+.score-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px; }
+.score-label { font-size: 11px; font-weight: 700; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+.score-bar-wrap { background: var(--surface2); border-radius: 4px; height: 4px; margin-bottom: 4px; overflow: hidden; }
+.score-bar { height: 4px; border-radius: 4px; transition: width 1s ease; }
+.score-num { font-size: 16px; font-weight: 700; }
+.score-note { font-size: 11px; color: var(--muted); line-height: 1.4; margin-top: 2px; }
+.trend-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+.trend-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .trend-pillar-badge { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 3px 9px; border-radius: 20px; }
-.trend-pillar-badge.cre { background: rgba(79,110,247,0.15); color: #818cf8; }
-.trend-pillar-badge.ci { background: rgba(124,58,237,0.15); color: #a78bfa; }
-.trend-pillar-badge.fb { background: rgba(245,158,11,0.15); color: #fbbf24; }
+.trend-pillar-badge.cre    { background: rgba(79,110,247,0.15); color: #818cf8; }
+.trend-pillar-badge.ci     { background: rgba(124,58,237,0.15); color: #a78bfa; }
+.trend-pillar-badge.fb     { background: rgba(245,158,11,0.15); color: #fbbf24; }
 .trend-pillar-badge.retail { background: rgba(16,185,129,0.15); color: #34d399; }
-.trend-number { font-size: 12px; color: var(--muted); }
-.trend-headline { font-size: 15px; font-weight: 600; margin-bottom: 6px; line-height: 1.4; }
-.trend-context { font-size: 13px; color: var(--muted); line-height: 1.55; margin-bottom: 12px; }
-.trend-hook-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-bottom: 4px; }
-.trend-hook { font-size: 13px; color: var(--text); font-style: italic; border-left: 3px solid var(--accent); padding-left: 10px; line-height: 1.5; }
-.trend-actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
-.trend-generate-area { border: 2px dashed var(--border); border-radius: 12px; padding: 48px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px; }
-.trend-generate-area .big-icon { font-size: 48px; }
-.trend-generate-area p { font-size: 14px; color: var(--muted); max-width: 380px; line-height: 1.6; }
+.trend-number { font-size: 11px; color: var(--muted); font-weight: 600; }
+.trend-headline { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.trend-context { font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 10px; }
+.trend-hook-label { font-size: 11px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.trend-hook { font-size: 13px; color: var(--text); font-style: italic; margin-bottom: 10px; padding: 8px 12px; background: rgba(79,110,247,0.08); border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; }
+.trend-actions { display: flex; gap: 8px; }
 .pillar-filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
 .pillar-filter-btn { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
 .pillar-filter-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(79,110,247,0.1); }
-.source-toggle { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
-.source-toggle.active { border-color: var(--success); color: var(--success); background: rgba(16,185,129,0.1); }
-/* LinkedIn status */
-.li-status-connected { background: rgba(16,185,129,0.1); color: #4ade80; border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; padding: 10px 14px; font-size: 14px; }
-.li-status-disconnected { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 14px; }
-/* Collaboration Styles */
-.collab-bar { display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
-.status-badge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; }
-.status-badge.pending   { background:rgba(251,191,36,.18); color:#fbbf24; border:1px solid rgba(251,191,36,.35); }
-.status-badge.approved  { background:rgba(52,211,153,.18); color:#34d399; border:1px solid rgba(52,211,153,.35); }
-.status-badge.needs-edits { background:rgba(248,113,113,.18); color:#f87171; border:1px solid rgba(248,113,113,.35); }
-.collab-actions { display:flex; gap:8px; flex-wrap:wrap; }
-.btn-approve  { background:#34d399!important; color:#0a0a0a!important; border:none!important; }
-.btn-edits    { background:#f87171!important; color:#0a0a0a!important; border:none!important; }
-.comments-section { margin-top:12px; border-top:1px solid var(--border); padding-top:12px; }
-.comments-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; }
-.comment-item { background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:8px; padding:8px 10px; margin-bottom:6px; font-size:13px; }
-.comment-author { font-weight:700; color:var(--accent); font-size:12px; }
-.comment-date { color:var(--muted); font-size:11px; margin-left:6px; }
-.comment-text { color:var(--text); line-height:1.5; margin-top:3px; }
-.comment-input-wrap { display:flex; gap:8px; margin-top:8px; }
-.comment-input-wrap textarea { flex:1; background:rgba(255,255,255,.05); border:1px solid var(--border); border-radius:8px; padding:8px 10px; color:var(--text); font-size:13px; resize:none; height:52px; font-family:inherit; }
-.comment-input-wrap textarea:focus { outline:none; border-color:var(--accent); }
-.no-comments { color:var(--muted); font-size:13px; font-style:italic; }
-.collab-refresh { background:transparent; border:1px solid var(--border); color:var(--muted); border-radius:6px; padding:3px 8px; font-size:11px; cursor:pointer; }
-.collab-refresh:hover { border-color:var(--accent); color:var(--accent); }
-@media (max-width: 768px) { .app { grid-template-columns: 1fr; } .sidebar { display: none; } .settings-grid { grid-template-columns: 1fr; } }
-@media (max-width: 1100px) { #createGrid, #trendsInputGrid { grid-template-columns: 1fr !important; } }
+.brainstorm-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; cursor: pointer; transition: all 0.15s; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.brainstorm-item:hover { border-color: var(--accent); background: rgba(79,110,247,0.06); }
+.brainstorm-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.brainstorm-desc { font-size: 12px; color: var(--muted); }
+.status-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+.status-badge.pending     { background: rgba(245,158,11,0.15); color: #fbbf24; }
+.status-badge.approved    { background: rgba(16,185,129,0.15); color: #34d399; }
+.status-badge.needs-edits { background: rgba(239,68,68,0.15); color: #f87171; }
+.collab-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+.collab-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.collab-refresh { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; padding: 2px 6px; border-radius: 4px; }
+.collab-refresh:hover { color: var(--text); }
+.comments-section { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 12px; }
+.comments-label { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
+.comment-item { background: var(--surface); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+.comment-author { font-size: 12px; font-weight: 600; color: var(--accent); margin-right: 8px; }
+.comment-date { font-size: 11px; color: var(--muted); }
+.comment-text { font-size: 13px; margin-top: 4px; line-height: 1.5; }
+.no-comments { font-size: 13px; color: var(--muted); padding: 8px 0; }
+.comment-input-wrap { display: flex; gap: 8px; margin-top: 10px; }
+.comment-input-wrap textarea { min-height: 60px; resize: vertical; }
+.source-toggle { padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+.source-toggle.active { border-color: var(--accent2); color: #a78bfa; background: rgba(124,58,237,0.1); }
+.li-status-connected    { color: var(--success); font-size: 13px; padding: 8px 12px; background: rgba(16,185,129,0.1); border-radius: 8px; border: 1px solid rgba(16,185,129,0.3); }
+.li-status-disconnected { color: var(--warning); font-size: 13px; padding: 8px 12px; background: rgba(245,158,11,0.1); border-radius: 8px; border: 1px solid rgba(245,158,11,0.3); }
+.settings-section { margin-bottom: 28px; padding-bottom: 28px; border-bottom: 1px solid var(--border); }
+.settings-section:last-child { border-bottom: none; }
+
+/* Calendar styles */
+.cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.cal-nav-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text); width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+.cal-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+.cal-month-label { font-size: 18px; font-weight: 700; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-header { text-align: center; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; padding: 6px 0; }
+.cal-cell { min-height: 80px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 6px; cursor: pointer; transition: all 0.15s; vertical-align: top; }
+.cal-cell:hover { border-color: var(--accent); }
+.cal-cell.today { border-color: var(--accent); background: rgba(79,110,247,0.08); }
+.cal-cell.other-month { opacity: 0.35; }
+.cal-day-num { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 4px; }
+.cal-cell.today .cal-day-num { color: var(--accent); }
+.cal-post-chip { display: block; font-size: 10px; font-weight: 600; padding: 2px 5px; border-radius: 4px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.cal-post-chip.cre    { background: rgba(79,110,247,0.2); color: #818cf8; }
+.cal-post-chip.ci     { background: rgba(124,58,237,0.2); color: #a78bfa; }
+.cal-post-chip.fb     { background: rgba(245,158,11,0.2); color: #fbbf24; }
+.cal-post-chip.retail { background: rgba(16,185,129,0.2); color: #34d399; }
+.cal-post-chip.mixed  { background: rgba(139,144,176,0.2); color: var(--muted); }
+.cal-saved-drafts { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-top: 20px; }
+.cal-draft-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--border); gap: 12px; }
+.cal-draft-item:last-child { border-bottom: none; }
+.cal-draft-text { font-size: 13px; line-height: 1.5; flex: 1; }
+.cal-draft-meta { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.cal-schedule-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted); font-size: 11px; padding: 3px 8px; border-radius: 6px; cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+.cal-schedule-btn:hover { border-color: var(--accent); color: var(--accent); }
+.cal-schedule-btn.scheduled { background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.4); color: #34d399; }
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; width: 440px; max-width: 95vw; max-height: 80vh; overflow-y: auto; }
+.modal-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+.modal-post-list { display: flex; flex-direction: column; gap: 8px; }
+.modal-post-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; cursor: pointer; transition: all 0.15s; }
+.modal-post-item:hover { border-color: var(--accent); }
+.modal-post-preview { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.editable { border: 1px solid transparent; border-radius: 6px; padding: 4px; transition: border 0.15s; }
+.editable:focus { border-color: var(--accent); outline: none; background: rgba(79,110,247,0.05); }
+@media (max-width: 1100px) { .grid-2 { grid-template-columns: 1fr; } }
+@media (max-width: 768px) { .app { grid-template-columns: 1fr; } .sidebar { height: auto; position: static; } .cal-grid { gap: 2px; } .cal-cell { min-height: 60px; } }
 </style>
 </head>
 <body>
 <div class="app">
-  <!-- Sidebar -->
+  <!-- SIDEBAR -->
   <div class="sidebar">
     <div class="logo">
-      <div class="logo-icon">&#x2726;</div>
+      <div class="logo-icon">🔗</div>
       <div>
         <div class="logo-text">LinkedIn Bot</div>
-        <div class="logo-sub">Mike's Content Studio</div>
+        <div class="logo-sub">Baum Realty Group</div>
       </div>
     </div>
     <div>
-      <div class="nav-label" style="margin-bottom:8px">Menu</div>
-      <div class="nav-item active" onclick="showPage('create',this)"><span class="nav-icon">&#x270F;&#xFE0F;</span> Create Post</div>
-      <div class="nav-item" onclick="showPage('trends',this)"><span class="nav-icon">&#x1F525;</span> Trending Ideas <span style="font-size:10px;background:linear-gradient(135deg,#f97316,#ef4444);color:white;padding:2px 6px;border-radius:10px;margin-left:4px">NEW</span></div>
-      <div class="nav-item" onclick="showPage('brainstorms',this)"><span class="nav-icon">&#x1F4A1;</span> Brainstorms</div>
-      <div class="nav-item" onclick="showPage('drafts',this)"><span class="nav-icon">&#x1F4C4;</span> Working Drafts</div>
-      <div class="nav-item" onclick="showPage('settings',this)"><span class="nav-icon">&#x2699;&#xFE0F;</span> Settings</div>
+      <div class="nav-label" style="margin-bottom:8px">Workspace</div>
+      <div class="nav-item active" onclick="showPage('create',this)"><span class="nav-icon">✏️</span> Create Post</div>
+      <div class="nav-item" onclick="showPage('trends',this)"><span class="nav-icon">🔥</span> Trending Ideas <span style="font-size:10px;background:linear-gradient(135deg,#f97316,#ef4444);color:white;padding:2px 6px;border-radius:10px;margin-left:4px">LIVE</span></div>
+      <div class="nav-item" onclick="showPage('brainstorms',this)"><span class="nav-icon">💡</span> Brainstorms</div>
+      <div class="nav-item" onclick="showPage('drafts',this)"><span class="nav-icon">📄</span> Working Drafts</div>
+      <div class="nav-item" onclick="showPage('calendar',this)"><span class="nav-icon">📅</span> Content Calendar</div>
+      <div class="nav-item" onclick="showPage('settings',this)"><span class="nav-icon">⚙️</span> Settings</div>
     </div>
     <div>
-      <div class="nav-label" style="margin-bottom:10px">Content Pillars</div>
+      <div class="nav-label" style="margin-bottom:8px">Pillars</div>
       <div class="pillars-grid">
-        <div class="pillar-tag p1 active" onclick="togglePillar(this,'cre')">&#x1F3E2; CRE</div>
-        <div class="pillar-tag p2 active" onclick="togglePillar(this,'ci')">&#x1F3­&#xFE0F; Creative Industrial</div>
-        <div class="pillar-tag p3 active" onclick="togglePillar(this,'fb')">&#x1F37D;&#xFE0F; Chicago F&amp;B</div>
-        <div class="pillar-tag p4 active" onclick="togglePillar(this,'retail')">&#x1F6CD;&#xFE0F; Retail Trends</div>
-      </div>
-    </div>
-    <div style="margin-top:auto">
-      <div style="font-size:12px;color:var(--muted);padding:8px;background:var(--surface2);border-radius:8px;line-height:1.5">
-        &#x1F3AF; Goal: Thought leadership<br>
-        &#x1F4C5; Cadence: 1&ndash;2x/week<br>
-        &#x1F4AC; Tone: Conversational
+        <div class="pillar-tag p1 active" onclick="togglePillar(this,'cre')">🏢 CRE</div>
+        <div class="pillar-tag p2 active" onclick="togglePillar(this,'ci')">🎭 Creative Industrial</div>
+        <div class="pillar-tag p3 active" onclick="togglePillar(this,'fb')">🍽️ Chicago F&amp;B</div>
+        <div class="pillar-tag p4 active" onclick="togglePillar(this,'retail')">🛍️ Retail Trends</div>
       </div>
     </div>
   </div>
 
-  <!-- Main -->
+  <!-- MAIN -->
   <div class="main">
 
-    <!-- CREATE PAGE -->
-    <div id="page-create" class="page active">
+    <!-- CREATE POST -->
+    <div class="page active" id="page-create">
       <div class="section-title">Create a Post</div>
-      <div class="section-sub">Add your raw material and I'll draft LinkedIn posts in your voice.</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px" id="createGrid">
+      <div class="section-sub">Add raw material and I'll draft LinkedIn posts in Mike's voice.</div>
+      <div class="grid-2" id="createGrid" style="grid-template-columns: 1.2fr 1fr">
         <div>
           <div class="card">
-            <div class="card-title">&#x1F5BC; Image</div>
-            <div class="upload-area" id="uploadArea">
-              <input type="file" accept="image/*" onchange="handleImage(this)">
-              <div class="upload-icon">&#x1F4FC;&#xFE0F;</div>
-              <div class="upload-text">Drop an image or tap to browse</div>
+            <div class="form-group">
+              <label>Raw Material</label>
+              <textarea id="draftText" rows="5" placeholder="Paste a thought, observation, deal story, article excerpt, or anything else you want to post about..." oninput="updateCharCount('draftText','draftCharCount',2000)"></textarea>
+              <div class="char-count" id="draftCharCount">0 / 2000</div>
             </div>
-            <img id="imagePreview" class="upload-preview" />
-          </div>
-          <div class="card">
-            <div class="card-title">&#x1F4AD; Your Idea / Draft Text</div>
-            <div class="field">
-              <textarea id="draftText" placeholder="Share your raw idea, observation, or draft text here..." oninput="updateCharCount('draftText','draftCount',3000)"></textarea>
-              <div class="char-count" id="draftCount">0 / 3000</div>
-            </div>
-            <div class="field">
-              <label>&#x1F517; Link (optional)</label>
+            <div class="form-group">
+              <label>Article / Link (optional)</label>
               <input type="url" id="linkInput" placeholder="https://..." />
             </div>
-            <div class="field">
-              <label>&#x1F3F7;&#xFE0F; Content Pillar</label>
-              <select id="pillarSelect">
-                <option value="cre">&#x1F3E2; Commercial Real Estate</option>
-                <option value="ci">&#x1F3­&#xFE0F; Creative Industrial</option>
-                <option value="fb">&#x1F37D;&#xFE0F; Chicago Food &amp; Beverage</option>
-                <option value="retail">&#x1F6CD;&#xFE0F; Retail Trends</option>
-                <option value="mixed">&#x2026; Mixed / Let AI decide</option>
-              </select>
+            <div class="form-group">
+              <label>Image (optional)</label>
+              <div class="upload-zone" onclick="document.getElementById('imgUpload').click()">
+                <div style="font-size: 24px">📎</div>
+                <div class="upload-text">Click to attach an image</div>
+              </div>
+              <input type="file" id="imgUpload" accept="image/*,.heic,.heif" style="display:none" onchange="handleImage(this)" />
+              <img id="imagePreview" style="display:none;max-width:100%;border-radius:8px;margin-top:10px" />
             </div>
-            <div class="field">
-              <label>&#x1F4DD; Post Style Preference</label>
-              <select id="styleSelect">
-                <option value="all">Generate all 3 variants</option>
-                <option value="hot">&#x1F525; Hot Take only</option>
-                <option value="insight">&#x1F4A1; Insight / Observation only</option>
-                <option value="story">&#x1F4D6; Story / Celebration only</option>
-              </select>
+            <div style="display:flex;gap:12px;margin-bottom:4px">
+              <div class="form-group" style="flex:1;margin-bottom:0">
+                <label>Content Pillar</label>
+                <select id="pillarSelect">
+                  <option value="cre">🏢 CRE</option>
+                  <option value="ci">🎭 Creative Industrial</option>
+                  <option value="fb">🍽️ Chicago F&amp;B</option>
+                  <option value="retail">🛍️ Retail Trends</option>
+                  <option value="mixed">🔀 Mixed</option>
+                </select>
+              </div>
+              <div class="form-group" style="flex:1;margin-bottom:0">
+                <label>Post Style</label>
+                <select id="styleSelect">
+                  <option value="all">All 3 Variants</option>
+                  <option value="hot">🔥 Hot Take</option>
+                  <option value="insight">💡 Insight</option>
+                  <option value="story">📖 Story</option>
+                </select>
+              </div>
             </div>
-            <button class="btn btn-primary" onclick="generatePosts()" id="generateBtn" style="width:100%">&#x2728; Generate Post Drafts</button>
-            <div id="generateStatus" class="status-bar"></div>
+            <div class="form-group" style="margin-top:16px">
+              <button class="btn btn-primary" id="generateBtn" onclick="generatePosts()" style="width:100%;justify-content:center;padding:12px">✨ Generate Post Drafts</button>
+              <div class="status-bar" id="generateStatus"></div>
+            </div>
           </div>
         </div>
-        <div id="draftsOutput">
-          <div style="display:flex;align-items:center;justify-content:center;height:300px;color:var(--muted);flex-direction:column;gap:12px;border:1px dashed var(--border);border-radius:12px">
-            <div style="font-size:40px">&#x2728;</div>
-            <div style="font-size:14px">Your post drafts will appear here</div>
-          </div>
+        <div>
+          <div id="draftsOutput"></div>
         </div>
       </div>
     </div>
 
-    <!-- TRENDING IDEAS PAGE -->
-    <div id="page-trends" class="page">
-      <div class="section-title">&#x1F525; Trending Ideas</div>
-      <div class="section-sub">Pull current headlines across your pillars &mdash; enhanced with custom keywords, priority sources, and URL context.</div>
-      <div class="card" style="margin-bottom:20px">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px" id="trendsInputGrid">
-          <div>
-            <div class="card-title">&#x1F50D; Custom Keywords
-              <span style="font-size:10px;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(optional &mdash; clears after search)</span>
-            </div>
-            <textarea id="trendKeywords" placeholder="e.g. CMBS defaults, ghost kitchens, micro-fulfillment, adaptive reuse Chicago..." style="min-height:80px;font-size:13px"></textarea>
+    <!-- TRENDING IDEAS -->
+    <div class="page" id="page-trends">
+      <div class="section-title">🔥 Trending Ideas</div>
+      <div class="section-sub">Pull current headlines across your pillars — enhanced with custom keywords, priority sources, and URL context.</div>
+      <div class="card" id="trendsInputGrid" style="margin-bottom:20px;display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <div>
+          <div class="form-group">
+            <label>Custom Keywords <span style="font-size:11px;font-weight:400;color:var(--muted)">(optional — clears after search)</span></label>
+            <input id="customKeywords" placeholder="e.g. Logan Square, dark kitchens, industrial conversion..." />
           </div>
-          <div>
-            <div class="card-title">&#x1F517; URL Context
-              <span style="font-size:10px;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(optional &mdash; layers topic into search)</span>
-            </div>
-            <input type="url" id="trendUrl" placeholder="https://bisnow.com/some-article..." style="margin-bottom:10px" />
-            <div style="font-size:11px;color:var(--muted);line-height:1.6">Paste any article URL and I'll extract its topic and search for related discussion across the web, Twitter/X, LinkedIn, and your selected sources.</div>
+          <div class="form-group">
+            <label>Topic Layer <span style="font-size:11px;font-weight:400;color:var(--muted)">(optional — layers topic into search)</span></label>
+            <input id="topicLayer" placeholder="e.g. interest rates, lease renewals..." />
           </div>
-          <div style="grid-column:1/-1">
-            <div class="card-title">&#x1F4F0; Priority Sources
-              <span style="font-size:10px;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(click to toggle &mdash; green = active)</span>
-            </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-              <button class="source-toggle active" onclick="toggleSource(this)" data-source="Twitter/X (twitter.com and x.com)">&#x1F426; Twitter/X</button>
-              <button class="source-toggle active" onclick="toggleSource(this)" data-source="LinkedIn (linkedin.com)">&#x1F4BC; LinkedIn</button>
-              <button class="source-toggle active" onclick="toggleSource(this)" data-source="CoStar, GlobeSt, and CommercialObserver">&#x1F3E2; CoStar / CRE News</button>
-              <button class="source-toggle" onclick="toggleSource(this)" data-source="Bisnow (bisnow.com)">&#x1F4F0; Bisnow</button>
-              <button class="source-toggle" onclick="toggleSource(this)" data-source="The Real Deal (therealdeal.com)">&#x1F4F0; The Real Deal</button>
-              <button class="source-toggle" onclick="toggleSource(this)" data-source="Nation's Restaurant News (nrn.com)">&#x1F37D;&#xFE0F; NRN</button>
-              <button class="source-toggle" onclick="toggleSource(this)" data-source="Retail Dive (retaildive.com)">&#x1F6CD;&#xFE0F; Retail Dive</button>
-              <input type="text" id="customSource" placeholder="+ Custom site (e.g. chicagobusiness.com)" style="width:240px;font-size:12px;padding:6px 12px;flex-shrink:0" />
-            </div>
+          <div class="form-group">
+            <label>URL Context <span style="font-size:11px;font-weight:400;color:var(--muted)">(optional — extracts topic from link)</span></label>
+            <input id="urlContext" type="url" placeholder="https://..." />
+            <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-top:6px">Paste any article URL and I'll extract its topic and find related discussion across the web, Twitter/X, LinkedIn, and your selected sources.</div>
           </div>
         </div>
-      </div>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
-        <button class="btn btn-primary" onclick="generateTrends()" id="trendBtn">&#x1F525; Generate Trend Ideas</button>
-        <div style="font-size:13px;color:var(--muted)" id="trendLastRun"></div>
+        <div>
+          <div class="form-group">
+            <label>Priority Sources</label>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">
+              <button class="source-toggle" onclick="toggleSource(this)" data-src="CoStar">CoStar</button>
+              <button class="source-toggle" onclick="toggleSource(this)" data-src="Bisnow">Bisnow</button>
+              <button class="source-toggle" onclick="toggleSource(this)" data-src="Crain's Chicago Business">Crain's Chicago</button>
+              <button class="source-toggle" onclick="toggleSource(this)" data-src="GlobeSt">GlobeSt</button>
+              <button class="source-toggle" onclick="toggleSource(this)" data-src="The Real Deal">The Real Deal</button>
+              <button class="source-toggle" onclick="toggleSource(this)" data-src="Eater Chicago">Eater Chicago</button>
+              <button class="source-toggle" onclick="toggleSource(this)" data-src="Chicago Tribune">Chicago Tribune</button>
+              <button class="source-toggle" onclick="toggleSource(this)" data-src="LinkedIn">LinkedIn</button>
+              <button class="source-toggle" onclick="toggleSource(this)" data-src="Twitter/X">Twitter/X</button>
+            </div>
+          </div>
+          <div style="margin-top:16px">
+            <button class="btn btn-primary" onclick="generateTrends()" id="trendsBtn" style="width:100%;justify-content:center;padding:12px">🔥 Find Trending Topics</button>
+            <div class="status-bar" id="trendStatus"></div>
+          </div>
+        </div>
       </div>
       <div class="pillar-filter-row" id="pillarFilterRow">
         <button class="pillar-filter-btn active" onclick="filterTrends('all',this)">All Pillars</button>
-        <button class="pillar-filter-btn" onclick="filterTrends('cre',this)">&#x1F3E2; CRE</button>
-        <button class="pillar-filter-btn" onclick="filterTrends('ci',this)">&#x1F3­&#xFE0F; Creative Industrial</button>
-        <button class="pillar-filter-btn" onclick="filterTrends('fb',this)">&#x1F37D;&#xFE0F; Chicago F&amp;B</button>
-        <button class="pillar-filter-btn" onclick="filterTrends('retail',this)">&#x1F6CD;&#xFE0F; Retail</button>
+        <button class="pillar-filter-btn" onclick="filterTrends('cre',this)">🏢 CRE</button>
+        <button class="pillar-filter-btn" onclick="filterTrends('ci',this)">🎭 Creative Industrial</button>
+        <button class="pillar-filter-btn" onclick="filterTrends('fb',this)">🍽️ Chicago F&amp;B</button>
+        <button class="pillar-filter-btn" onclick="filterTrends('retail',this)">🛍️ Retail</button>
       </div>
-      <div id="trendStatus" class="status-bar"></div>
-      <div id="trendsOutput">
-        <div class="trend-generate-area">
-          <div class="big-icon">&#x1F525;</div>
-          <p>Add optional keywords, a URL, or select sources above &mdash; then hit <strong>Generate Trend Ideas</strong> to get post angles ready to go.</p>
-          <button class="btn btn-primary" onclick="generateTrends()">&#x1F525; Generate Now</button>
-        </div>
-      </div>
+      <div id="trendsOutput"></div>
     </div>
 
-    <!-- BRAINSTORMS PAGE -->
-    <div id="page-brainstorms" class="page">
-      <div class="section-title">&#x1F4A1; Brainstorms</div>
+    <!-- BRAINSTORMS -->
+    <div class="page" id="page-brainstorms">
+      <div class="section-title">💡 Brainstorms</div>
       <div class="section-sub">Cards from your Trello "Brainstorms" list. Click one to use it as post material.</div>
-      <div style="display:flex;gap:10px;margin-bottom:16px">
-        <button class="btn btn-secondary" onclick="loadBrainstorms()">&#x1F504; Refresh from Trello</button>
-      </div>
-      <div id="brainstormsList"><div style="color:var(--muted);font-size:14px">Click Refresh to load your Brainstorms from Trello.</div></div>
-      <div id="brainstormStatus" class="status-bar"></div>
+      <button class="btn" onclick="loadBrainstorms()" style="margin-bottom:16px">↻ Load Brainstorms</button>
+      <div class="status-bar" id="brainstormStatus"></div>
+      <div id="brainstormsList"></div>
     </div>
 
-    <!-- WORKING DRAFTS PAGE -->
-    <div id="page-drafts" class="page">
-      <div class="section-title">&#x1F4C4; Working Drafts</div>
+    <!-- WORKING DRAFTS -->
+    <div class="page" id="page-drafts">
+      <div class="section-title">📄 Working Drafts</div>
       <div class="section-sub">Posts saved to your Trello "Working Drafts" list.</div>
-      <div style="display:flex;gap:10px;margin-bottom:16px">
-        <button class="btn btn-secondary" onclick="loadWorkingDrafts()">&#x1F504; Refresh from Trello</button>
-      </div>
-      <div id="workingDraftsList"><div style="color:var(--muted);font-size:14px">Click Refresh to load your Working Drafts from Trello.</div></div>
-      <div id="workingDraftsStatus" class="status-bar"></div>
+      <button class="btn" onclick="loadWorkingDrafts()" style="margin-bottom:16px">↻ Load Working Drafts</button>
+      <div class="status-bar" id="workingDraftsStatus"></div>
+      <div id="workingDraftsList"></div>
     </div>
 
-    <!-- SETTINGS PAGE -->
-    <div id="page-settings" class="page">
-      <div class="section-title">&#x2699;&#xFE0F; Settings</div>
-      <div class="section-sub">Configure your API credentials. Saved in your browser only.</div>
+    <!-- CONTENT CALENDAR -->
+    <div class="page" id="page-calendar">
+      <div class="section-title">📅 Content Calendar</div>
+      <div class="section-sub">Schedule and plan your LinkedIn posts. Click any day to assign a draft.</div>
+      <div class="card" style="margin-bottom:20px">
+        <div class="cal-nav">
+          <button class="cal-nav-btn" onclick="calShift(-1)">‹</button>
+          <div class="cal-month-label" id="calMonthLabel"></div>
+          <button class="cal-nav-btn" onclick="calShift(1)">›</button>
+        </div>
+        <div class="cal-grid" id="calGrid">
+          <div class="cal-header">Sun</div>
+          <div class="cal-header">Mon</div>
+          <div class="cal-header">Tue</div>
+          <div class="cal-header">Wed</div>
+          <div class="cal-header">Thu</div>
+          <div class="cal-header">Fri</div>
+          <div class="cal-header">Sat</div>
+        </div>
+      </div>
+      <div class="cal-saved-drafts">
+        <div style="font-size:14px;font-weight:700;margin-bottom:12px">📋 Saved Drafts — Ready to Schedule</div>
+        <div id="calDraftPool"></div>
+      </div>
+    </div>
 
-      <!-- API Credentials -->
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="section-title">⚙️ Settings</div>
+      <div class="section-sub">Configure your API credentials. Saved in your browser only — never transmitted anywhere else.</div>
       <div class="card">
-        <div class="card-title">&#x1F511; API Credentials</div>
-        <div class="settings-grid">
-          <div class="field">
-            <label>Trello API Key</label>
-            <input type="password" id="trelloKey" placeholder="Your Trello API Key" />
+        <div class="settings-section">
+          <div style="font-size:15px;font-weight:700;margin-bottom:12px">🤖 Your Voice Profile</div>
+          <div class="form-group">
+            <label>Your Name</label>
+            <input id="userName" placeholder="Mike Baum" />
           </div>
-          <div class="field">
-            <label>Trello Token</label>
-            <input type="password" id="trelloToken" placeholder="Your Trello Token" />
+          <div class="form-group">
+            <label>Your Role / Title</label>
+            <input id="userRole" placeholder="Principal at Baum Realty Group | Founder, Baum Asset Management" />
           </div>
-          <div class="field" style="grid-column:1/-1">
+          <div class="form-group">
+            <label>Voice / POV Description</label>
+            <textarea id="userPov" rows="4" placeholder="Conversational, non-transactional CRE thought leader. 13+ years in Chicago CRE, commercial real estate attorney background. Draws on deal experience, market knowledge, and Chicago neighborhood expertise. Never pitching — always teaching or observing."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Core Hashtags</label>
+            <input id="coreHashtags" placeholder="#ChicagoCRE #CRE #RetailTrends #CreativeIndustrial #CommercialRealEstate" />
+          </div>
+        </div>
+        <div class="settings-section">
+          <div style="font-size:15px;font-weight:700;margin-bottom:12px">🔑 API Keys</div>
+          <div class="form-group">
             <label>Anthropic API Key</label>
-            <input type="password" id="anthropicKey" placeholder="sk-ant-..." />
+            <input id="anthropicKey" type="password" placeholder="sk-ant-..." />
           </div>
-          <div class="field" style="grid-column:1/-1">
-            <label>&#x1F4BB; GitHub Token <span style="font-size:11px;color:var(--success);margin-left:6px">&#x2713; Enables Claude to push updates directly</span></label>
-            <input type="password" id="githubToken" placeholder="ghp_..." />
+          <div class="form-group">
+            <label>Trello API Key</label>
+            <input id="trelloKey" type="password" placeholder="Trello API Key..." />
+          </div>
+          <div class="form-group">
+            <label>Trello Token</label>
+            <input id="trelloToken" type="password" placeholder="Trello Token..." />
           </div>
         </div>
-        <button class="btn btn-primary" onclick="saveSettings()">&#x1F4BE; Save Settings</button>
-        <div id="settingsStatus" class="status-bar"></div>
+        <div class="settings-section">
+          <div style="font-size:15px;font-weight:700;margin-bottom:12px">🔗 LinkedIn Connection</div>
+          <div id="liStatusDisplay" class="li-status-disconnected">⚠️ Not connected — click Connect LinkedIn below</div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button class="btn btn-linkedin" onclick="connectLinkedIn()">🔗 Connect LinkedIn</button>
+            <button class="btn" onclick="disconnectLinkedIn()">Disconnect</button>
+          </div>
+          <div class="status-bar" id="liSettingsStatus"></div>
+        </div>
+        <button class="btn btn-primary" onclick="saveSettings()" style="padding:10px 24px">💾 Save Settings</button>
+        <div class="status-bar" id="settingsStatus"></div>
       </div>
+    </div>
 
-      <!-- Voice Profile -->
-      <div class="card">
-        <div class="card-title">&#x1F3A4; Your Voice Profile</div>
-        <div class="field">
-          <label>Your Name</label>
-          <input type="text" id="userName" placeholder="Mike" />
-        </div>
-        <div class="field">
-          <label>Your Role / Title</label>
-          <input type="text" id="userRole" placeholder="e.g. President, Baum Realty Group | Founder, Strategic Location Advisors" />
-        </div>
-        <div class="field">
-          <label>Signature POV (used in AI prompts)</label>
-          <textarea id="userPov" placeholder="e.g. I see the future before it arrives..."></textarea>
-        </div>
-        <div class="field">
-          <label>Always-on Hashtags (comma separated)</label>
-          <input type="text" id="coreHashtags" placeholder="#CRE, #ChicagoRealEstate, #RetailTrends" />
-        </div>
-        <button class="btn btn-primary" onclick="saveSettings()">&#x1F4BE; Save Profile</button>
-      </div>
+  </div><!-- /main -->
+</div><!-- /app -->
 
-      <!-- LinkedIn Connection -->
-      <div class="card">
-        <div class="card-title">&#x1F517; LinkedIn Connection</div>
-        <div class="settings-grid">
-          <div class="field">
-            <label>Connection Status</label>
-            <div id="liStatusDisplay" class="li-status-disconnected">&#x26A0;&#xFE0F; Not connected &mdash; click Connect LinkedIn below</div>
-          </div>
-          <div class="field">
-            <label>Actions</label>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button class="btn btn-linkedin btn-sm" onclick="connectLinkedIn()">&#x1F517; Connect LinkedIn</button>
-              <button class="btn btn-secondary btn-sm" onclick="disconnectLinkedIn()">&#x2715; Disconnect</button>
-            </div>
-          </div>
-        </div>
-        <div id="liSettingsStatus" class="status-bar"></div>
-      </div>
-
-    </div><!-- /page-settings -->
-
-  </div><!-- /.main -->
-</div><!-- /.app -->
+<!-- SCHEDULE MODAL -->
+<div class="modal-overlay" id="scheduleModal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">Schedule Post</div>
+    <div class="modal-sub" id="modalSub"></div>
+    <div class="modal-post-list" id="modalPostList"></div>
+    <button class="btn" onclick="closeModal()" style="margin-top:16px;width:100%;justify-content:center">Cancel</button>
+  </div>
+</div>
 
 <script>
-// ── State ──────────────────────────────────────────────────────
-let imageBase64 = null;
-        let imageMimeType = 'image/jpeg';
-let activePillars = ['cre','ci','fb','retail'];
-let trelloListIds = {};
-let trendData = [];
-
-// ── Models ─────────────────────────────────────────────────────
+// ── Constants ──────────────────────────────────────────────────
+const MODEL_WRITING  = 'claude-sonnet-4-5-20250929';
 const MODEL_RESEARCH = 'claude-haiku-4-5-20251001';
-const MODEL_WRITING  = 'claude-sonnet-4-6';
+const LI_WORKER      = 'https://worker-small-mountain-69ba.mike-3ac.workers.dev';
+const API_TIMEOUT_MS = 50000; // 50 seconds
+
+// ── State ──────────────────────────────────────────────────────
+let activePillars = ['cre','ci','fb','retail'];
+let imageBase64 = null;
+let imageMimeType = 'image/jpeg';
+let trendData = [];
+let trelloListIds = {};
+let calYear, calMonth;
+let calendarData = {}; // { "2026-02-15": [{ text, pillar, type, id }] }
+let savedDrafts  = []; // persisted generated drafts
+let pendingScheduleDate = null;
 
 // ── Init ───────────────────────────────────────────────────────
 window.onload = () => {
+  const now = new Date();
+  calYear  = now.getFullYear();
+  calMonth = now.getMonth();
   loadFromStorage();
-  fetchTrelloListIds();
-  updateLiStatus();
+  renderCalendar();
+  renderDraftPool();
 };
 
+// ── Storage ────────────────────────────────────────────────────
 function loadFromStorage() {
-  ['trelloKey','trelloToken','anthropicKey','githubToken','userName','userRole','userPov','coreHashtags'].forEach(f => {
+  ['trelloKey','trelloToken','anthropicKey','userName','userRole','userPov','coreHashtags'].forEach(f => {
     const v = localStorage.getItem(f);
     if (v && document.getElementById(f)) document.getElementById(f).value = v;
   });
+  try { calendarData = JSON.parse(localStorage.getItem('calendarData') || '{}'); } catch(e) { calendarData = {}; }
+  try { savedDrafts  = JSON.parse(localStorage.getItem('savedDrafts')  || '[]'); } catch(e) { savedDrafts = []; }
 }
 
 function saveSettings() {
-  ['trelloKey','trelloToken','anthropicKey','githubToken','userName','userRole','userPov','coreHashtags'].forEach(f => {
+  ['trelloKey','trelloToken','anthropicKey','userName','userRole','userPov','coreHashtags'].forEach(f => {
     const el = document.getElementById(f);
-    if (el) localStorage.setItem(f, el.value);
+    if (el) localStorage.setItem(f, el.value.trim());
   });
-  showStatus('settingsStatus','success','&#x2705; Settings saved!');
+  showStatus('settingsStatus','success','✅ Settings saved!');
 }
+
+function persistCalendar() { localStorage.setItem('calendarData', JSON.stringify(calendarData)); }
+function persistDrafts()   { localStorage.setItem('savedDrafts',  JSON.stringify(savedDrafts)); }
 
 // ── Nav ────────────────────────────────────────────────────────
 function showPage(name, el) {
@@ -450,7 +492,8 @@ function showPage(name, el) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
   if (el) el.classList.add('active');
-  if (name === 'settings') updateLiStatus();
+  if (name === 'settings')  updateLiStatus();
+  if (name === 'calendar')  { renderCalendar(); renderDraftPool(); }
 }
 
 // ── Pillars ────────────────────────────────────────────────────
@@ -465,63 +508,60 @@ function togglePillar(el, key) {
 function handleImage(input) {
   const file = input.files[0];
   if (!file) return;
-
-  const supportedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-  const fileType = file.type.toLowerCase();
-  const isHEIC = fileType === 'image/heic' || fileType === 'image/heif'
-    || file.name.toLowerCase().endsWith('.heic')
-    || file.name.toLowerCase().endsWith('.heif');
-
-  if (!supportedTypes.includes(fileType) && !isHEIC) {
-    showStatus('generateStatus', 'error', '\u274c Unsupported image type. Please use JPEG, PNG, GIF, WebP, or HEIC.');
-    return;
+  const supported = ['image/jpeg','image/png','image/gif','image/webp'];
+  const isHEIC = file.type === 'image/heic' || file.type === 'image/heif'
+    || file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif');
+  if (!supported.includes(file.type) && !isHEIC) {
+    showStatus('generateStatus','error','❌ Unsupported image type. Please use JPEG, PNG, GIF, WebP, or HEIC.'); return;
   }
-
   if (isHEIC) {
-    // Convert HEIC to JPEG via canvas (works natively in Safari on Mac/iPhone)
     const url = URL.createObjectURL(file);
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
+      canvas.width = img.width; canvas.height = img.height;
       canvas.getContext('2d').drawImage(img, 0, 0);
       const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-      imageBase64 = dataUrl.split(',')[1];
-      imageMimeType = 'image/jpeg';
-      const preview = document.getElementById('imagePreview');
-      preview.src = dataUrl;
-      preview.style.display = 'block';
-      document.querySelector('.upload-text').textContent = '\u2705 ' + file.name + ' (converted to JPEG)';
+      imageBase64 = dataUrl.split(',')[1]; imageMimeType = 'image/jpeg';
+      const prev = document.getElementById('imagePreview');
+      prev.src = dataUrl; prev.style.display = 'block';
+      document.querySelector('.upload-text').textContent = '✅ ' + file.name + ' (HEIC → JPEG)';
       URL.revokeObjectURL(url);
     };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      showStatus('generateStatus', 'error', '\u274c Could not process HEIC file. Please convert it to JPEG in the Photos app (File > Export > Export as JPEG) and try again.');
-    };
-    img.src = url;
-    return;
+    img.onerror = () => { URL.revokeObjectURL(url); showStatus('generateStatus','error','❌ Could not process HEIC. Convert to JPEG in Photos app and retry.'); };
+    img.src = url; return;
   }
-
-  // Standard supported format
-  imageMimeType = fileType;
+  imageMimeType = file.type;
   const reader = new FileReader();
   reader.onload = e => {
     imageBase64 = e.target.result.split(',')[1];
-    const preview = document.getElementById('imagePreview');
-    preview.src = e.target.result;
-    preview.style.display = 'block';
-    document.querySelector('.upload-text').textContent = '\u2705 ' + file.name;
+    const prev = document.getElementById('imagePreview');
+    prev.src = e.target.result; prev.style.display = 'block';
+    document.querySelector('.upload-text').textContent = '✅ ' + file.name;
   };
   reader.readAsDataURL(file);
-}
 }
 
 function updateCharCount(inputId, countId, max) {
   const len = document.getElementById(inputId).value.length;
-  const el = document.getElementById(countId);
+  const el  = document.getElementById(countId);
   el.textContent = `${len} / ${max}`;
   el.className = 'char-count' + (len > max ? ' over' : '');
+}
+
+// ── Fetch with Timeout ─────────────────────────────────────────
+async function fetchWithTimeout(url, options, timeoutMs = API_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timer);
+    return res;
+  } catch (e) {
+    clearTimeout(timer);
+    if (e.name === 'AbortError') throw new Error('Request timed out after ' + Math.round(timeoutMs/1000) + 's. Try again.');
+    throw e;
+  }
 }
 
 // ── Trello ─────────────────────────────────────────────────────
@@ -530,46 +570,51 @@ async function fetchTrelloListIds() {
   if (!key || !token) return;
   try {
     const boards = await (await fetch(`https://api.trello.com/1/members/me/boards?key=${key}&token=${token}&fields=name`)).json();
-    const liBoard = boards.find(b => b.name === 'LinkedIN Bot');
+    const liBoard = boards.find(b => /linkedin/i.test(b.name));
     if (!liBoard) return;
     const lists = await (await fetch(`https://api.trello.com/1/boards/${liBoard.id}/lists?key=${key}&token=${token}`)).json();
     lists.forEach(l => { trelloListIds[l.name] = l.id; });
-  } catch(e) { console.error('Trello init', e); }
+  } catch(e) { console.error('Trello init:', e); }
 }
 
 async function loadBrainstorms() {
   const key = localStorage.getItem('trelloKey'), token = localStorage.getItem('trelloToken');
   if (!key || !token) { showStatus('brainstormStatus','error','⚠️ Add Trello credentials in Settings.'); return; }
+  showStatus('brainstormStatus','info','Loading brainstorms...');
   await fetchTrelloListIds();
   const listId = trelloListIds['Brainstorms'];
-  if (!listId) { showStatus('brainstormStatus','error','Could not find Brainstorms list.'); return; }
-  showStatus('brainstormStatus','info','Loading brainstorms...');
-  const cards = await (await fetch(`https://api.trello.com/1/lists/${listId}/cards?key=${key}&token=${token}`)).json();
-  const container = document.getElementById('brainstormsList');
-  if (!cards.length) { container.innerHTML = '<div style="color:var(--muted);font-size:14px">No cards in Brainstorms yet.</div>'; hideStatus('brainstormStatus'); return; }
-  container.innerHTML = cards.map(c => `
-    <div class="brainstorm-item" onclick="useBrainstorm('${c.id}','${escHtml(c.name)}','${escHtml(c.desc||'')}')">
-      <div>
-        <div class="brainstorm-name">${c.name}</div>
-        ${c.desc ? `<div class="brainstorm-desc">${c.desc.substring(0,100)}${c.desc.length>100?'...':''}</div>` : ''}
-      </div>
-      <span style="color:var(--accent);font-size:18px">→</span>
-    </div>`).join('');
-  hideStatus('brainstormStatus');
+  if (!listId) { showStatus('brainstormStatus','error','Could not find "Brainstorms" list on your LinkedIn Bot board.'); return; }
+  try {
+    const cards = await (await fetch(`https://api.trello.com/1/lists/${listId}/cards?key=${key}&token=${token}`)).json();
+    const container = document.getElementById('brainstormsList');
+    if (!cards.length) {
+      container.innerHTML = '<div style="color:var(--muted);font-size:14px">No cards in Brainstorms yet.</div>';
+      hideStatus('brainstormStatus'); return;
+    }
+    container.innerHTML = cards.map(c => `
+      <div class="brainstorm-item" onclick="useBrainstorm('${c.id}','${escHtml(c.name)}','${escHtml(c.desc||'')}')">
+        <div>
+          <div class="brainstorm-name">${c.name}</div>
+          ${c.desc ? `<div class="brainstorm-desc">${c.desc.substring(0,100)}${c.desc.length>100?'...':''}</div>` : ''}
+        </div>
+        <span style="color:var(--accent);font-size:18px">→</span>
+      </div>`).join('');
+    hideStatus('brainstormStatus');
+  } catch(e) { showStatus('brainstormStatus','error','❌ ' + e.message); }
 }
 
 function useBrainstorm(cardId, name, desc) {
   const fullText = name + (desc ? '\n\n' + desc : '');
   const lower = fullText.toLowerCase();
   let pillar = 'mixed';
-  if (/\b(cre|commercial real estate|office|industrial|cap rate|noi|lease|landlord)\b/.test(lower)) pillar = 'cre';
+  if (/\b(cre|commercial real estate|office|industrial|cap rate|noi|lease|landlord|vacancy)\b/.test(lower)) pillar = 'cre';
   else if (/\b(creative industrial|adaptive reuse|warehouse|flex space|maker|studio space)\b/.test(lower)) pillar = 'ci';
-  else if (/\b(food|beverage|restaurant|bar|cafe|dining|chef|f&b|beer|cocktail)\b/.test(lower)) pillar = 'fb';
-  else if (/\b(retail|store|brand|consumer|shopping|ecommerce|brick|pop.up)\b/.test(lower)) pillar = 'retail';
+  else if (/\b(food|beverage|restaurant|bar|cafe|dining|chef|f&b|beer|cocktail|kitchen)\b/.test(lower)) pillar = 'fb';
+  else if (/\b(retail|store|brand|consumer|shopping|ecommerce|brick|pop.up|tenant)\b/.test(lower)) pillar = 'retail';
   let style = 'all';
-  if (/\b(hot take|unpopular opinion|controversial|bold)\b/.test(lower)) style = 'hot';
+  if (/\b(hot take|unpopular|controversial|bold)\b/.test(lower)) style = 'hot';
   else if (/\b(insight|data|trend|analysis|observation)\b/.test(lower)) style = 'insight';
-  else if (/\b(story|celebrate|congrats|proud|shoutout|excited)\b/.test(lower)) style = 'story';
+  else if (/\b(story|celebrate|proud|shoutout|excited)\b/.test(lower)) style = 'story';
   document.getElementById('draftText').value = fullText;
   document.getElementById('pillarSelect').value = pillar;
   document.getElementById('styleSelect').value = style;
@@ -582,96 +627,101 @@ function useBrainstorm(cardId, name, desc) {
 async function loadWorkingDrafts() {
   const key = localStorage.getItem('trelloKey'), token = localStorage.getItem('trelloToken');
   if (!key || !token) { showStatus('workingDraftsStatus','error','⚠️ Add Trello credentials in Settings.'); return; }
+  showStatus('workingDraftsStatus','info','Loading...');
   await fetchTrelloListIds();
   const listId = trelloListIds['Working Drafts'];
-  if (!listId) { showStatus('workingDraftsStatus','error','Could not find Working Drafts list.'); return; }
-  showStatus('workingDraftsStatus','info','Loading...');
-  const cards = await (await fetch(`https://api.trello.com/1/lists/${listId}/cards?key=${key}&token=${token}&fields=name,desc,shortUrl,labels`)).json();
-  const container = document.getElementById('workingDraftsList');
-  if (!cards.length) { container.innerHTML = '<div style="color:var(--muted);font-size:14px">No cards in Working Drafts yet.</div>'; hideStatus('workingDraftsStatus'); return; }
-  const commentsByCard = {};
-  await Promise.all(cards.map(async c => {
-    try {
-      const actions = await (await fetch(`https://api.trello.com/1/cards/${c.id}/actions?key=${key}&token=${token}&filter=commentCard`)).json();
-      commentsByCard[c.id] = actions;
-    } catch(e) { commentsByCard[c.id] = []; }
-  }));
-  container.innerHTML = cards.map(c => {
-    const labelNames = (c.labels||[]).map(l => l.name.toLowerCase());
-    let statusClass = 'pending', statusText = '⏳ Pending Review';
-    if (labelNames.some(l => l.includes('approved'))) { statusClass='approved'; statusText='✅ Approved'; }
-    else if (labelNames.some(l => l.includes('edit') || l.includes('revision'))) { statusClass='needs-edits'; statusText='✏️ Needs Edits'; }
-    const comments = commentsByCard[c.id] || [];
-    const commentsHtml = comments.length
-      ? comments.map(a => `<div class="comment-item"><div><span class="comment-author">${escHtmlFull(a.memberCreator&&a.memberCreator.fullName||'Team')}</span><span class="comment-date">${new Date(a.date).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</span></div><div class="comment-text">${escHtmlFull(a.data&&a.data.text||'')}</div></div>`).join('')
-      : '<div class="no-comments">No comments yet.</div>';
-    return `<div class="draft-card" id="wdCard-${c.id}">
-      <div class="collab-bar">
-        <span class="status-badge ${statusClass}">${statusText}</span>
-        <div class="collab-actions">
-          <button class="btn btn-sm btn-approve" onclick="setDraftStatus('${c.id}','approved')">✅ Approve</button>
-          <button class="btn btn-sm btn-edits" onclick="setDraftStatus('${c.id}','needs-edits')">✏️ Request Edits</button>
-          <button class="collab-refresh" onclick="loadWorkingDrafts()">↻ Refresh</button>
+  if (!listId) { showStatus('workingDraftsStatus','error','Could not find "Working Drafts" list on your LinkedIn Bot board.'); return; }
+  try {
+    const cards = await (await fetch(`https://api.trello.com/1/lists/${listId}/cards?key=${key}&token=${token}&fields=name,desc,shortUrl,labels`)).json();
+    const container = document.getElementById('workingDraftsList');
+    if (!cards.length) {
+      container.innerHTML = '<div style="color:var(--muted);font-size:14px">No cards in Working Drafts yet.</div>';
+      hideStatus('workingDraftsStatus'); return;
+    }
+    const commentsByCard = {};
+    await Promise.all(cards.map(async c => {
+      try {
+        const actions = await (await fetch(`https://api.trello.com/1/cards/${c.id}/actions?key=${key}&token=${token}&filter=commentCard`)).json();
+        commentsByCard[c.id] = actions;
+      } catch(e) { commentsByCard[c.id] = []; }
+    }));
+    container.innerHTML = cards.map(c => {
+      const labelNames = (c.labels||[]).map(l => l.name.toLowerCase());
+      let statusClass = 'pending', statusText = '⏳ Pending Review';
+      if (labelNames.some(l => l.includes('approved'))) { statusClass='approved'; statusText='✅ Approved'; }
+      else if (labelNames.some(l => l.includes('edit') || l.includes('revision'))) { statusClass='needs-edits'; statusText='✏️ Needs Edits'; }
+      const comments = commentsByCard[c.id] || [];
+      const commentsHtml = comments.length
+        ? comments.map(a => `<div class="comment-item"><div><span class="comment-author">${escHtmlFull(a.memberCreator&&a.memberCreator.fullName||'Team')}</span><span class="comment-date">${new Date(a.date).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</span></div><div class="comment-text">${escHtmlFull(a.data&&a.data.text||'')}</div></div>`).join('')
+        : '<div class="no-comments">No comments yet.</div>';
+      return `<div class="draft-card" id="wdCard-${c.id}">
+        <div class="collab-bar">
+          <span class="status-badge ${statusClass}">${statusText}</span>
+          <div class="collab-actions">
+            <button class="btn btn-sm btn-approve" onclick="setDraftStatus('${c.id}','approved')">✅ Approve</button>
+            <button class="btn btn-sm btn-edits" onclick="setDraftStatus('${c.id}','needs-edits')">✏️ Request Edits</button>
+            <button class="collab-refresh" onclick="loadWorkingDrafts()">↻</button>
+          </div>
         </div>
-      </div>
-      <div style="font-weight:600;margin-bottom:6px">${c.name}</div>
-      ${c.desc ? `<div class="draft-body">${c.desc.substring(0,300)}${c.desc.length>300?'...':''}</div>` : ''}
-      <div class="comments-section">
-        <div class="comments-label">💬 Team Comments (${comments.length})</div>
-        ${commentsHtml}
-        <div class="comment-input-wrap">
-          <textarea id="commentInput-${c.id}" placeholder="Add a comment for your team..."></textarea>
-          <button class="btn btn-secondary btn-sm" onclick="postTrelloComment('${c.id}')">Send</button>
+        <div style="font-weight:600;margin-bottom:6px">${c.name}</div>
+        ${c.desc ? `<div class="draft-body">${escHtmlFull(c.desc.substring(0,300))}${c.desc.length>300?'...':''}</div>` : ''}
+        <div class="comments-section">
+          <div class="comments-label">💬 Team Comments (${comments.length})</div>
+          ${commentsHtml}
+          <div class="comment-input-wrap">
+            <textarea id="commentInput-${c.id}" placeholder="Add a comment for your team..."></textarea>
+            <button class="btn btn-secondary btn-sm" onclick="postTrelloComment('${c.id}')">Send</button>
+          </div>
         </div>
-      </div>
-      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-        <a href="${c.shortUrl}" target="_blank" class="btn btn-secondary btn-sm">📋 Open in Trello</a>
-        <button class="btn btn-secondary btn-sm" onclick="moveToProduction('${c.id}')">🚀 Move to Production</button>
-      </div>
-      <div id="collabStatus-${c.id}" class="status-bar" style="display:none"></div>
-    </div>`;
-  }).join('');
-  hideStatus('workingDraftsStatus');
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+          <a href="${c.shortUrl}" target="_blank" class="btn btn-sm">📋 Open in Trello</a>
+          <button class="btn btn-sm" onclick="moveToProduction('${c.id}')">🚀 Move to Production</button>
+        </div>
+        <div id="collabStatus-${c.id}" class="status-bar" style="display:none"></div>
+      </div>`;
+    }).join('');
+    hideStatus('workingDraftsStatus');
+  } catch(e) { showStatus('workingDraftsStatus','error','❌ ' + e.message); }
 }
 
 async function setDraftStatus(cardId, status) {
   const key = localStorage.getItem('trelloKey'), token = localStorage.getItem('trelloToken');
   if (!key || !token) return;
   await fetchTrelloListIds();
-  const boards = await (await fetch(`https://api.trello.com/1/members/me/boards?key=${key}&token=${token}&fields=name`)).json();
-  const liBoard = boards.find(b => b.name === 'LinkedIN Bot');
-  if (!liBoard) return;
-  const boardLabels = await (await fetch(`https://api.trello.com/1/boards/${liBoard.id}/labels?key=${key}&token=${token}`)).json();
-  const wantedName = status === 'approved' ? 'Approved' : 'Needs Edits';
-  const wantedColor = status === 'approved' ? 'green' : 'red';
-  let label = boardLabels.find(l => l.name === wantedName);
-  if (!label) {
-    const res = await fetch(`https://api.trello.com/1/labels?key=${key}&token=${token}`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ name: wantedName, color: wantedColor, idBoard: liBoard.id })
-    });
-    label = await res.json();
-  }
-  const card = await (await fetch(`https://api.trello.com/1/cards/${cardId}?key=${key}&token=${token}&fields=idLabels`)).json();
-  for (const lid of (card.idLabels||[])) {
-    const lbl = boardLabels.find(l => l.id === lid);
-    if (lbl && (lbl.name === 'Approved' || lbl.name === 'Needs Edits')) {
-      await fetch(`https://api.trello.com/1/cards/${cardId}/idLabels/${lid}?key=${key}&token=${token}`, { method:'DELETE' });
+  try {
+    const boards = await (await fetch(`https://api.trello.com/1/members/me/boards?key=${key}&token=${token}&fields=name`)).json();
+    const liBoard = boards.find(b => /linkedin/i.test(b.name));
+    if (!liBoard) return;
+    const boardLabels = await (await fetch(`https://api.trello.com/1/boards/${liBoard.id}/labels?key=${key}&token=${token}`)).json();
+    const wantedName = status === 'approved' ? 'Approved' : 'Needs Edits';
+    const wantedColor = status === 'approved' ? 'green' : 'red';
+    let label = boardLabels.find(l => l.name === wantedName);
+    if (!label) {
+      const res = await fetch(`https://api.trello.com/1/labels?key=${key}&token=${token}`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ name: wantedName, color: wantedColor, idBoard: liBoard.id })
+      });
+      label = await res.json();
     }
-  }
-  await fetch(`https://api.trello.com/1/cards/${cardId}/idLabels?key=${key}&token=${token}`, {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ value: label.id })
-  });
-  const userName = localStorage.getItem('userName') || 'Mike';
-  const commentText = status === 'approved'
-    ? `✅ Approved by ${userName} on ${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`
-    : `✏️ Edits requested by ${userName} on ${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
-  await fetch(`https://api.trello.com/1/cards/${cardId}/actions/comments?key=${key}&token=${token}`, {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ text: commentText })
-  });
-  loadWorkingDrafts();
+    const card = await (await fetch(`https://api.trello.com/1/cards/${cardId}?key=${key}&token=${token}&fields=idLabels`)).json();
+    for (const lid of (card.idLabels||[])) {
+      const lbl = boardLabels.find(l => l.id === lid);
+      if (lbl && (lbl.name === 'Approved' || lbl.name === 'Needs Edits')) {
+        await fetch(`https://api.trello.com/1/cards/${cardId}/idLabels/${lid}?key=${key}&token=${token}`, { method:'DELETE' });
+      }
+    }
+    await fetch(`https://api.trello.com/1/cards/${cardId}/idLabels?key=${key}&token=${token}`, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ value: label.id })
+    });
+    const userName = localStorage.getItem('userName') || 'Mike';
+    const commentText = status === 'approved'
+      ? `✅ Approved by ${userName} on ${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`
+      : `✏️ Edits requested by ${userName} on ${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
+    await fetch(`https://api.trello.com/1/cards/${cardId}/actions/comments?key=${key}&token=${token}`, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ text: commentText })
+    });
+    loadWorkingDrafts();
+  } catch(e) { console.error('setDraftStatus:', e); }
 }
 
 async function postTrelloComment(cardId) {
@@ -681,150 +731,127 @@ async function postTrelloComment(cardId) {
   if (!text || !key || !token) return;
   const statusEl = document.getElementById('collabStatus-' + cardId);
   if (statusEl) { statusEl.style.display='block'; statusEl.className='status-bar info'; statusEl.textContent='Posting...'; }
-  await fetch(`https://api.trello.com/1/cards/${cardId}/actions/comments?key=${key}&token=${token}`, {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ text })
-  });
-  if (input) input.value = '';
-  if (statusEl) { statusEl.className='status-bar success'; statusEl.textContent='✅ Comment posted!'; setTimeout(()=>{ statusEl.style.display='none'; },2000); }
-  loadWorkingDrafts();
+  try {
+    await fetch(`https://api.trello.com/1/cards/${cardId}/actions/comments?key=${key}&token=${token}`, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ text })
+    });
+    if (input) input.value = '';
+    if (statusEl) { statusEl.className='status-bar success'; statusEl.textContent='✅ Comment posted!'; setTimeout(()=>{ statusEl.style.display='none'; },2500); }
+    loadWorkingDrafts();
+  } catch(e) { if (statusEl) { statusEl.className='status-bar error'; statusEl.textContent='❌ ' + e.message; } }
 }
 
 async function moveToProduction(cardId) {
   const key = localStorage.getItem('trelloKey'), token = localStorage.getItem('trelloToken');
   await fetchTrelloListIds();
   const listId = trelloListIds['Production'];
-  if (!listId) return;
-  await fetch(`https://api.trello.com/1/cards/${cardId}?key=${key}&token=${token}`, {
-    method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ idList: listId })
-  });
-  loadWorkingDrafts();
+  if (!listId) { alert('Could not find "Production" list on your board.'); return; }
+  try {
+    await fetch(`https://api.trello.com/1/cards/${cardId}?key=${key}&token=${token}`, {
+      method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ idList: listId })
+    });
+    loadWorkingDrafts();
+  } catch(e) { alert('Failed to move card: ' + e.message); }
 }
 
 async function archiveBrainstormCard(cardId) {
   const key = localStorage.getItem('trelloKey'), token = localStorage.getItem('trelloToken');
   if (!key || !token) return;
-  await fetchTrelloListIds();
-  const listId = trelloListIds['Archive'];
-  if (!listId) return;
-  await fetch(`https://api.trello.com/1/cards/${cardId}?key=${key}&token=${token}`, {
-    method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ idList: listId })
-  });
+  try {
+    await fetch(`https://api.trello.com/1/cards/${cardId}?key=${key}&token=${token}`, {
+      method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ closed: true })
+    });
+  } catch(e) { console.error('Archive card:', e); }
 }
 
-// ── Source Toggles ──────────────────────────────────────────────
-function toggleSource(el) {
-  el.classList.toggle('active');
-}
-
+// ── Source Toggle ──────────────────────────────────────────────
+function toggleSource(el) { el.classList.toggle('active'); }
 function getActiveSources() {
-  const active = Array.from(document.querySelectorAll('.source-toggle.active'))
-    .map(b => b.dataset.source);
-  const custom = document.getElementById('customSource')?.value.trim();
-  if (custom) active.push(custom);
-  return active;
+  return Array.from(document.querySelectorAll('.source-toggle.active')).map(el => el.dataset.src);
 }
 
-// ── TREND INJECTION ─────────────────────────────────────────────
+// ── TREND GENERATION ───────────────────────────────────────────
 async function generateTrends() {
   const anthropicKey = localStorage.getItem('anthropicKey');
   if (!anthropicKey) { showStatus('trendStatus','error','⚠️ Add your Anthropic API key in Settings first.'); return; }
-
-  const btn = document.getElementById('trendBtn');
-  btn.innerHTML = '<span class="spinner"></span> Scanning headlines...';
+  const btn = document.getElementById('trendsBtn');
+  btn.innerHTML = '<span class="spinner"></span> Scanning trends...';
   btn.disabled = true;
-  showStatus('trendStatus','info','🔥 Scanning current trends across your 4 pillars...');
-  document.getElementById('trendsOutput').innerHTML = '';
-
-  const userName = localStorage.getItem('userName') || 'Mike';
-  const userRole = localStorage.getItem('userRole') || 'CRE & Retail Strategist';
-  const userPov = localStorage.getItem('userPov') || 'Conversational thought leader in CRE, Creative Industrial, Chicago F&B, and Retail. I see the future before it arrives.';
-  const customKeywords = document.getElementById('trendKeywords')?.value.trim() || '';
-  const urlContext     = document.getElementById('trendUrl')?.value.trim() || '';
+  showStatus('trendStatus','info','🔥 Scanning current trends across your 4 pillars — this takes ~20 seconds with live web search...');
+  const customKeywords = document.getElementById('customKeywords').value.trim();
+  const topicLayer     = document.getElementById('topicLayer').value.trim();
+  const urlContext     = document.getElementById('urlContext').value.trim();
   const activeSources  = getActiveSources();
+  const userName = localStorage.getItem('userName') || 'Mike Baum';
+  const userRole  = localStorage.getItem('userRole') || 'Principal at Baum Realty Group, Chicago';
+  const keywordsSection = customKeywords
+    ? `\nFOCUS KEYWORDS: Prioritize finding trends related to these specific topics: ${customKeywords}.` : '';
+  const topicSection = topicLayer
+    ? `\nTOPIC LAYER: Weight results toward this theme: ${topicLayer}.` : '';
+  const sourcesSection  = activeSources.length
+    ? `\nPRIORITY SOURCES: Explicitly search for content from: ${activeSources.join(', ')}.` : '';
+  const urlSection = urlContext
+    ? `\nURL CONTEXT: The user submitted this URL: ${urlContext}\nSearch for related discussion on Twitter/X, LinkedIn, and news sites. Use its themes to enrich your trend ideas.` : '';
+  const prompt = `You are a trend researcher for ${userName}, ${userRole}.
 
-  const keywordsSection = customKeywords ? `\nFOCUS KEYWORDS: Prioritize finding trends related to these specific topics: ${customKeywords}. Weight your search and results heavily toward these themes first.` : '';
-  const sourcesSection = activeSources.length ? `\nPRIORITY SOURCES: When searching, explicitly prioritize content from: ${activeSources.join(', ')}. Search these platforms and sites directly for relevant headlines and discussion.` : '';
-  const urlSection = urlContext ? `\nURL CONTEXT: The user has submitted this URL for context: ${urlContext}\nSearch the web for what people are saying about the topic in this URL. Look for related discussion on Twitter/X, LinkedIn, and news sites. Use the themes from this URL to enrich your trend ideas across the 4 pillars.` : '';
-
-  const prompt = `You are a trend researcher and content strategist for ${userName}, ${userRole}.
-Their voice: ${userPov}
-Today's date: ${new Date().toLocaleDateString('en-US', {weekday:'long', year:'numeric', month:'long', day:'numeric'})}.${keywordsSection}${sourcesSection}${urlSection}
+TODAY'S DATE: ${new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}
 
 Search for the most current, relevant headlines and developments (within the last 2-4 weeks) across these 4 content pillars:
-1. CRE (Commercial Real Estate) - office, industrial, leasing, investment, cap rates, CMBS, urban real estate
-2. Creative Industrial - adaptive reuse, warehouse conversions, flex/maker space, creative office, live-work lofts
-3. Chicago F&B - Chicago restaurant scene, new openings/closings, food trends, hospitality, local chefs
-4. Retail Trends - brick & mortar, DTC brands, retail real estate, pop-ups, consumer behavior, experiential retail
+1. CRE (pillar key: cre) — Commercial real estate: office, industrial, retail leasing, investment, cap rates, Chicago market
+2. Creative Industrial (pillar key: ci) — Adaptive reuse, warehouse conversion, flex/maker space, mixed-use industrial Chicago
+3. Chicago F&B (pillar key: fb) — Restaurants, bars, ghost kitchens, food halls, chef news, Chicago dining scene
+4. Retail Trends (pillar key: retail) — Retail real estate, tenant expansion/contraction, e-commerce vs brick-and-mortar, pop-ups
+${keywordsSection}${topicSection}${sourcesSection}${urlSection}
 
 Generate exactly 4 trend ideas (one per pillar) in this EXACT format with no extra text:
----TREND---
-PILLAR: cre
-HEADLINE: [specific, timely trend or development]
-CONTEXT: [2-3 sentences: what's happening, why it matters, market implication. Use data/examples.]
-HOOK: [punchy 1-sentence opener in Mike's voice - no "I" as first word, stops the scroll]
+
+===TREND===
+PILLAR: [cre|ci|fb|retail]
+HEADLINE: [specific, punchy headline from actual recent news — include company/place names when possible]
+CONTEXT: [2-3 sentences of context — what's happening, why it matters, any data/numbers]
+HOOK: [a ready-to-use opening hook for a LinkedIn post — under 30 words, provocative, no "I" as first word]
 STYLE: [hot|insight|story]
----END---
----TREND---
-PILLAR: ci
-HEADLINE: [trend headline]
-CONTEXT: [context]
-HOOK: [hook]
-STYLE: [hot|insight|story]
----END---
----TREND---
-PILLAR: fb
-HEADLINE: [trend headline]
-CONTEXT: [context]
-HOOK: [hook]
-STYLE: [hot|insight|story]
----END---
----TREND---
-PILLAR: retail
-HEADLINE: [trend headline]
-CONTEXT: [context]
-HOOK: [hook]
-STYLE: [hot|insight|story]
----END---
-Be specific, timely, and opinionated. Reference real market dynamics, named cities, real data points where possible.`;
+===END===
+
+Repeat for each pillar. Use actual recent news — be specific.`;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': anthropicKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
+    const res = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':anthropicKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
       },
       body: JSON.stringify({
         model: MODEL_RESEARCH,
         max_tokens: 2000,
         tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-        messages: [{ role: 'user', content: prompt }]
+        messages:[{ role:'user', content: prompt }]
       })
-    });
+    }, 65000);
     const data = await res.json();
     if (!res.ok) {
-      showStatus('trendStatus','error','❌ API error: ' + (data?.error?.message || res.statusText));
+      const errMsg = data?.error?.message || JSON.stringify(data?.error) || res.statusText;
+      showStatus('trendStatus','error','❌ API error: ' + errMsg);
     } else {
       const text = data.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
       renderTrends(text);
       hideStatus('trendStatus');
-      document.getElementById('trendLastRun').textContent = '⏱ Last updated: ' + new Date().toLocaleTimeString();
-      if (document.getElementById('trendKeywords')) document.getElementById('trendKeywords').value = '';
-      if (document.getElementById('trendUrl')) document.getElementById('trendUrl').value = '';
+      document.getElementById('customKeywords').value = '';
     }
-  } catch(e) { showStatus('trendStatus','error','Error: ' + e.message); }
-
-  btn.innerHTML = '🔥 Generate Trend Ideas';
+  } catch(e) {
+    showStatus('trendStatus','error','❌ ' + e.message);
+  }
+  btn.innerHTML = '🔥 Find Trending Topics';
   btn.disabled = false;
 }
 
 function renderTrends(text) {
-  const blocks = text.split('---TREND---').slice(1);
+  const blocks = text.split('===TREND===').slice(1).map(b => b.split('===END===')[0]);
   if (!blocks.length) {
-    document.getElementById('trendsOutput').innerHTML = `<div class="draft-card"><div class="draft-body">${text}</div></div>`;
+    document.getElementById('trendsOutput').innerHTML = '<div style="color:var(--muted);padding:20px">Could not parse trends. Try generating again.</div>';
     return;
   }
   trendData = blocks.map((block, i) => {
@@ -837,7 +864,7 @@ function renderTrends(text) {
 function displayTrendCards(trends) {
   const pillarLabels = { cre:'🏢 CRE', ci:'🎭 Creative Industrial', fb:'🍽️ Chicago F&B', retail:'🛍️ Retail' };
   const styleIcons   = { hot:'🔥', insight:'💡', story:'📖' };
-  const html = trends.map(t => `
+  document.getElementById('trendsOutput').innerHTML = trends.map(t => `
     <div class="trend-card" data-pillar="${t.pillar}">
       <div class="trend-header">
         <span class="trend-pillar-badge ${t.pillar}">${pillarLabels[t.pillar] || t.pillar}</span>
@@ -849,10 +876,9 @@ function displayTrendCards(trends) {
       <div class="trend-hook">${t.hook}</div>
       <div class="trend-actions">
         <button class="btn btn-primary btn-sm" onclick="useTrend(${t.index})">✏️ Write This Post</button>
-        <button class="btn btn-secondary btn-sm" onclick="copyTrendHook(${t.index})">📋 Copy Hook</button>
+        <button class="btn btn-sm" onclick="copyTrendHook(${t.index})">📋 Copy Hook</button>
       </div>
-    </div>`).join('');
-  document.getElementById('trendsOutput').innerHTML = html || '<div style="color:var(--muted)">No trends parsed. Try generating again.</div>';
+    </div>`).join('') || '<div style="color:var(--muted)">No trends found. Try generating again.</div>';
 }
 
 function filterTrends(pillar, btn) {
@@ -870,89 +896,121 @@ function useTrend(idx) {
   document.getElementById('linkInput').value = '';
   window._activeBrainstormCardId = null;
   showPage('create', document.querySelectorAll('.nav-item')[0]);
-  showStatus('generateStatus','info','🔥 Trend loaded: "' + t.headline.substring(0,60) + '" — ' + t.pillar.toUpperCase() + ' | ' + (t.style||'').toUpperCase() + '. Hit Generate!');
+  showStatus('generateStatus','info','🔥 Trend loaded: "' + t.headline.substring(0,60) + '" — Hit Generate!');
 }
 
 function copyTrendHook(idx) {
   const t = trendData[idx];
-  if (t) navigator.clipboard.writeText(t.hook);
+  if (t) navigator.clipboard.writeText(t.hook).then(() => {}).catch(() => {});
 }
 
-// ── GENERATE POSTS ──────────────────────────────────────────────
+// ── GENERATE POSTS ─────────────────────────────────────────────
 async function generatePosts() {
   const anthropicKey = localStorage.getItem('anthropicKey');
   if (!anthropicKey) { showStatus('generateStatus','error','⚠️ Add your Anthropic API key in Settings first.'); return; }
-  const draftText   = document.getElementById('draftText').value.trim();
-  const linkInput   = document.getElementById('linkInput').value.trim();
-  const pillar      = document.getElementById('pillarSelect').value;
-  const style       = document.getElementById('styleSelect').value;
-  const userName    = localStorage.getItem('userName') || 'Mike';
-  const userRole    = localStorage.getItem('userRole') || '';
-  const userPov     = localStorage.getItem('userPov') || 'Conversational, non-transactional thought leader in CRE, Creative Industrial, Chicago F&B, and retail trends.';
-  const coreHashtags = localStorage.getItem('coreHashtags') || '#CRE #RetailTrends #ChicagoCRE #CreativeIndustrial';
+  const draftText  = document.getElementById('draftText').value.trim();
+  const linkInput  = document.getElementById('linkInput').value.trim();
+  const pillar     = document.getElementById('pillarSelect').value;
+  const style      = document.getElementById('styleSelect').value;
+  const userName   = localStorage.getItem('userName') || 'Mike Baum';
+  const userRole   = localStorage.getItem('userRole') || 'Principal at Baum Realty Group | Founder, Baum Asset Management';
+  const userPov    = localStorage.getItem('userPov') || 'Conversational, non-transactional CRE thought leader. 13 years in Chicago CRE, commercial real estate attorney background. Never pitching — always teaching or observing.';
+  const coreHashtags = localStorage.getItem('coreHashtags') || '#ChicagoCRE #CRE #RetailTrends #CreativeIndustrial #CommercialRealEstate';
   if (!draftText && !linkInput && !imageBase64) { showStatus('generateStatus','error','⚠️ Add some raw material first.'); return; }
   const btn = document.getElementById('generateBtn');
   btn.innerHTML = '<span class="spinner"></span> Generating...';
   btn.disabled = true;
-  showStatus('generateStatus','info','✨ Drafting your posts...');
-  const pillarLabels = { cre:'Commercial Real Estate', ci:'Creative Industrial', fb:'Chicago Food & Beverage', retail:'Retail Trends', mixed:'Mixed topics' };
+  showStatus('generateStatus','info','✨ Drafting posts in your voice...');
+  const pillarLabels = { cre:'Commercial Real Estate', ci:'Creative Industrial', fb:'Chicago Food & Beverage', retail:'Retail Trends', mixed:'Mixed' };
   const styleInstructions = {
-    all: 'Generate 3 variants: 1) 🔥 Hot Take (bold, provocative), 2) 💡 Insight/Observation (data-informed), 3) 📖 Story/Celebration (personal, warm)',
-    hot: 'Generate 1 variant: 🔥 Hot Take',
-    insight: 'Generate 1 variant: 💡 Insight/Observation',
-    story: 'Generate 1 variant: 📖 Story/Celebration'
+    all: 'Generate 3 variants:\n1) 🔥 Hot Take — bold, provocative, takes a clear stance\n2) 💡 Insight/Observation — data-informed, teaches something\n3) 📖 Story/Celebration — personal, warm, narrative',
+    hot:     'Generate 1 variant: 🔥 Hot Take — bold, provocative, takes a clear stance',
+    insight: 'Generate 1 variant: 💡 Insight/Observation — data-informed, teaches something',
+    story:   'Generate 1 variant: 📖 Story/Celebration — personal, warm, narrative'
   };
   const userContent = [];
   if (imageBase64) userContent.push({ type:'image', source:{ type:'base64', media_type: imageMimeType, data:imageBase64 } });
-  userContent.push({ type:'text', text:`
-You are a ghostwriter for ${userName}${userRole ? ', '+userRole : ''}.
-VOICE: ${userPov}
-- Conversational, never corporate. 150-250 words. No hashtags in body. Line breaks for readability.
-- Hook that stops the scroll - no "I" as first word. End with a thought-provoking question.
-PILLAR: ${pillarLabels[pillar]}
+  userContent.push({ type:'text', text:`You are a ghostwriter for ${userName}, ${userRole}.
+
+MIKE'S VOICE — INTERNALIZE THESE RULES:
+- ${userPov}
+- Writes like he's talking to a peer at a Chicago coffee shop, not broadcasting to an audience
+- Commercial real estate attorney background — precise, structured, knows the deal mechanics
+- 13+ years in Chicago CRE, knows the neighborhoods, tenants, and players by name
+- Non-transactional. Never pitching. Never "reach out for a free consult."
+- Uses specific details: deal types, Chicago neighborhoods, tenant names, dollar amounts when available
+- 150–250 words. Line breaks between thoughts for readability.
+- NO hashtags in the body text. NO emoji unless truly appropriate.
+- Hook must stop the scroll: punchy, specific, a bit provocative. Never starts with "I" as the first word.
+- End with a genuine question that invites dialogue (not "What do you think?" — be specific).
+- No buzzwords: no "synergy," "ecosystem," "game-changer," "leverage," "reimagine."
+- Read the raw material, find the most interesting angle, and write from that angle.
+
+CONTENT PILLAR: ${pillarLabels[pillar]}
 RAW MATERIAL: ${draftText || '(See image/link)'}
-${linkInput ? `LINK: ${linkInput}` : ''}
+${linkInput ? `REFERENCE LINK: ${linkInput}` : ''}
+
 TASK: ${styleInstructions[style]}
-Format each as:
+
+Format each variant EXACTLY like this (no extra text):
 ---VARIANT---
 TYPE: [Hot Take | Insight | Story]
-POST: [post body]
-HASHTAGS: [8-10 hashtags including some from: ${coreHashtags}]
+POST:
+[post body here — no inline hashtags]
+HASHTAGS: [8-10 hashtags, include some from: ${coreHashtags}]
 ---END---`});
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
       method:'POST',
-      headers:{ 'Content-Type':'application/json', 'x-api-key':anthropicKey, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
-      body: JSON.stringify({ model: MODEL_WRITING, max_tokens: 2000, messages:[{ role:'user', content:userContent }] })
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':anthropicKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body: JSON.stringify({ model: MODEL_WRITING, max_tokens: 2500, messages:[{ role:'user', content:userContent }] })
     });
     const data = await res.json();
-    if (!res.ok) showStatus('generateStatus','error','❌ ' + (data?.error?.message || res.statusText));
-    else { renderDrafts(data.content?.[0]?.text || '', style); hideStatus('generateStatus'); }
-  } catch(e) { showStatus('generateStatus','error','Error: ' + e.message); }
+    if (!res.ok) {
+      const errMsg = data?.error?.message || JSON.stringify(data?.error) || res.statusText;
+      showStatus('generateStatus','error','❌ API error: ' + errMsg);
+    } else {
+      const text = data.content?.[0]?.text || '';
+      renderDrafts(text, style, pillar);
+      hideStatus('generateStatus');
+    }
+  } catch(e) { showStatus('generateStatus','error','❌ ' + e.message); }
   btn.innerHTML = '✨ Generate Post Drafts';
   btn.disabled = false;
   if (window._activeBrainstormCardId) { archiveBrainstormCard(window._activeBrainstormCardId); window._activeBrainstormCardId = null; }
 }
 
-function renderDrafts(text, style) {
+function renderDrafts(text, style, pillar) {
   const blocks = text.split('---VARIANT---').slice(1);
   if (!blocks.length) {
+    const id = 'draft_' + Date.now() + '_0';
+    const draftObj = { id, text: text.trim(), hashtags:'', type:'Draft', pillar: pillar || 'mixed', createdAt: new Date().toISOString() };
+    savedDrafts.unshift(draftObj);
+    persistDrafts();
     document.getElementById('draftsOutput').innerHTML = `<div class="draft-card">
       <div class="draft-label hot">• Draft</div>
-      <div class="draft-body" id="draftBody0" contenteditable="true">${text.trim()}</div>
+      <div class="draft-body" id="draftBody0" contenteditable="true">${escHtmlFull(text.trim())}</div>
       <div class="draft-actions">
-        <button class="btn btn-success btn-sm" onclick="saveToDraftsTrello(0,'Draft')">💾 Save to Working Drafts</button>
-        <button class="btn btn-secondary btn-sm" onclick="copyPost(0)">📋 Copy</button>
+        <button class="btn btn-success btn-sm" onclick="saveToDraftsTrello(0,'Draft')">💾 Save to Trello</button>
+        <button class="btn btn-sm" onclick="scorePost(0)">📊 Score This Post</button>
+        <button class="btn btn-sm" onclick="copyPost(0)">📋 Copy</button>
         <button class="btn btn-linkedin btn-sm" onclick="postToLinkedIn(0)" id="liBtn0">🔗 Post to LinkedIn</button>
+        <button class="btn btn-sm" onclick="scheduleFromDraft('${id}')">📅 Schedule</button>
       </div>
+      <div id="scoresSection0" style="display:none"><div class="scores" id="scores0"></div></div>
       <div id="draftSaveStatus0" class="status-bar"></div>
     </div>`;
-    scoreAndPreview(0, text.trim(), '');
     return;
   }
   const typeColors = {'Hot Take':'hot','Insight':'insight','Story':'story'};
   const typeIcons  = {'Hot Take':'🔥','Insight':'💡','Story':'📖'};
   let html = `<div style="font-size:13px;color:var(--muted);margin-bottom:12px">✨ ${blocks.length} draft${blocks.length>1?'s':''} generated</div>`;
+  const newDrafts = [];
   blocks.forEach((block, i) => {
     const typeMatch = block.match(/TYPE:\s*(.+)/);
     const postMatch = block.match(/POST:\n([\s\S]+?)(?=HASHTAGS:|---END---|$)/);
@@ -962,28 +1020,28 @@ function renderDrafts(text, style) {
     const hashtags = hashMatch ? hashMatch[1].trim() : '';
     const colorClass = typeColors[type] || 'hot';
     const icon = typeIcons[type] || '•';
+    const id = 'draft_' + Date.now() + '_' + i;
+    newDrafts.push({ id, text: post, hashtags, type, pillar: pillar || 'mixed', createdAt: new Date().toISOString() });
     html += `<div class="draft-card" id="draftCard${i}">
       <div class="draft-label ${colorClass}" style="justify-content:space-between">
         <span>${icon} ${type}</span>
-        <span class="preview-toggle" onclick="togglePreview(${i})">📱 LinkedIn Preview</span>
+        <span class="preview-toggle" onclick="togglePreview(${i})">📱 Preview</span>
       </div>
-      <div class="draft-body" id="draftBody${i}" contenteditable="true">${post}</div>
+      <div class="draft-body" id="draftBody${i}" contenteditable="true">${escHtmlFull(post)}</div>
       <div class="draft-hashtags" id="draftHash${i}">${hashtags}</div>
       <div class="linkedin-preview" id="preview${i}">
-        <div class="lp-header"><div class="lp-avatar">MB</div><div><div class="lp-name">Mike Baum</div><div class="lp-title">President @ Baum Realty Group | Founder @ Strategic Location Advisors</div></div></div>
+        <div class="lp-header"><div class="lp-avatar">MB</div><div><div class="lp-name">${localStorage.getItem('userName')||'Mike Baum'}</div><div class="lp-title">${localStorage.getItem('userRole')||'Principal @ Baum Realty Group'}</div></div></div>
         <div class="lp-body" id="previewBody${i}"></div>
         <div class="lp-hashtags" id="previewHash${i}"></div>
         <div class="lp-actions"><span class="lp-action">👍 Like</span><span class="lp-action">💬 Comment</span><span class="lp-action">🔄 Repost</span><span class="lp-action">✉️ Send</span></div>
       </div>
-      <div class="scores" id="scores${i}">
-        <div class="score-card"><div class="score-label">🎣 Hook</div><div class="score-bar-wrap"><div class="score-bar" id="hookBar${i}" style="width:0%;background:#f97316"></div></div><div class="score-num" id="hookNum${i}">--</div><div class="score-note" id="hookNote${i}">Analyzing...</div></div>
-        <div class="score-card"><div class="score-label">💬 Engagement</div><div class="score-bar-wrap"><div class="score-bar" id="engBar${i}" style="width:0%;background:#818cf8"></div></div><div class="score-num" id="engNum${i}">--</div><div class="score-note" id="engNote${i}">Analyzing...</div></div>
-        <div class="score-card"><div class="score-label">✨ On-Brand</div><div class="score-bar-wrap"><div class="score-bar" id="brandBar${i}" style="width:0%;background:#34d399"></div></div><div class="score-num" id="brandNum${i}">--</div><div class="score-note" id="brandNote${i}">Analyzing...</div></div>
-      </div>
+      <div id="scoresSection${i}" style="display:none"><div class="scores" id="scores${i}"></div></div>
       <div class="draft-actions">
-        <button class="btn btn-success btn-sm" onclick="saveToDraftsTrello(${i},'${escJs(type)}')">💾 Save to Working Drafts</button>
-        <button class="btn btn-secondary btn-sm" onclick="copyPost(${i})">📋 Copy</button>
+        <button class="btn btn-success btn-sm" onclick="saveToDraftsTrello(${i},'${escJs(type)}')">💾 Save to Trello</button>
+        <button class="btn btn-sm" onclick="scorePost(${i})">📊 Score</button>
+        <button class="btn btn-sm" onclick="copyPost(${i})">📋 Copy</button>
         <button class="btn btn-linkedin btn-sm" onclick="postToLinkedIn(${i})" id="liBtn${i}">🔗 Post to LinkedIn</button>
+        <button class="btn btn-sm" onclick="scheduleFromDraft('${id}')">📅 Schedule</button>
       </div>
       <div id="draftSaveStatus${i}" class="status-bar"></div>
     </div>`;
@@ -993,8 +1051,10 @@ function renderDrafts(text, style) {
     const postMatch = block.match(/POST:\n([\s\S]+?)(?=HASHTAGS:|---END---|$)/);
     const hashMatch = block.match(/HASHTAGS:\s*(.+)/);
     populatePreview(i, postMatch ? postMatch[1].trim() : '', hashMatch ? hashMatch[1].trim() : '');
-    scoreAndPreview(i, postMatch ? postMatch[1].trim() : '', hashMatch ? hashMatch[1].trim() : '');
   });
+  // Persist new drafts (prepend)
+  savedDrafts = [...newDrafts, ...savedDrafts].slice(0, 50);
+  persistDrafts();
 }
 
 function populatePreview(i, post, hashtags) {
@@ -1012,75 +1072,242 @@ function togglePreview(i) {
   populatePreview(i, document.getElementById('draftBody'+i)?.innerText||'', document.getElementById('draftHash'+i)?.innerText||'');
 }
 
-// ── SCORE & PREVIEW ─────────────────────────────────────────────
-async function scoreAndPreview(i, post, hashtags) {
+// ── ON-DEMAND SCORING ──────────────────────────────────────────
+async function scorePost(i) {
   const anthropicKey = localStorage.getItem('anthropicKey');
-  if (!anthropicKey) return;
+  if (!anthropicKey) { showStatus('draftSaveStatus'+i, 'error', '⚠️ Add Anthropic key in Settings.'); return; }
+  const sec = document.getElementById('scoresSection'+i);
+  if (sec) sec.style.display = 'block';
+  const scoresEl = document.getElementById('scores'+i);
+  if (scoresEl) scoresEl.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px">📊 Scoring...</div>';
+  const post = document.getElementById('draftBody'+i)?.innerText || '';
   const userPov = localStorage.getItem('userPov') || 'Conversational CRE thought leader, Chicago-based.';
-  const prompt = `Score this LinkedIn post on 3 dimensions. Reply ONLY in JSON, no other text:
-{"hook":{"score":8,"note":"..."},"engagement":{"score":7,"note":"..."},"brand":{"score":9,"note":"..."}}
+  const prompt = `Score this LinkedIn post on 3 dimensions for a Chicago CRE thought leader. Reply ONLY in JSON:
+{"hook":{"score":8,"note":"one sentence"},"engagement":{"score":7,"note":"one sentence"},"brand":{"score":9,"note":"one sentence"}}
 Voice profile: ${userPov}
-POST: ${post}`;
+POST:
+${post}`;
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
       method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':anthropicKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body: JSON.stringify({ model: MODEL_RESEARCH, max_tokens: 200, messages:[{ role:'user', content:prompt }] })
-    });
+      body: JSON.stringify({ model: MODEL_RESEARCH, max_tokens: 300, messages:[{ role:'user', content:prompt }] })
+    }, 20000);
     const data = await res.json();
     let rawScore = (data.content?.[0]?.text||'{}').replace(/```json|```/g,'').trim();
-    // Extract just the JSON object in case there's surrounding text
     const jsonMatch = rawScore.match(/\{[\s\S]*\}/);
     rawScore = jsonMatch ? jsonMatch[0] : '{}';
     const scores = JSON.parse(rawScore);
-    const set  = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-    const setW = (id, pct) => { const el = document.getElementById(id); if (el) el.style.width = pct+'%'; };
-    set('hookNum'+i, scores.hook?.score+'/10');
-    set('engNum'+i, scores.engagement?.score+'/10');
-    set('brandNum'+i, scores.brand?.score+'/10');
-    set('hookNote'+i, scores.hook?.note||'');
-    set('engNote'+i, scores.engagement?.note||'');
-    set('brandNote'+i, scores.brand?.note||'');
-    setW('hookBar'+i, (scores.hook?.score||0)*10);
-    setW('engBar'+i, (scores.engagement?.score||0)*10);
-    setW('brandBar'+i, (scores.brand?.score||0)*10);
-  } catch(e) { console.error('Scoring error',e); }
+    if (scoresEl) scoresEl.innerHTML = `
+      <div class="score-card">
+        <div class="score-label">🎣 Hook</div>
+        <div class="score-bar-wrap"><div class="score-bar" style="width:${(scores.hook?.score||0)*10}%;background:#f97316"></div></div>
+        <div class="score-num">${scores.hook?.score||'--'}/10</div>
+        <div class="score-note">${scores.hook?.note||''}</div>
+      </div>
+      <div class="score-card">
+        <div class="score-label">💬 Engagement</div>
+        <div class="score-bar-wrap"><div class="score-bar" style="width:${(scores.engagement?.score||0)*10}%;background:#818cf8"></div></div>
+        <div class="score-num">${scores.engagement?.score||'--'}/10</div>
+        <div class="score-note">${scores.engagement?.note||''}</div>
+      </div>
+      <div class="score-card">
+        <div class="score-label">✨ On-Brand</div>
+        <div class="score-bar-wrap"><div class="score-bar" style="width:${(scores.brand?.score||0)*10}%;background:#34d399"></div></div>
+        <div class="score-num">${scores.brand?.score||'--'}/10</div>
+        <div class="score-note">${scores.brand?.note||''}</div>
+      </div>`;
+  } catch(e) {
+    if (scoresEl) scoresEl.innerHTML = '<div style="color:var(--danger);font-size:12px;padding:8px">❌ Scoring failed: ' + e.message + '</div>';
+  }
 }
 
+// ── SAVE TO TRELLO ─────────────────────────────────────────────
 async function saveToDraftsTrello(idx, type) {
   const key = localStorage.getItem('trelloKey'), token = localStorage.getItem('trelloToken');
-  if (!key || !token) { showStatus('generateStatus','error','⚠️ Add Trello credentials in Settings.'); return; }
+  if (!key || !token) { showStatus('draftSaveStatus'+idx,'error','⚠️ Add Trello credentials in Settings.'); return; }
+  showStatus('draftSaveStatus'+idx,'info','Saving...');
   await fetchTrelloListIds();
   const listId = trelloListIds['Working Drafts'];
-  if (!listId) { alert('Could not find Working Drafts list.'); return; }
+  if (!listId) { showStatus('draftSaveStatus'+idx,'error','Could not find "Working Drafts" list.'); return; }
   const body = document.getElementById('draftBody'+idx)?.innerText || '';
   const hash = document.getElementById('draftHash'+idx)?.innerText || '';
-  const cardName = body.substring(0,60) + (body.length>60?'...':'');
-  const res = await fetch('https://api.trello.com/1/cards', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ name:`[${type}] ${cardName}`, desc: body+'\n\n'+hash, idList: listId, key, token })
-  });
-  const card = await res.json();
-  if (card.id) showStatus('draftSaveStatus'+idx,'success','✅ Saved to Working Drafts on Trello!');
-  else showStatus('draftSaveStatus'+idx,'error','❌ Failed to save to Trello.');
+  const cardName = '[' + type + '] ' + body.substring(0,55) + (body.length>55?'...':'');
+  try {
+    const res = await fetch('https://api.trello.com/1/cards', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ name: cardName, desc: body + '\n\n' + hash, idList: listId, key, token })
+    });
+    const card = await res.json();
+    if (card.id) showStatus('draftSaveStatus'+idx,'success','✅ Saved to Working Drafts on Trello!');
+    else showStatus('draftSaveStatus'+idx,'error','❌ Failed to save: ' + JSON.stringify(card.message || card));
+  } catch(e) { showStatus('draftSaveStatus'+idx,'error','❌ ' + e.message); }
 }
 
 function copyPost(idx) {
   const body = document.getElementById('draftBody'+idx)?.innerText||'';
   const hash = document.getElementById('draftHash'+idx)?.innerText||'';
-  navigator.clipboard.writeText(body+'\n\n'+hash);
+  navigator.clipboard.writeText(body+'\n\n'+hash).then(() => {}).catch(() => {});
 }
 
-// ── Utilities ───────────────────────────────────────────────────
-function showStatus(id, type, msg) { const el = document.getElementById(id); if (!el) return; el.className='status-bar '+type; el.textContent=msg; el.style.display='block'; }
-function hideStatus(id) { const el = document.getElementById(id); if (el) el.style.display='none'; }
-function escHtml(str) { return (str||'').replace(/'/g,"\\'").replace(/"/g,'&quot;').substring(0,200); }
-function escHtmlFull(str) { return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function escJs(str) { return (str||'').replace(/'/g,"\\'"); }
+// ── CONTENT CALENDAR ───────────────────────────────────────────
+function calShift(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0)  { calMonth = 11; calYear--; }
+  renderCalendar();
+}
 
-// ── LinkedIn Integration ────────────────────────────────────────
-const LI_WORKER = 'https://worker-small-mountain-69ba.mike-3ac.workers.dev';
+function renderCalendar() {
+  const label = new Date(calYear, calMonth, 1).toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  document.getElementById('calMonthLabel').textContent = label;
+  const grid = document.getElementById('calGrid');
+  // Remove old cells (keep 7 header divs)
+  while (grid.children.length > 7) grid.removeChild(grid.lastChild);
+  const today = new Date();
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const daysInPrev  = new Date(calYear, calMonth, 0).getDate();
+  let day = 1, nextDay = 1, col = 0;
+  // prev month fill
+  for (let i = 0; i < firstDay; i++) {
+    const cell = makeCalCell(calYear, calMonth-1, daysInPrev - firstDay + 1 + i, true);
+    grid.appendChild(cell); col++;
+  }
+  // current month
+  while (day <= daysInMonth) {
+    const isToday = (day === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear());
+    const cell = makeCalCell(calYear, calMonth, day, false, isToday);
+    grid.appendChild(cell); day++; col++;
+  }
+  // next month fill
+  while (col % 7 !== 0) {
+    const cell = makeCalCell(calYear, calMonth+1, nextDay++, true);
+    grid.appendChild(cell); col++;
+  }
+}
 
+function makeCalCell(year, month, day, otherMonth, isToday) {
+  const d = new Date(year, month, day);
+  const key = d.toISOString().split('T')[0];
+  const cell = document.createElement('div');
+  cell.className = 'cal-cell' + (otherMonth?' other-month':'') + (isToday?' today':'');
+  cell.onclick = () => openScheduleModal(key);
+  cell.innerHTML = `<div class="cal-day-num">${day}</div>`;
+  const posts = calendarData[key] || [];
+  posts.forEach(p => {
+    const chip = document.createElement('span');
+    chip.className = 'cal-post-chip ' + (p.pillar || 'mixed');
+    chip.textContent = p.type + ': ' + (p.text||'').substring(0,18) + '…';
+    chip.title = p.text || '';
+    chip.onclick = (e) => { e.stopPropagation(); openScheduleModal(key); };
+    cell.appendChild(chip);
+  });
+  return cell;
+}
+
+function renderDraftPool() {
+  const container = document.getElementById('calDraftPool');
+  if (!container) return;
+  if (!savedDrafts.length) {
+    container.innerHTML = '<div style="color:var(--muted);font-size:13px">Generate posts first — they\'ll appear here ready to schedule.</div>';
+    return;
+  }
+  container.innerHTML = savedDrafts.slice(0,20).map(d => {
+    const isScheduled = Object.values(calendarData).some(arr => arr.some(p => p.id === d.id));
+    const dateScheduled = isScheduled
+      ? Object.entries(calendarData).find(([k,arr]) => arr.some(p => p.id === d.id))?.[0]
+      : null;
+    return `<div class="cal-draft-item">
+      <div style="flex:1">
+        <div class="cal-draft-text">${escHtmlFull((d.text||'').substring(0,100))}${(d.text||'').length>100?'…':''}</div>
+        <div class="cal-draft-meta">${d.type} · ${d.pillar} · ${new Date(d.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>
+      </div>
+      <button class="cal-schedule-btn ${isScheduled?'scheduled':''}" onclick="scheduleDraftToDate('${d.id}')">
+        ${isScheduled ? '📅 ' + dateScheduled : '+ Schedule'}
+      </button>
+    </div>`;
+  }).join('');
+}
+
+function openScheduleModal(dateKey) {
+  pendingScheduleDate = dateKey;
+  const d = new Date(dateKey + 'T12:00:00');
+  document.getElementById('modalTitle').textContent = '📅 ' + d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  const existing = calendarData[dateKey] || [];
+  let html = '';
+  if (existing.length) {
+    html += `<div style="margin-bottom:12px"><div style="font-size:13px;font-weight:600;color:var(--muted);margin-bottom:8px">Scheduled on this day:</div>`;
+    html += existing.map((p,i) => `<div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:6px">
+      <div style="font-size:12px;flex:1">${escHtmlFull((p.text||'').substring(0,80))}…</div>
+      <button class="btn btn-sm" style="color:var(--danger);margin-left:8px" onclick="removeFromCalendar('${dateKey}',${i})">✕</button>
+    </div>`).join('');
+    html += '</div>';
+  }
+  if (savedDrafts.length) {
+    html += `<div style="font-size:13px;font-weight:600;color:var(--muted);margin-bottom:8px">Add a draft:</div>`;
+    html += '<div class="modal-post-list">';
+    html += savedDrafts.slice(0,15).map(d => `
+      <div class="modal-post-item" onclick="addToCalendar('${dateKey}','${d.id}')">
+        <div style="font-size:13px;font-weight:600;margin-bottom:2px">${d.type} · ${d.pillar}</div>
+        <div class="modal-post-preview">${escHtmlFull((d.text||'').substring(0,100))}</div>
+      </div>`).join('');
+    html += '</div>';
+  } else {
+    html += '<div style="color:var(--muted);font-size:13px">No saved drafts yet. Generate some posts first.</div>';
+  }
+  document.getElementById('modalSub').textContent = '';
+  document.getElementById('modalPostList').innerHTML = html;
+  document.getElementById('scheduleModal').classList.add('open');
+}
+
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('scheduleModal')) {
+    document.getElementById('scheduleModal').classList.remove('open');
+    pendingScheduleDate = null;
+  }
+}
+
+function addToCalendar(dateKey, draftId) {
+  const draft = savedDrafts.find(d => d.id === draftId);
+  if (!draft) return;
+  if (!calendarData[dateKey]) calendarData[dateKey] = [];
+  if (calendarData[dateKey].some(p => p.id === draftId)) return; // already there
+  calendarData[dateKey].push({ id: draft.id, text: draft.text, pillar: draft.pillar, type: draft.type });
+  persistCalendar();
+  document.getElementById('scheduleModal').classList.remove('open');
+  renderCalendar();
+  renderDraftPool();
+}
+
+function removeFromCalendar(dateKey, idx) {
+  if (!calendarData[dateKey]) return;
+  calendarData[dateKey].splice(idx, 1);
+  if (!calendarData[dateKey].length) delete calendarData[dateKey];
+  persistCalendar();
+  openScheduleModal(dateKey); // re-open to refresh
+  renderCalendar();
+  renderDraftPool();
+}
+
+function scheduleDraftToDate(draftId) {
+  // Just open current month's first open weekday as a convenience prompt
+  document.getElementById('scheduleModal').classList.add('open');
+  pendingScheduleDate = null;
+  const draft = savedDrafts.find(d => d.id === draftId);
+  document.getElementById('modalTitle').textContent = '📅 Pick a day to schedule this post';
+  document.getElementById('modalSub').textContent = draft ? '"' + (draft.text||'').substring(0,60) + '…"' : '';
+  document.getElementById('modalPostList').innerHTML = '<div style="color:var(--muted);font-size:13px">Click any day on the calendar to schedule this post.</div>';
+  // Store pending
+  pendingScheduleDate = '_pick_' + draftId;
+  document.getElementById('scheduleModal').classList.remove('open');
+  // Highlight calendar cells on hover — just go to calendar tab
+  showPage('calendar', document.querySelectorAll('.nav-item')[4]);
+}
+
+function scheduleFromDraft(draftId) { scheduleDraftToDate(draftId); }
+
+// ── LINKEDIN INTEGRATION ───────────────────────────────────────
 function connectLinkedIn() {
   window.open(LI_WORKER + '/auth', 'linkedin-auth', 'width=600,height=700');
   window.addEventListener('message', function handler(e) {
@@ -1088,7 +1315,7 @@ function connectLinkedIn() {
       localStorage.setItem('linkedinToken', e.data.linkedinToken);
       window.removeEventListener('message', handler);
       updateLiStatus();
-      showStatus('liSettingsStatus', 'success', '✅ LinkedIn connected!');
+      showStatus('liSettingsStatus','success','✅ LinkedIn connected!');
     }
   });
 }
@@ -1096,7 +1323,7 @@ function connectLinkedIn() {
 function disconnectLinkedIn() {
   localStorage.removeItem('linkedinToken');
   updateLiStatus();
-  showStatus('liSettingsStatus', 'success', 'Disconnected from LinkedIn.');
+  showStatus('liSettingsStatus','info','Disconnected from LinkedIn.');
 }
 
 function updateLiStatus() {
@@ -1105,57 +1332,69 @@ function updateLiStatus() {
   const token = localStorage.getItem('linkedinToken');
   if (token) {
     el.className = 'li-status-connected';
-    el.innerHTML = '✅ Connected &mdash; token stored in browser';
+    el.innerHTML = '✅ Connected — token stored in browser';
   } else {
     el.className = 'li-status-disconnected';
-    el.innerHTML = '⚠️ Not connected &mdash; click Connect LinkedIn below';
+    el.innerHTML = '⚠️ Not connected — click Connect LinkedIn below';
   }
 }
 
 async function postToLinkedIn(idx) {
   const token = localStorage.getItem('linkedinToken');
   if (!token) {
-    showPage('settings', document.querySelectorAll('.nav-item')[4]);
-    showStatus('liSettingsStatus', 'error', '⚠️ Please connect your LinkedIn account first.');
+    showPage('settings', document.querySelectorAll('.nav-item')[5]);
+    showStatus('liSettingsStatus','error','⚠️ Please connect your LinkedIn account first.');
     return;
   }
-  const draftEl = document.getElementById('draftBody' + idx);
+  const draftEl = document.getElementById('draftBody'+idx);
   if (!draftEl) { alert('Could not find draft text.'); return; }
   const postText = (draftEl.innerText || draftEl.textContent || '').trim();
-  const hashEl = document.getElementById('draftHash' + idx);
+  const hashEl = document.getElementById('draftHash'+idx);
   const hashtags = hashEl ? (hashEl.innerText || hashEl.textContent || '').trim() : '';
   const fullText = postText + (hashtags ? '\n\n' + hashtags : '');
   if (fullText.length < 10) { alert('Draft appears empty.'); return; }
-
-  const btn = document.getElementById('liBtn' + idx);
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Posting...'; }
-
+  const btn = document.getElementById('liBtn'+idx);
+  if (btn) { btn.disabled=true; btn.textContent='⏳ Posting...'; }
   try {
-    const res = await fetch(LI_WORKER + '/post', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetchWithTimeout(LI_WORKER + '/post', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ access_token: token, text: fullText })
-    });
+    }, 30000);
     const data = await res.json();
     if (data.success || data.postId || data.id) {
-      if (btn) { btn.textContent = '✅ Posted!'; btn.style.background = '#16a34a'; }
-      showStatus('draftSaveStatus' + idx, 'success', '✅ Successfully posted to LinkedIn!');
-      setTimeout(() => {
-        if (btn) { btn.disabled = false; btn.textContent = '🔗 Post to LinkedIn'; btn.style.background = ''; }
-      }, 4000);
+      if (btn) { btn.textContent='✅ Posted!'; btn.style.background='#16a34a'; }
+      showStatus('draftSaveStatus'+idx,'success','✅ Successfully posted to LinkedIn!');
+      setTimeout(() => { if (btn) { btn.disabled=false; btn.textContent='🔗 Post to LinkedIn'; btn.style.background=''; } }, 4000);
     } else if (data.error && data.error.includes('expired')) {
       localStorage.removeItem('linkedinToken');
       updateLiStatus();
-      if (btn) { btn.disabled = false; btn.textContent = '🔗 Post to LinkedIn'; }
-      showStatus('draftSaveStatus' + idx, 'error', '❌ LinkedIn token expired. Please reconnect in Settings.');
+      if (btn) { btn.disabled=false; btn.textContent='🔗 Post to LinkedIn'; }
+      showStatus('draftSaveStatus'+idx,'error','❌ LinkedIn token expired. Please reconnect in Settings.');
     } else {
       throw new Error(data.error || data.message || JSON.stringify(data));
     }
   } catch(e) {
-    if (btn) { btn.disabled = false; btn.textContent = '🔗 Post to LinkedIn'; }
-    showStatus('draftSaveStatus' + idx, 'error', '❌ Post failed: ' + e.message);
+    if (btn) { btn.disabled=false; btn.textContent='🔗 Post to LinkedIn'; }
+    showStatus('draftSaveStatus'+idx,'error','❌ Post failed: ' + e.message);
   }
 }
+
+// ── Utilities ──────────────────────────────────────────────────
+function showStatus(id, type, msg) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'status-bar ' + type;
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function hideStatus(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = 'none';
+}
+function escHtml(str) { return (str||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;').substring(0,200); }
+function escHtmlFull(str) { return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escJs(str) { return (str||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
 </script>
 </body>
 </html>
