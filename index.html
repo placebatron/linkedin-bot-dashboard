@@ -217,6 +217,10 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
 .draft-photo-section .photo-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
 .draft-photo-thumb { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
 .draft-photo-thumb img { max-height: 80px; max-width: 120px; border-radius: 6px; border: 1px solid var(--border); object-fit: cover; }
+.resume-banner { display: none; align-items: center; gap: 12px; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.35); border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; font-size: 13px; flex-wrap: wrap; }
+.resume-banner-text { flex: 1; color: var(--text); min-width: 200px; }
+.resume-banner-text em { color: #fbbf24; font-style: normal; font-weight: 500; }
+.autosave-indicator { font-size: 11px; color: var(--muted); text-align: right; margin-top: 4px; min-height: 16px; }
 </style>
 </head>
 <body>
@@ -308,6 +312,13 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
           </div>
         </div>
         <div>
+          <!-- Resume Banner: shown when returning to page with a saved draft -->
+          <div id="resumeBanner" class="resume-banner">
+            <span style="font-size:20px">📝</span>
+            <div class="resume-banner-text" id="resumeBannerText">You have an unsaved draft.</div>
+            <button class="btn btn-primary btn-sm" onclick="resumeActiveDraft()">↩ Resume Draft</button>
+            <button class="btn btn-sm" onclick="dismissActiveDraft()" style="opacity:0.7">Dismiss</button>
+          </div>
           <div id="draftsOutput"></div>
         </div>
       </div>
@@ -621,6 +632,172 @@ function showPage(name, el) {
   if (name === 'settings')    updateLiStatus();
   if (name === 'calendar')    { renderCalendar(); renderDraftPool(); }
   if (name === 'performance') renderPerformance();
+  if (name === 'create') {
+    const draftsOutput = document.getElementById('draftsOutput');
+    if (draftsOutput && !draftsOutput.innerHTML.trim()) {
+      showResumeBanner();
+    } else {
+      hideResumeBanner();
+    }
+  }
+}
+
+// ── Draft Auto-Save ─────────────────────────────────────────────
+let _autoSaveTimer = null;
+let _activeDraftMeta = null; // { source, cardName }
+
+function timeSince(isoStr) {
+  const sec = Math.floor((Date.now() - new Date(isoStr)) / 1000);
+  if (sec < 60)  return 'just now';
+  const min = Math.floor(sec / 60);
+  if (min < 60)  return min + 'm ago';
+  const hr = Math.floor(min / 60);
+  if (hr < 24)   return hr + 'h ago';
+  return Math.floor(hr / 24) + 'd ago';
+}
+
+function saveActiveDraft() {
+  const drafts = [];
+  let i = 0;
+  while (true) {
+    const bodyEl = document.getElementById('draftBody' + i);
+    if (!bodyEl) break;
+    const hashEl = document.getElementById('draftHash' + i);
+    const photo   = draftPhotos[i];
+    const dataUrl = photo ? (document.getElementById('photoThumbImg' + i)?.src || null) : null;
+    drafts.push({
+      body:         bodyEl.innerText || bodyEl.textContent || '',
+      hashtags:     hashEl ? (hashEl.innerText || hashEl.textContent || '') : '',
+      photoBase64:  photo ? photo.base64   : null,
+      photoMimeType: photo ? photo.mimeType : null,
+      photoDataUrl: dataUrl,
+    });
+    i++;
+  }
+  if (!drafts.length) return;
+  const record = {
+    source:   _activeDraftMeta?.source   || 'unknown',
+    cardName: _activeDraftMeta?.cardName || 'Draft',
+    drafts,
+    savedAt: new Date().toISOString(),
+  };
+  try {
+    localStorage.setItem('activeDraft', JSON.stringify(record));
+  } catch(e) {
+    // Quota exceeded — retry without photo binary (keep dataUrl for thumbnail)
+    const slim = { ...record, drafts: record.drafts.map(d => ({ ...d, photoBase64: null, photoMimeType: null })) };
+    try { localStorage.setItem('activeDraft', JSON.stringify(slim)); } catch(e2) { /* give up */ }
+  }
+  // Show brief autosave indicator on all visible draft cards
+  document.querySelectorAll('.autosave-indicator').forEach(el => {
+    el.textContent = '✓ Draft saved';
+    setTimeout(() => { el.textContent = ''; }, 2500);
+  });
+}
+
+function scheduleSave() {
+  clearTimeout(_autoSaveTimer);
+  _autoSaveTimer = setTimeout(saveActiveDraft, 1500);
+}
+
+function clearActiveDraft() {
+  localStorage.removeItem('activeDraft');
+  _activeDraftMeta = null;
+  hideResumeBanner();
+}
+
+function setupDraftAutoSave(meta) {
+  _activeDraftMeta = meta;
+  // Attach input listeners after DOM settles
+  setTimeout(() => {
+    let i = 0;
+    while (true) {
+      const bodyEl = document.getElementById('draftBody' + i);
+      if (!bodyEl) break;
+      // Use a named handler so duplicate attach is harmless (replaceWith trick not needed since DOM is new each time)
+      bodyEl.addEventListener('input', scheduleSave);
+      const hashEl = document.getElementById('draftHash' + i);
+      if (hashEl) hashEl.addEventListener('input', scheduleSave);
+      i++;
+    }
+  }, 80);
+}
+
+function showResumeBanner() {
+  let record;
+  try { record = JSON.parse(localStorage.getItem('activeDraft') || 'null'); } catch(e) { record = null; }
+  if (!record) return;
+  const banner = document.getElementById('resumeBanner');
+  if (!banner) return;
+  const ago   = timeSince(record.savedAt);
+  const label = record.source === 'trello' ? `Trello: "${record.cardName}"` : record.cardName;
+  const hasPhoto = record.drafts.some(d => d.photoBase64 || d.photoDataUrl);
+  document.getElementById('resumeBannerText').innerHTML =
+    `Unsaved draft from <em>${ago}</em> — ${escHtml(label)}${hasPhoto ? ' · 📷 Photo attached' : ''}`;
+  banner.style.display = 'flex';
+}
+
+function hideResumeBanner() {
+  const banner = document.getElementById('resumeBanner');
+  if (banner) banner.style.display = 'none';
+}
+
+function resumeActiveDraft() {
+  let record;
+  try { record = JSON.parse(localStorage.getItem('activeDraft') || 'null'); } catch(e) { record = null; }
+  if (!record || !record.drafts?.length) { hideResumeBanner(); return; }
+  hideResumeBanner();
+
+  // Restore photo state
+  draftPhotos = {};
+  record.drafts.forEach((d, i) => {
+    if (d.photoBase64) draftPhotos[i] = { base64: d.photoBase64, mimeType: d.photoMimeType || 'image/jpeg' };
+  });
+
+  const renderRestoredDraft = (d, i) => {
+    const photoStrip = draftPhotoHTML(i);
+    return `<div class="draft-card" id="draftCard${i}">
+      <div class="draft-label insight" style="justify-content:space-between;width:100%">
+        <span>📝 ${i === 0 && record.drafts.length === 1 ? escHtml(record.source === 'trello' ? 'Trello Draft' : 'Draft') : 'Draft ' + (i+1)}</span>
+      </div>
+      <div class="draft-body" id="draftBody${i}" contenteditable="true">${escHtmlFull(d.body)}</div>
+      <div class="draft-hashtags" id="draftHash${i}" contenteditable="true">${escHtmlFull(d.hashtags)}</div>
+      ${photoStrip}
+      <div class="draft-actions">
+        <button class="btn btn-success btn-sm" onclick="saveToDraftsTrello(${i},'Draft')">💾 Save to Trello</button>
+        <button class="btn btn-sm" onclick="copyPost(${i})">📋 Copy</button>
+        <button class="btn btn-linkedin btn-sm" onclick="postToLinkedIn(${i})" id="liBtn${i}">🔗 Post to LinkedIn</button>
+      </div>
+      <div class="autosave-indicator"></div>
+      <div id="draftSaveStatus${i}" class="status-bar"></div>
+    </div>`;
+  };
+
+  const sourceLabel = record.source === 'trello' ? `Trello: <em>${escHtml(record.cardName.substring(0,60))}</em>` : `<em>${escHtml(record.cardName.substring(0,60))}</em>`;
+  const header = `<div style="font-size:13px;color:var(--muted);margin-bottom:12px">↩ Resumed — ${sourceLabel} · <span style="opacity:0.6">${timeSince(record.savedAt)}</span></div>`;
+
+  const output = document.getElementById('draftsOutput');
+  output.innerHTML = header + record.drafts.map(renderRestoredDraft).join('');
+
+  // Restore photo thumbnails
+  record.drafts.forEach((d, i) => {
+    if (d.photoDataUrl) {
+      const imgEl   = document.getElementById('photoThumbImg' + i);
+      const thumbEl = document.getElementById('photoThumb' + i);
+      const nameEl  = document.getElementById('photoName'   + i);
+      if (imgEl)   imgEl.src = d.photoDataUrl;
+      if (thumbEl) thumbEl.style.display = 'flex';
+      if (nameEl)  nameEl.textContent = d.photoBase64 ? '📷 Restored photo' : '📷 Photo (re-attach to re-upload)';
+    }
+  });
+
+  setupDraftAutoSave({ source: record.source, cardName: record.cardName });
+  setTimeout(() => output.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+}
+
+function dismissActiveDraft() {
+  clearActiveDraft();
+  hideResumeBanner();
 }
 
 // ── Pillars ────────────────────────────────────────────────────
@@ -1152,6 +1329,8 @@ HASHTAGS: [8-10 hashtags, include some from: ${coreHashtags}]
 
 function renderDrafts(text, style, pillar) {
   draftPhotos = {}; // clear any photos from prior generation
+  clearActiveDraft();  // new generation replaces any saved draft
+  hideResumeBanner();
   const blocks = text.split('---VARIANT---').slice(1);
   if (!blocks.length) {
     const id = 'draft_' + Date.now() + '_0';
@@ -1170,8 +1349,10 @@ function renderDrafts(text, style, pillar) {
         <button class="btn btn-sm" onclick="scheduleFromDraft('${id}')">📅 Schedule</button>
       </div>
       <div id="scoresSection0" style="display:none"><div class="scores" id="scores0"></div></div>
+      <div class="autosave-indicator"></div>
       <div id="draftSaveStatus0" class="status-bar"></div>
     </div>`;
+    setupDraftAutoSave({ source: 'generated', cardName: 'Draft' });
     return;
   }
   const typeColors = {'Hot Take':'hot','Insight':'insight','Story':'story'};
@@ -1211,6 +1392,7 @@ function renderDrafts(text, style, pillar) {
         <button class="btn btn-linkedin btn-sm" onclick="postToLinkedIn(${i})" id="liBtn${i}">🔗 Post to LinkedIn</button>
         <button class="btn btn-sm" onclick="scheduleFromDraft('${id}')">📅 Schedule</button>
       </div>
+      <div class="autosave-indicator"></div>
       <div id="draftSaveStatus${i}" class="status-bar"></div>
     </div>`;
   });
@@ -1223,6 +1405,7 @@ function renderDrafts(text, style, pillar) {
   // Persist new drafts (prepend)
   savedDrafts = [...newDrafts, ...savedDrafts].slice(0, 50);
   persistDrafts();
+  setupDraftAutoSave({ source: 'generated', cardName: blocks.length + ' draft' + (blocks.length > 1 ? 's' : '') });
 }
 
 function populatePreview(i, post, hashtags) {
@@ -1307,8 +1490,12 @@ async function saveToDraftsTrello(idx, type) {
       body: JSON.stringify({ name: cardName, desc: body + '\n\n' + hash, idList: listId, key, token })
     });
     const card = await res.json();
-    if (card.id) showStatus('draftSaveStatus'+idx,'success','✅ Saved to Working Drafts on Trello!');
-    else showStatus('draftSaveStatus'+idx,'error','❌ Failed to save: ' + JSON.stringify(card.message || card));
+    if (card.id) {
+      showStatus('draftSaveStatus'+idx,'success','✅ Saved to Working Drafts on Trello!');
+      clearActiveDraft(); // saved to Trello — no need to resume
+    } else {
+      showStatus('draftSaveStatus'+idx,'error','❌ Failed to save: ' + JSON.stringify(card.message || card));
+    }
   } catch(e) { showStatus('draftSaveStatus'+idx,'error','❌ ' + e.message); }
 }
 
@@ -1537,9 +1724,11 @@ function loadTrelloDraftIntoBot(cardName, cardDesc, listName) {
         <button class="btn btn-linkedin btn-sm" onclick="postToLinkedIn(0)" id="liBtn0">🔗 Post to LinkedIn</button>
         <button class="btn btn-sm" onclick="scheduleFromDraft('${id}')">📅 Schedule</button>
       </div>
+      <div class="autosave-indicator"></div>
       <div id="draftSaveStatus0" class="status-bar"></div>
     </div>`;
   populatePreview(0, body, hashtags);
+  setupDraftAutoSave({ source: 'trello', cardName: cardName });
   setTimeout(() => output.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
 }
 
@@ -1659,6 +1848,7 @@ function attachDraftPhoto(event, idx) {
         if (thumbEl) { thumbEl.style.display = 'flex'; }
         if (nameEl)  { nameEl.textContent = displayName; }
         URL.revokeObjectURL(url);
+        saveActiveDraft(); // immediate save when photo attached
       });
     };
     img.src = url;
@@ -1683,6 +1873,7 @@ function removeDraftPhoto(idx) {
   if (thumbEl) thumbEl.style.display = 'none';
   if (nameEl)  nameEl.textContent = '';
   if (fileEl)  fileEl.value = '';
+  saveActiveDraft(); // update saved state when photo removed
 }
 
 async function uploadPhotoToLinkedIn(token, base64, mimeType) {
@@ -1737,6 +1928,7 @@ async function postToLinkedIn(idx) {
     if (data.success || data.postId || data.id) {
       if (btn) { btn.textContent = '✅ Posted!'; btn.style.background = '#16a34a'; }
       showStatus('draftSaveStatus'+idx, 'success', '✅ Successfully posted to LinkedIn' + (imageAssetUrn ? ' with photo!' : '!'));
+      clearActiveDraft(); // post succeeded — no need to resume
       const liPostId  = data.postId || data.id || null;
       const draftBody = document.getElementById('draftBody'+idx)?.innerText || '';
       const draftHash = document.getElementById('draftHash'+idx)?.innerText || '';
