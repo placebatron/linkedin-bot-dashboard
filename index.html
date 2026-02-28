@@ -611,28 +611,55 @@ function handleImage(input) {
     const url = URL.createObjectURL(file);
     const img = new Image();
     img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width; canvas.height = img.height;
-      canvas.getContext('2d').drawImage(img, 0, 0);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-      imageBase64 = dataUrl.split(',')[1]; imageMimeType = 'image/jpeg';
-      const prev = document.getElementById('imagePreview');
-      prev.src = dataUrl; prev.style.display = 'block';
-      document.querySelector('.upload-text').textContent = '✅ ' + file.name + ' (HEIC → JPEG)';
+      imageMimeType = 'image/jpeg';
+      compressToLimit(img, file.name + ' (HEIC → JPEG)');
       URL.revokeObjectURL(url);
     };
     img.onerror = () => { URL.revokeObjectURL(url); showStatus('generateStatus','error','❌ Could not process HEIC. Convert to JPEG in Photos app and retry.'); };
     img.src = url; return;
   }
-  imageMimeType = file.type;
+  imageMimeType = 'image/jpeg'; // always compress to JPEG
   const reader = new FileReader();
   reader.onload = e => {
-    imageBase64 = e.target.result.split(',')[1];
-    const prev = document.getElementById('imagePreview');
-    prev.src = e.target.result; prev.style.display = 'block';
-    document.querySelector('.upload-text').textContent = '✅ ' + file.name;
+    const img = new Image();
+    img.onload = () => {
+      compressToLimit(img, file.name);
+    };
+    img.src = e.target.result;
   };
   reader.readAsDataURL(file);
+}
+
+// Compress image to stay under Anthropic's 5 MB base64 limit
+function compressToLimit(img, fileName) {
+  const MAX_B64 = 5 * 1024 * 1024; // 5 MB
+  const canvas  = document.createElement('canvas');
+  let quality   = 0.85;
+  let scale     = 1.0;
+  let dataUrl, b64;
+
+  // Iteratively reduce quality then scale until under limit
+  for (let attempt = 0; attempt < 8; attempt++) {
+    canvas.width  = Math.round(img.naturalWidth  * scale);
+    canvas.height = Math.round(img.naturalHeight * scale);
+    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+    dataUrl = canvas.toDataURL('image/jpeg', quality);
+    b64     = dataUrl.split(',')[1];
+    if (b64.length <= MAX_B64) break;
+    // Alternate between reducing quality and reducing dimensions
+    if (attempt % 2 === 0) quality = Math.max(quality - 0.15, 0.3);
+    else                   scale   = Math.max(scale   - 0.2,  0.3);
+  }
+
+  imageBase64 = b64;
+  const sizeMB  = (b64.length / 1024 / 1024).toFixed(1);
+  const wasCompressed = scale < 1.0 || quality < 0.85;
+  const prev = document.getElementById('imagePreview');
+  prev.src = dataUrl; prev.style.display = 'block';
+  document.querySelector('.upload-text').textContent =
+    wasCompressed
+      ? `✅ ${fileName} — compressed to ${sizeMB} MB (Anthropic limit: 5 MB)`
+      : `✅ ${fileName} (${sizeMB} MB)`;
 }
 
 function updateCharCount(inputId, countId, max) {
