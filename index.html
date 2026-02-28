@@ -1152,7 +1152,7 @@ function renderDrafts(text, style, pillar) {
     const id = 'draft_' + Date.now() + '_' + i;
     newDrafts.push({ id, text: post, hashtags, type, pillar: pillar || 'mixed', createdAt: new Date().toISOString() });
     html += `<div class="draft-card" id="draftCard${i}">
-      <div class="draft-label ${colorClass}" style="justify-content:space-between">
+      <div class="draft-label ${colorClass}" style="justify-content:space-between;width:100%">
         <span>${icon} ${type}</span>
         <span class="preview-toggle" onclick="togglePreview(${i})">📱 Preview</span>
       </div>
