@@ -371,10 +371,18 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
     <!-- WORKING DRAFTS -->
     <div class="page" id="page-drafts">
       <div class="section-title">📄 Working Drafts</div>
-      <div class="section-sub">Posts saved to your Trello "Working Drafts" list.</div>
+      <div class="section-sub">Posts saved to your Trello "Working Drafts" list. Click <strong>Edit in Bot</strong> to load any card into the editor for scoring, preview, and publishing.</div>
       <button class="btn" onclick="loadWorkingDrafts()" style="margin-bottom:16px">↻ Load Working Drafts</button>
       <div class="status-bar" id="workingDraftsStatus"></div>
       <div id="workingDraftsList"></div>
+
+      <div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--border)">
+        <div class="section-title">🚀 Production</div>
+        <div class="section-sub">Cards moved to your Trello "Production" list — approved and ready to post.</div>
+        <button class="btn" onclick="loadProductionCards()" style="margin-bottom:16px">↻ Load Production Cards</button>
+        <div class="status-bar" id="productionStatus"></div>
+        <div id="productionList"></div>
+      </div>
     </div>
 
     <!-- CONTENT CALENDAR -->
@@ -818,6 +826,7 @@ async function loadWorkingDrafts() {
         <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
           <a href="${c.shortUrl}" target="_blank" class="btn btn-sm">📋 Open in Trello</a>
           <button class="btn btn-sm" onclick="moveToProduction('${c.id}')">🚀 Move to Production</button>
+          <button class="btn btn-linkedin btn-sm" onclick="loadTrelloDraftIntoBot(${JSON.stringify(c.name)},${JSON.stringify(c.desc||'')},'Working Drafts')">✏️ Edit in Bot</button>
         </div>
         <div id="collabStatus-${c.id}" class="status-bar" style="display:none"></div>
       </div>`;
@@ -1448,6 +1457,95 @@ function scheduleDraftToDate(draftId) {
 }
 
 function scheduleFromDraft(draftId) { scheduleDraftToDate(draftId); }
+
+// ── TRELLO → BOT EDITOR ────────────────────────────────────────
+function parseTrelloCardContent(desc) {
+  // Separate hashtags (last block of #tags) from body text
+  const parts = desc.split('\n\n');
+  const lastPart = (parts[parts.length - 1] || '').trim();
+  const isHashtagBlock = lastPart.startsWith('#') && lastPart.split(/\s+/).every(w => w === '' || w.startsWith('#'));
+  if (isHashtagBlock && parts.length > 1) {
+    return { body: parts.slice(0, -1).join('\n\n').trim(), hashtags: lastPart };
+  }
+  // Fallback: look for a line that is all hashtags
+  const lines = desc.split('\n');
+  const hIdx = lines.findIndex(l => l.trim().startsWith('#') && l.trim().split(/\s+/).every(w => w.startsWith('#')));
+  if (hIdx > 0) {
+    return { body: lines.slice(0, hIdx).join('\n').trim(), hashtags: lines.slice(hIdx).join(' ').trim() };
+  }
+  return { body: desc.trim(), hashtags: '' };
+}
+
+function loadTrelloDraftIntoBot(cardName, cardDesc, listName) {
+  const { body, hashtags } = parseTrelloCardContent(cardDesc || '');
+  // Navigate to Create Post page
+  showPage('create', document.querySelectorAll('.nav-item')[0]);
+  const id = 'trello_' + Date.now() + '_0';
+  const draftObj = { id, text: body, hashtags, type: listName || 'Trello', pillar: 'mixed', createdAt: new Date().toISOString() };
+  savedDrafts.unshift(draftObj);
+  persistDrafts();
+  const userName = localStorage.getItem('userName') || 'Mike Baum';
+  const userRole  = localStorage.getItem('userRole') || 'Principal @ Baum Realty Group';
+  const output = document.getElementById('draftsOutput');
+  output.innerHTML = `
+    <div style="font-size:13px;color:var(--muted);margin-bottom:12px">
+      📋 Loaded from Trello${listName ? ' · ' + listName : ''}: <em>${escHtml(cardName.substring(0,70))}</em>
+    </div>
+    <div class="draft-card" id="draftCard0">
+      <div class="draft-label insight" style="justify-content:space-between;width:100%">
+        <span>📋 ${escHtml(listName || 'Trello Import')}</span>
+        <span class="preview-toggle" onclick="togglePreview(0)">📱 Preview</span>
+      </div>
+      <div class="draft-body" id="draftBody0" contenteditable="true">${escHtmlFull(body)}</div>
+      <div class="draft-hashtags" id="draftHash0" contenteditable="true">${escHtmlFull(hashtags)}</div>
+      <div class="linkedin-preview" id="preview0">
+        <div class="lp-header"><div class="lp-avatar">MB</div><div><div class="lp-name">${escHtml(userName)}</div><div class="lp-title">${escHtml(userRole)}</div></div></div>
+        <div class="lp-body" id="previewBody0"></div>
+        <div class="lp-hashtags" id="previewHash0"></div>
+        <div class="lp-actions"><span class="lp-action">👍 Like</span><span class="lp-action">💬 Comment</span><span class="lp-action">🔄 Repost</span><span class="lp-action">✉️ Send</span></div>
+      </div>
+      <div id="scoresSection0" style="display:none"><div class="scores" id="scores0"></div></div>
+      <div class="draft-actions">
+        <button class="btn btn-success btn-sm" onclick="saveToDraftsTrello(0,'Draft')">💾 Save to Trello</button>
+        <button class="btn btn-sm" onclick="scorePost(0)">📊 Score</button>
+        <button class="btn btn-sm" onclick="copyPost(0)">📋 Copy</button>
+        <button class="btn btn-linkedin btn-sm" onclick="postToLinkedIn(0)" id="liBtn0">🔗 Post to LinkedIn</button>
+        <button class="btn btn-sm" onclick="scheduleFromDraft('${id}')">📅 Schedule</button>
+      </div>
+      <div id="draftSaveStatus0" class="status-bar"></div>
+    </div>`;
+  populatePreview(0, body, hashtags);
+  setTimeout(() => output.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+}
+
+async function loadProductionCards() {
+  const key = localStorage.getItem('trelloKey'), token = localStorage.getItem('trelloToken');
+  if (!key || !token) { showStatus('productionStatus','error','⚠️ Add Trello credentials in Settings.'); return; }
+  showStatus('productionStatus','info','Loading production cards...');
+  await fetchTrelloListIds();
+  const listId = trelloListIds['Production'];
+  if (!listId) { showStatus('productionStatus','error','Could not find "Production" list on your LinkedIn Bot board.'); return; }
+  try {
+    const cards = await (await fetch(`https://api.trello.com/1/lists/${listId}/cards?key=${key}&token=${token}&fields=name,desc,shortUrl,labels`)).json();
+    const container = document.getElementById('productionList');
+    if (!cards.length) {
+      container.innerHTML = '<div style="color:var(--muted);font-size:14px">No cards in Production yet.</div>';
+      hideStatus('productionStatus'); return;
+    }
+    container.innerHTML = cards.map(c => {
+      const preview = (c.desc || '').substring(0, 200);
+      return `<div class="draft-card">
+        <div style="font-weight:600;margin-bottom:6px">${escHtmlFull(c.name)}</div>
+        ${preview ? `<div class="draft-body" style="cursor:default">${escHtmlFull(preview)}${c.desc.length > 200 ? '...' : ''}</div>` : ''}
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+          <a href="${c.shortUrl}" target="_blank" class="btn btn-sm">📋 Open in Trello</a>
+          <button class="btn btn-linkedin btn-sm" onclick="loadTrelloDraftIntoBot(${JSON.stringify(c.name)},${JSON.stringify(c.desc||'')},'Production')">✏️ Edit in Bot</button>
+        </div>
+      </div>`;
+    }).join('');
+    hideStatus('productionStatus');
+  } catch(e) { showStatus('productionStatus','error','❌ ' + e.message); }
+}
 
 // ── LINKEDIN INTEGRATION ───────────────────────────────────────
 function connectLinkedIn() {
