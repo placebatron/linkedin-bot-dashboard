@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LinkedIn Bot Dashboard — Baum Realty</title>
+<script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
 <style>
 :root {
   --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a; --border: #2e3250;
@@ -608,15 +609,23 @@ function handleImage(input) {
     showStatus('generateStatus','error','❌ Unsupported image type. Please use JPEG, PNG, GIF, WebP, or HEIC.'); return;
   }
   if (isHEIC) {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
-      imageMimeType = 'image/jpeg';
-      compressToLimit(img, file.name + ' (HEIC → JPEG)');
-      URL.revokeObjectURL(url);
-    };
-    img.onerror = () => { URL.revokeObjectURL(url); showStatus('generateStatus','error','❌ Could not process HEIC. Convert to JPEG in Photos app and retry.'); };
-    img.src = url; return;
+    showStatus('generateStatus','info','🔄 Converting HEIC to JPEG...');
+    heic2any({ blob: file, toType: 'image/jpeg', quality: 0.85 })
+      .then(blob => {
+        imageMimeType = 'image/jpeg';
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
+        img.onload = () => {
+          compressToLimit(img, file.name + ' (HEIC → JPEG)');
+          URL.revokeObjectURL(url);
+          hideStatus('generateStatus');
+        };
+        img.src = url;
+      })
+      .catch(err => {
+        showStatus('generateStatus','error','❌ Could not convert HEIC: ' + (err.message || err));
+      });
+    return;
   }
   imageMimeType = 'image/jpeg'; // always compress to JPEG
   const reader = new FileReader();
