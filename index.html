@@ -591,6 +591,7 @@ let trelloListIds = {};
 let trelloCardCache = {}; // { cardId: { name, desc, listName } } — avoids special-char issues in onclick
 let draftPhotos = {};     // { draftIndex: { base64, mimeType } } — photo to attach when posting
 let draftAudiences = {}; // { draftIndex: 'owners'|'tenants'|'brokers'|'general' }
+let inlineEditorAudience = {}; // { cardId: audience } — for Working Drafts inline editor
 let _activeTrelloCardId = null; // card ID when editing an existing Trello card — used to update rather than create
 let calYear, calMonth;
 let calendarData    = {}; // { "2026-02-15": [{ text, pillar, type, id }] }
@@ -1054,7 +1055,25 @@ async function loadWorkingDrafts() {
           </div>
         </div>
         <div style="font-weight:600;margin-bottom:6px">${escHtmlFull(c.name)}</div>
-        ${c.desc ? `<div class="draft-body">${escHtmlFull(c.desc.substring(0,300))}${c.desc.length>300?'...':''}</div>` : ''}
+        <div id="ieStaticPreview-${c.id}">
+          ${c.desc ? `<div class="draft-body">${escHtmlFull(c.desc.substring(0,300))}${c.desc.length>300?'...':''}</div>` : ''}
+        </div>
+        <!-- Inline editor (hidden until Edit is clicked) -->
+        <div id="inlineEditor-${c.id}" style="display:none;margin-top:10px;padding-top:12px;border-top:1px solid var(--border)">
+          <div style="font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px">✏️ Editing</div>
+          <div id="ieBody-${c.id}" contenteditable="true"
+            style="min-height:80px;border:1px solid var(--border);border-radius:8px;padding:10px;font-size:14px;margin-bottom:8px;outline:none;white-space:pre-wrap;background:var(--bg);line-height:1.55"></div>
+          <div id="ieHash-${c.id}" contenteditable="true"
+            style="border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;color:#0a66c2;margin-bottom:10px;outline:none;background:var(--bg)"></div>
+          <div id="ieAudience-${c.id}" style="margin-bottom:10px"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-success btn-sm" id="ieSaveBtn-${c.id}" onclick="saveInlineEditorToTrello('${c.id}')">💾 Save</button>
+            <button class="btn btn-sm" onclick="scheduleInlineEditor('${c.id}')">📅 Schedule</button>
+            <button class="btn btn-linkedin btn-sm" id="iePostBtn-${c.id}" onclick="postInlineEditorToLinkedIn('${c.id}')">🔗 Post to LinkedIn</button>
+            <button class="btn btn-sm" onclick="closeInlineEditor('${c.id}')">✕ Cancel</button>
+          </div>
+          <div id="ieStatus-${c.id}" class="status-bar" style="display:none;margin-top:8px"></div>
+        </div>
         <div class="comments-section">
           <div class="comments-label">💬 Team Comments (${comments.length})</div>
           ${commentsHtml}
@@ -1066,7 +1085,7 @@ async function loadWorkingDrafts() {
         <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
           <a href="${c.shortUrl}" target="_blank" class="btn btn-sm">📋 Open in Trello</a>
           <button class="btn btn-sm" onclick="moveToProduction('${c.id}')">🚀 Move to Production</button>
-          <button class="btn btn-linkedin btn-sm" onclick="loadTrelloDraftFromCache('${c.id}')">✏️ Edit in Bot</button>
+          <button class="btn btn-linkedin btn-sm" onclick="openInlineEditor('${c.id}')">✏️ Edit</button>
           <button class="btn btn-sm" style="color:#c0392b;border-color:#c0392b" data-delete-card="${c.id}" onclick="deleteWorkingDraft('${c.id}')">🗑️ Delete</button>
         </div>
         <div id="collabStatus-${c.id}" class="status-bar" style="display:none"></div>
@@ -1169,6 +1188,179 @@ async function deleteWorkingDraft(cardId) {
     });
     loadWorkingDrafts(); // refresh the list
   } catch(e) { alert('Could not delete draft: ' + e.message); if (btn) { btn.disabled = false; btn.textContent = '🗑️ Delete'; } }
+}
+
+// ── INLINE EDITOR (Working Drafts) ─────────────────────────────
+function openInlineEditor(cardId) {
+  // Close any other open inline editors first
+  document.querySelectorAll('[id^="inlineEditor-"]').forEach(el => {
+    if (el.id !== 'inlineEditor-' + cardId) el.style.display = 'none';
+  });
+  document.querySelectorAll('[id^="ieStaticPreview-"]').forEach(el => {
+    if (el.id !== 'ieStaticPreview-' + cardId) el.style.display = '';
+  });
+
+  const card = trelloCardCache[cardId];
+  if (!card) { alert('Card data not cached — please reload the list.'); return; }
+  const { body, hashtags } = parseTrelloCardContent(card.desc || '');
+
+  const bodyEl = document.getElementById('ieBody-' + cardId);
+  const hashEl = document.getElementById('ieHash-' + cardId);
+  if (bodyEl) bodyEl.innerText = body;
+  if (hashEl) hashEl.innerText = hashtags;
+
+  // Render audience selector
+  const audEl = document.getElementById('ieAudience-' + cardId);
+  if (audEl) {
+    const cur = inlineEditorAudience[cardId] || null;
+    const buttons = AUDIENCE_OPTS.map(o =>
+      `<button class="audience-btn ${o.cls}${cur === o.key ? ' active' : ''}" onclick="setInlineAudience('${cardId}','${o.key}',this)">${o.label}</button>`
+    ).join('');
+    audEl.innerHTML = `<div class="audience-selector"><span class="audience-label">Audience:</span>${buttons}</div>`;
+  }
+
+  document.getElementById('ieStaticPreview-' + cardId).style.display = 'none';
+  const editor = document.getElementById('inlineEditor-' + cardId);
+  if (editor) { editor.style.display = 'block'; if (bodyEl) setTimeout(() => bodyEl.focus(), 50); }
+}
+
+function closeInlineEditor(cardId) {
+  const editor = document.getElementById('inlineEditor-' + cardId);
+  if (editor) editor.style.display = 'none';
+  const preview = document.getElementById('ieStaticPreview-' + cardId);
+  if (preview) preview.style.display = '';
+  const status = document.getElementById('ieStatus-' + cardId);
+  if (status) status.style.display = 'none';
+}
+
+function setInlineAudience(cardId, audience, el) {
+  inlineEditorAudience[cardId] = audience;
+  const row = el.closest('.audience-selector');
+  if (row) row.querySelectorAll('.audience-btn').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+}
+
+async function saveInlineEditorToTrello(cardId) {
+  const key = localStorage.getItem('trelloKey'), token = localStorage.getItem('trelloToken');
+  if (!key || !token) { showIeStatus(cardId, 'error', '⚠️ Add Trello credentials in Settings.'); return; }
+  const body = (document.getElementById('ieBody-' + cardId)?.innerText || '').trim();
+  const hash = (document.getElementById('ieHash-' + cardId)?.innerText || '').trim();
+  const saveBtn = document.getElementById('ieSaveBtn-' + cardId);
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<span class="spinner"></span> Saving…'; }
+  showIeStatus(cardId, 'info', '💾 Saving to Trello…');
+  try {
+    const res = await fetch(`https://api.trello.com/1/cards/${cardId}?key=${key}&token=${token}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ desc: body + (hash ? '\n\n' + hash : '') })
+    });
+    const data = await res.json();
+    if (data.id) {
+      if (trelloCardCache[cardId]) trelloCardCache[cardId].desc = body + (hash ? '\n\n' + hash : '');
+      // Update the static preview text without full reload
+      const combined = body + (hash ? '\n\n' + hash : '');
+      const prev = document.getElementById('ieStaticPreview-' + cardId);
+      if (prev) {
+        const existingBody = prev.querySelector('.draft-body');
+        if (existingBody) existingBody.textContent = combined.substring(0, 300) + (combined.length > 300 ? '…' : '');
+        else prev.innerHTML = `<div class="draft-body">${escHtmlFull(combined.substring(0,300))}${combined.length>300?'...':''}</div>`;
+      }
+      showIeStatus(cardId, 'success', '✅ Saved to Trello!');
+      if (saveBtn) {
+        saveBtn.disabled = false; saveBtn.innerHTML = '✅ Saved';
+        setTimeout(() => { if (saveBtn) saveBtn.innerHTML = '💾 Save'; }, 3000);
+      }
+    } else {
+      showIeStatus(cardId, 'error', '❌ ' + (data.message || 'Save failed'));
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '💾 Save'; }
+    }
+  } catch(e) {
+    showIeStatus(cardId, 'error', '❌ ' + e.message);
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '💾 Save'; }
+  }
+}
+
+function scheduleInlineEditor(cardId) {
+  const body = (document.getElementById('ieBody-' + cardId)?.innerText || '').trim();
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('modalTitle').textContent = '📅 Schedule This Draft';
+  document.getElementById('modalSub').textContent = body ? '"' + body.substring(0, 60) + '…"' : '';
+  document.getElementById('modalPostList').innerHTML = `
+    <div style="margin-bottom:10px;font-size:13px;color:var(--muted)">Pick a date to add this post to your content calendar:</div>
+    <input type="date" id="scheduleDatePicker" value="${today}" min="${today}"
+      style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:15px;margin-bottom:14px;box-sizing:border-box">
+    <button class="btn btn-linkedin" style="width:100%;justify-content:center" onclick="confirmInlineSchedule('${cardId}')">📅 Confirm Schedule</button>
+  `;
+  pendingScheduleDate = '_ie_' + cardId;
+  document.getElementById('scheduleModal').classList.add('open');
+}
+
+function confirmInlineSchedule(cardId) {
+  const dateVal = document.getElementById('scheduleDatePicker')?.value;
+  if (!dateVal) { alert('Please pick a date.'); return; }
+  const body = (document.getElementById('ieBody-' + cardId)?.innerText || '').trim();
+  const hash = (document.getElementById('ieHash-' + cardId)?.innerText || '').trim();
+  const tempId = 'ie_sched_' + cardId;
+  if (!calendarData[dateVal]) calendarData[dateVal] = [];
+  if (!calendarData[dateVal].some(p => p.id === tempId)) {
+    calendarData[dateVal].push({ id: tempId, text: body, pillar: 'mixed', type: 'Working Draft' });
+    persistCalendar();
+  }
+  document.getElementById('scheduleModal').classList.remove('open');
+  pendingScheduleDate = null;
+  const d = new Date(dateVal + 'T12:00:00');
+  const formatted = d.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+  showIeStatus(cardId, 'success', '📅 Scheduled for ' + formatted);
+}
+
+async function postInlineEditorToLinkedIn(cardId) {
+  const liToken = localStorage.getItem('linkedinToken');
+  if (!liToken) { showPage('settings'); showStatus('liSettingsStatus','error','⚠️ Please connect your LinkedIn account first.'); return; }
+  const body = (document.getElementById('ieBody-' + cardId)?.innerText || '').trim();
+  const hash = (document.getElementById('ieHash-' + cardId)?.innerText || '').trim();
+  const fullText = body + (hash ? '\n\n' + hash : '');
+  if (fullText.length < 10) { showIeStatus(cardId, 'error', '❌ Post is too short.'); return; }
+  const postBtn = document.getElementById('iePostBtn-' + cardId);
+  if (postBtn) { postBtn.disabled = true; postBtn.textContent = '⏳ Posting…'; }
+  showIeStatus(cardId, 'info', '⏳ Posting to LinkedIn…');
+  try {
+    const res = await fetchWithTimeout(LI_WORKER + '/post', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ access_token: liToken, text: fullText })
+    }, 30000);
+    const data = await res.json();
+    if (data.success || data.postId || data.id) {
+      showIeStatus(cardId, 'success', '✅ Posted to LinkedIn!');
+      if (postBtn) { postBtn.textContent = '✅ Posted!'; postBtn.style.background = '#16a34a'; }
+      publishedPosts.unshift({
+        id: 'pub_' + Date.now(), liPostId: data.postId || data.id || null,
+        text: body, hashtags: hash, pillar: 'mixed', type: 'Working Draft',
+        audience: inlineEditorAudience[cardId] || null,
+        publishedAt: new Date().toISOString(), hasPhoto: false,
+        stats: { likes: 0, comments: 0, shares: 0, lastFetched: null }
+      });
+      publishedPosts = publishedPosts.slice(0, 100);
+      persistPublished();
+      setTimeout(() => { if (postBtn) { postBtn.disabled = false; postBtn.textContent = '🔗 Post to LinkedIn'; postBtn.style.background = ''; } }, 4000);
+    } else if (data.error?.includes('expired')) {
+      localStorage.removeItem('linkedinToken'); updateLiStatus();
+      if (postBtn) { postBtn.disabled = false; postBtn.textContent = '🔗 Post to LinkedIn'; }
+      showIeStatus(cardId, 'error', '❌ LinkedIn token expired. Reconnect in Settings.');
+    } else {
+      throw new Error(data.error || data.message || JSON.stringify(data));
+    }
+  } catch(e) {
+    if (postBtn) { postBtn.disabled = false; postBtn.textContent = '🔗 Post to LinkedIn'; }
+    showIeStatus(cardId, 'error', '❌ Post failed: ' + e.message);
+  }
+}
+
+function showIeStatus(cardId, type, msg) {
+  const el = document.getElementById('ieStatus-' + cardId);
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'status-bar ' + type;
+  el.style.display = 'block';
+  if (type === 'success') setTimeout(() => { el.style.display = 'none'; }, 5000);
 }
 
 // ── Source Toggle ──────────────────────────────────────────────
