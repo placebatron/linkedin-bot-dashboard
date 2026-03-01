@@ -592,6 +592,7 @@ let trelloCardCache = {}; // { cardId: { name, desc, listName } } — avoids spe
 let draftPhotos = {};     // { draftIndex: { base64, mimeType } } — photo to attach when posting
 let draftAudiences = {}; // { draftIndex: 'owners'|'tenants'|'brokers'|'general' }
 let inlineEditorAudience = {}; // { cardId: audience } — for Working Drafts inline editor
+let inlineEditorPhotos   = {}; // { cardId: { base64, mimeType } } — for Working Drafts inline editor
 let _activeTrelloCardId = null; // card ID when editing an existing Trello card — used to update rather than create
 let calYear, calMonth;
 let calendarData    = {}; // { "2026-02-15": [{ text, pillar, type, id }] }
@@ -1066,6 +1067,18 @@ async function loadWorkingDrafts() {
           <div id="ieHash-${c.id}" contenteditable="true"
             style="border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;color:#0a66c2;margin-bottom:10px;outline:none;background:var(--bg)"></div>
           <div id="ieAudience-${c.id}" style="margin-bottom:10px"></div>
+          <div class="draft-photo-section" style="margin-bottom:10px">
+            <div class="photo-label">📷 Photo <span style="font-weight:400;color:var(--muted)">(optional)</span></div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="file" accept="image/*,.heic,.heif" style="display:none" id="iePhotoFile-${c.id}" onchange="attachInlinePhoto(event,'${c.id}')">
+              <button class="btn btn-sm" onclick="document.getElementById('iePhotoFile-${c.id}').click()" style="font-size:12px;padding:4px 12px">📎 Choose photo</button>
+              <span id="iePhotoName-${c.id}" style="font-size:12px;color:var(--muted)"></span>
+            </div>
+            <div class="draft-photo-thumb" id="iePhotoThumb-${c.id}" style="display:none">
+              <img id="iePhotoThumbImg-${c.id}" alt="photo preview">
+              <button class="btn btn-sm" onclick="removeInlinePhoto('${c.id}')" style="font-size:11px;padding:2px 8px;color:var(--danger);border-color:var(--danger)">✕ Remove</button>
+            </div>
+          </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button class="btn btn-success btn-sm" id="ieSaveBtn-${c.id}" onclick="saveInlineEditorToTrello('${c.id}')">💾 Save</button>
             <button class="btn btn-sm" onclick="scheduleInlineEditor('${c.id}')">📅 Schedule</button>
@@ -1219,6 +1232,15 @@ function openInlineEditor(cardId) {
     audEl.innerHTML = `<div class="audience-selector"><span class="audience-label">Audience:</span>${buttons}</div>`;
   }
 
+  // Reset photo state for this card
+  delete inlineEditorPhotos[cardId];
+  const thumbEl = document.getElementById('iePhotoThumb-' + cardId);
+  const nameEl  = document.getElementById('iePhotoName-'  + cardId);
+  const fileEl  = document.getElementById('iePhotoFile-'  + cardId);
+  if (thumbEl) thumbEl.style.display = 'none';
+  if (nameEl)  nameEl.textContent = '';
+  if (fileEl)  fileEl.value = '';
+
   document.getElementById('ieStaticPreview-' + cardId).style.display = 'none';
   const editor = document.getElementById('inlineEditor-' + cardId);
   if (editor) { editor.style.display = 'block'; if (bodyEl) setTimeout(() => bodyEl.focus(), 50); }
@@ -1323,19 +1345,30 @@ async function postInlineEditorToLinkedIn(cardId) {
   if (postBtn) { postBtn.disabled = true; postBtn.textContent = '⏳ Posting…'; }
   showIeStatus(cardId, 'info', '⏳ Posting to LinkedIn…');
   try {
+    // Upload photo if one is attached
+    let imageAssetUrn = null;
+    const photo = inlineEditorPhotos[cardId];
+    if (photo) {
+      if (postBtn) postBtn.textContent = '⏳ Uploading photo…';
+      showIeStatus(cardId, 'info', '⏳ Uploading photo…');
+      imageAssetUrn = await uploadPhotoToLinkedIn(liToken, photo.base64, photo.mimeType);
+      if (postBtn) postBtn.textContent = '⏳ Publishing…';
+    }
+    const postBody = { access_token: liToken, text: fullText };
+    if (imageAssetUrn) postBody.imageAssetUrn = imageAssetUrn;
     const res = await fetchWithTimeout(LI_WORKER + '/post', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ access_token: liToken, text: fullText })
+      body: JSON.stringify(postBody)
     }, 30000);
     const data = await res.json();
     if (data.success || data.postId || data.id) {
-      showIeStatus(cardId, 'success', '✅ Posted to LinkedIn!');
+      showIeStatus(cardId, 'success', '✅ Posted to LinkedIn' + (imageAssetUrn ? ' with photo!' : '!'));
       if (postBtn) { postBtn.textContent = '✅ Posted!'; postBtn.style.background = '#16a34a'; }
       publishedPosts.unshift({
         id: 'pub_' + Date.now(), liPostId: data.postId || data.id || null,
         text: body, hashtags: hash, pillar: 'mixed', type: 'Working Draft',
         audience: inlineEditorAudience[cardId] || null,
-        publishedAt: new Date().toISOString(), hasPhoto: false,
+        publishedAt: new Date().toISOString(), hasPhoto: !!imageAssetUrn,
         stats: { likes: 0, comments: 0, shares: 0, lastFetched: null }
       });
       publishedPosts = publishedPosts.slice(0, 100);
@@ -2196,6 +2229,48 @@ function removeDraftPhoto(idx) {
   if (nameEl)  nameEl.textContent = '';
   if (fileEl)  fileEl.value = '';
   saveActiveDraft(); // update saved state when photo removed
+}
+
+// Photo attachment for the inline editor in Working Drafts
+function attachInlinePhoto(event, cardId) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  const isHEIC = /\.(heic|heif)$/i.test(file.name) || file.type === 'image/heic' || file.type === 'image/heif';
+  const nameEl  = document.getElementById('iePhotoName-'     + cardId);
+  const thumbEl = document.getElementById('iePhotoThumb-'    + cardId);
+  const imgEl   = document.getElementById('iePhotoThumbImg-' + cardId);
+  if (nameEl) nameEl.textContent = '⏳ Processing…';
+  const processBlob = (blob, displayName) => {
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      compressForPost(img, ({ base64, mimeType, dataUrl }) => {
+        inlineEditorPhotos[cardId] = { base64, mimeType };
+        if (imgEl)   imgEl.src = dataUrl;
+        if (thumbEl) thumbEl.style.display = 'flex';
+        if (nameEl)  nameEl.textContent = displayName;
+        URL.revokeObjectURL(url);
+      });
+    };
+    img.src = url;
+  };
+  if (isHEIC) {
+    heic2any({ blob: file, toType: 'image/jpeg', quality: 0.85 })
+      .then(blob => processBlob(blob, file.name + ' (HEIC → JPEG)'))
+      .catch(() => { if (nameEl) nameEl.textContent = '❌ HEIC conversion failed'; });
+  } else {
+    processBlob(file, file.name);
+  }
+}
+
+function removeInlinePhoto(cardId) {
+  delete inlineEditorPhotos[cardId];
+  const thumbEl = document.getElementById('iePhotoThumb-'    + cardId);
+  const nameEl  = document.getElementById('iePhotoName-'     + cardId);
+  const fileEl  = document.getElementById('iePhotoFile-'     + cardId);
+  if (thumbEl) thumbEl.style.display = 'none';
+  if (nameEl)  nameEl.textContent = '';
+  if (fileEl)  fileEl.value = '';
 }
 
 // ── AUDIENCE TAGGING ───────────────────────────────────────────
