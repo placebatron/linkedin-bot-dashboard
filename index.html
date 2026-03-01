@@ -594,7 +594,14 @@ window.onload = () => {
   loadFromStorage();
   renderCalendar();
   renderDraftPool();
+  showResumeBanner(); // show resume banner immediately on page load if a saved draft exists
 };
+
+// Flush any pending auto-save immediately when the tab is hidden or closed
+window.addEventListener('beforeunload', saveActiveDraft);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') saveActiveDraft();
+});
 
 // ── Storage ────────────────────────────────────────────────────
 function loadFromStorage() {
@@ -748,10 +755,17 @@ function resumeActiveDraft() {
   if (!record || !record.drafts?.length) { hideResumeBanner(); return; }
   hideResumeBanner();
 
-  // Restore photo state
+  // Restore photo state — use photoBase64 if available; fall back to extracting from photoDataUrl
+  // (photoBase64 is stripped when localStorage quota is exceeded, but photoDataUrl is always kept)
   draftPhotos = {};
   record.drafts.forEach((d, i) => {
-    if (d.photoBase64) draftPhotos[i] = { base64: d.photoBase64, mimeType: d.photoMimeType || 'image/jpeg' };
+    if (d.photoBase64) {
+      draftPhotos[i] = { base64: d.photoBase64, mimeType: d.photoMimeType || 'image/jpeg' };
+    } else if (d.photoDataUrl && d.photoDataUrl.includes(',')) {
+      const [header, b64] = d.photoDataUrl.split(',');
+      const mime = (header.match(/:(.*?);/) || [])[1] || 'image/jpeg';
+      draftPhotos[i] = { base64: b64, mimeType: mime };
+    }
   });
 
   const renderRestoredDraft = (d, i) => {
@@ -787,7 +801,7 @@ function resumeActiveDraft() {
       const nameEl  = document.getElementById('photoName'   + i);
       if (imgEl)   imgEl.src = d.photoDataUrl;
       if (thumbEl) thumbEl.style.display = 'flex';
-      if (nameEl)  nameEl.textContent = d.photoBase64 ? '📷 Restored photo' : '📷 Photo (re-attach to re-upload)';
+      if (nameEl)  nameEl.textContent = (d.photoBase64 || d.photoDataUrl) ? '📷 Restored photo' : '📷 Photo (re-attach to re-upload)';
     }
   });
 
