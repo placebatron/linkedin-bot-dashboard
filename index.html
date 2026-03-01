@@ -2456,11 +2456,12 @@ function renderPerformance() {
   </div>`;
   const rows = posts.map((p, i) => {
     const date = new Date(p.publishedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'});
-    const fetched = p.stats?.lastFetched ? 'Updated ' + new Date(p.stats.lastFetched).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : 'Not fetched yet';
+    const fetched = p.stats?.lastFetched ? 'Updated ' + new Date(p.stats.lastFetched).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : 'No stats yet';
+    const urlLink = p.liUrl ? `<a href="${p.liUrl}" target="_blank" title="Open on LinkedIn" style="color:#0a66c2;text-decoration:none;font-size:13px">🔗</a>` : '';
     return `<div style="border-bottom:1px solid var(--border)">
       <div class="perf-post-row" style="border-bottom:none">
         <div>
-          <div class="perf-post-preview">${escHtmlFull((p.text||'').substring(0,70))}…</div>
+          <div class="perf-post-preview">${escHtmlFull((p.text||'').substring(0,70))}… ${urlLink}</div>
           <div class="perf-post-meta">${p.type || 'Post'} · ${date}${p.audience ? ' · <span class="audience-badge aud-'+p.audience+'">' + (AUDIENCE_LABELS[p.audience]||p.audience) + '</span>' : ''} · <span id="fetchedLabel${i}">${fetched}</span></div>
         </div>
         <div class="perf-num likes" id="perfLikes${i}">${p.stats?.likes ?? '—'}</div>
@@ -2469,16 +2470,25 @@ function renderPerformance() {
         <div style="text-align:center"><span style="font-size:12px">${pillarLabels[p.pillar]||p.pillar||'—'}</span></div>
         <div style="text-align:center;display:flex;gap:4px;justify-content:center;align-items:center">
           ${p.liPostId ? `<button class="btn btn-sm perf-refresh-btn" title="Auto-fetch from LinkedIn" onclick="fetchPostStats(${i})">↻</button>` : ''}
-          <button class="btn btn-sm perf-refresh-btn" title="Enter stats manually" onclick="openManualStats(${i})" style="font-size:12px">✏️</button>
+          <button class="btn btn-sm perf-refresh-btn" title="Edit stats &amp; URL" onclick="openManualStats(${i})" style="font-size:12px">✏️</button>
         </div>
       </div>
-      <div id="manualStats-${i}" style="display:none;padding:8px 16px 12px;background:var(--surface);gap:8px;align-items:center;flex-wrap:wrap">
-        <span style="font-size:12px;color:var(--muted);margin-right:4px">Enter stats manually:</span>
-        <label style="font-size:12px;display:flex;align-items:center;gap:4px">👍 <input type="number" id="mLikes-${i}" min="0" placeholder="Likes" style="width:70px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px"></label>
-        <label style="font-size:12px;display:flex;align-items:center;gap:4px">💬 <input type="number" id="mComments-${i}" min="0" placeholder="Comments" style="width:70px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px"></label>
-        <label style="font-size:12px;display:flex;align-items:center;gap:4px">🔄 <input type="number" id="mShares-${i}" min="0" placeholder="Shares" style="width:70px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px"></label>
-        <button class="btn btn-success btn-sm" onclick="saveManualStats(${i})">✓ Save</button>
-        <button class="btn btn-sm" onclick="cancelManualStats(${i})">✕</button>
+      <div id="manualStats-${i}" style="display:none;padding:10px 16px 14px;background:var(--surface);flex-direction:column;gap:10px">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span style="font-size:12px;color:var(--muted);font-weight:600;min-width:80px">Stats:</span>
+          <label style="font-size:12px;display:flex;align-items:center;gap:4px">👍 <input type="number" id="mLikes-${i}" min="0" placeholder="Likes" style="width:70px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px"></label>
+          <label style="font-size:12px;display:flex;align-items:center;gap:4px">💬 <input type="number" id="mComments-${i}" min="0" placeholder="Comments" style="width:70px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px"></label>
+          <label style="font-size:12px;display:flex;align-items:center;gap:4px">🔄 <input type="number" id="mShares-${i}" min="0" placeholder="Reposts" style="width:70px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px"></label>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="font-size:12px;color:var(--muted);font-weight:600;min-width:80px">Post URL:</span>
+          <input type="url" id="mUrl-${i}" placeholder="https://www.linkedin.com/feed/update/urn:li:activity:…"
+            style="flex:1;padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;min-width:200px">
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-success btn-sm" onclick="saveManualStats(${i})">✓ Save</button>
+          <button class="btn btn-sm" onclick="cancelManualStats(${i})">✕ Cancel</button>
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -2643,29 +2653,51 @@ function openManualStats(idx) {
   const post = publishedPosts[idx];
   const form = document.getElementById('manualStats-' + idx);
   if (!form) return;
-  const lEl = document.getElementById('mLikes-'    + idx);
-  const cEl = document.getElementById('mComments-' + idx);
-  const sEl = document.getElementById('mShares-'   + idx);
-  if (lEl) lEl.value = post.stats?.likes    ?? '';
-  if (cEl) cEl.value = post.stats?.comments ?? '';
-  if (sEl) sEl.value = post.stats?.shares   ?? '';
+  const lEl   = document.getElementById('mLikes-'    + idx);
+  const cEl   = document.getElementById('mComments-' + idx);
+  const sEl   = document.getElementById('mShares-'   + idx);
+  const urlEl = document.getElementById('mUrl-'      + idx);
+  if (lEl)   lEl.value   = post.stats?.likes    ?? '';
+  if (cEl)   cEl.value   = post.stats?.comments ?? '';
+  if (sEl)   sEl.value   = post.stats?.shares   ?? '';
+  if (urlEl) urlEl.value = post.liUrl           ?? '';
   form.style.display = 'flex';
-  if (lEl) lEl.focus();
+  if (urlEl) urlEl.focus();
+}
+
+function extractLiPostId(url) {
+  // LinkedIn URLs look like: /feed/update/urn:li:activity:1234567890123456789/
+  // or: /posts/username_urn:li:activity:123...
+  const m = url.match(/urn:li:(?:activity|share):(\d+)/i)
+         || url.match(/ugcPost[:\-](\d+)/i);
+  return m ? 'urn:li:activity:' + m[1] : null;
 }
 
 function saveManualStats(idx) {
   const likes    = parseInt(document.getElementById('mLikes-'    + idx)?.value) || 0;
   const comments = parseInt(document.getElementById('mComments-' + idx)?.value) || 0;
   const shares   = parseInt(document.getElementById('mShares-'   + idx)?.value) || 0;
+  const rawUrl   = (document.getElementById('mUrl-' + idx)?.value || '').trim();
+
   publishedPosts[idx].stats = { likes, comments, shares, lastFetched: new Date().toISOString() };
+
+  if (rawUrl) {
+    publishedPosts[idx].liUrl = rawUrl;
+    // Auto-extract post ID from URL so auto-refresh can be attempted later
+    const extracted = extractLiPostId(rawUrl);
+    if (extracted && !publishedPosts[idx].liPostId) {
+      publishedPosts[idx].liPostId = extracted;
+    }
+  }
+
   persistPublished();
   setText('perfLikes'    + idx, likes);
   setText('perfComments' + idx, comments);
   setText('perfShares'   + idx, shares);
   const label = document.getElementById('fetchedLabel' + idx);
-  if (label) label.textContent = 'Entered manually just now';
+  if (label) label.textContent = 'Updated manually just now';
   document.getElementById('manualStats-' + idx).style.display = 'none';
-  renderPerformanceSummary();
+  renderPerformance(); // full re-render so 🔗 link and ↻ button appear immediately
 }
 
 function cancelManualStats(idx) {
