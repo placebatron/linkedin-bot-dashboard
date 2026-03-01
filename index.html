@@ -591,6 +591,7 @@ let trelloListIds = {};
 let trelloCardCache = {}; // { cardId: { name, desc, listName } } — avoids special-char issues in onclick
 let draftPhotos = {};     // { draftIndex: { base64, mimeType } } — photo to attach when posting
 let draftAudiences = {}; // { draftIndex: 'owners'|'tenants'|'brokers'|'general' }
+let _activeTrelloCardId = null; // card ID when editing an existing Trello card — used to update rather than create
 let calYear, calMonth;
 let calendarData    = {}; // { "2026-02-15": [{ text, pillar, type, id }] }
 let savedDrafts     = []; // persisted generated drafts
@@ -1372,9 +1373,10 @@ HASHTAGS: [8-10 hashtags, include some from: ${coreHashtags}]
 }
 
 function renderDrafts(text, style, pillar) {
-  draftPhotos = {};    // clear any photos from prior generation
-  draftAudiences = {}; // clear audience tags from prior generation
-  clearActiveDraft();  // new generation replaces any saved draft
+  draftPhotos = {};       // clear any photos from prior generation
+  draftAudiences = {};    // clear audience tags from prior generation
+  _activeTrelloCardId = null; // new generation — not editing an existing card
+  clearActiveDraft();    // new generation replaces any saved draft
   hideResumeBanner();
   const blocks = text.split('---VARIANT---').slice(1);
   if (!blocks.length) {
@@ -1525,21 +1527,42 @@ async function saveToDraftsTrello(idx, type) {
   const key = localStorage.getItem('trelloKey'), token = localStorage.getItem('trelloToken');
   if (!key || !token) { showStatus('draftSaveStatus'+idx,'error','⚠️ Add Trello credentials in Settings.'); return; }
   showStatus('draftSaveStatus'+idx,'info','Saving...');
+  const body = document.getElementById('draftBody'+idx)?.innerText || '';
+  const hash = document.getElementById('draftHash'+idx)?.innerText || '';
+
+  // If this draft was loaded from an existing Trello card, update it — don't create a duplicate
+  if (_activeTrelloCardId) {
+    try {
+      const res = await fetch(`https://api.trello.com/1/cards/${_activeTrelloCardId}?key=${key}&token=${token}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ desc: body + (hash ? '\n\n' + hash : '') })
+      });
+      const card = await res.json();
+      if (card.id) {
+        showStatus('draftSaveStatus'+idx,'success','✅ Trello card updated!');
+        clearActiveDraft();
+      } else {
+        showStatus('draftSaveStatus'+idx,'error','❌ Update failed: ' + JSON.stringify(card.message || card));
+      }
+    } catch(e) { showStatus('draftSaveStatus'+idx,'error','❌ ' + e.message); }
+    return;
+  }
+
+  // No source card — create a new card in Working Drafts
   await fetchTrelloListIds();
   const listId = trelloListIds['Working Drafts'];
   if (!listId) { showStatus('draftSaveStatus'+idx,'error','Could not find "Working Drafts" list.'); return; }
-  const body = document.getElementById('draftBody'+idx)?.innerText || '';
-  const hash = document.getElementById('draftHash'+idx)?.innerText || '';
   const cardName = '[' + type + '] ' + body.substring(0,55) + (body.length>55?'...':'');
   try {
     const res = await fetch('https://api.trello.com/1/cards', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ name: cardName, desc: body + '\n\n' + hash, idList: listId, key, token })
+      body: JSON.stringify({ name: cardName, desc: body + (hash ? '\n\n' + hash : ''), idList: listId, key, token })
     });
     const card = await res.json();
     if (card.id) {
+      _activeTrelloCardId = card.id; // track the new card so subsequent saves update it
       showStatus('draftSaveStatus'+idx,'success','✅ Saved to Working Drafts on Trello!');
-      clearActiveDraft(); // saved to Trello — no need to resume
+      clearActiveDraft();
     } else {
       showStatus('draftSaveStatus'+idx,'error','❌ Failed to save: ' + JSON.stringify(card.message || card));
     }
@@ -1713,7 +1736,7 @@ function scheduleFromDraft(draftId) { scheduleDraftToDate(draftId); }
 function loadTrelloDraftFromCache(cardId) {
   const card = trelloCardCache[cardId];
   if (!card) { alert('Card data not cached — please reload the list and try again.'); return; }
-  loadTrelloDraftIntoBot(card.name, card.desc, card.listName);
+  loadTrelloDraftIntoBot(card.name, card.desc, card.listName, cardId);
 }
 
 function parseTrelloCardContent(desc) {
@@ -1733,10 +1756,11 @@ function parseTrelloCardContent(desc) {
   return { body: desc.trim(), hashtags: '' };
 }
 
-function loadTrelloDraftIntoBot(cardName, cardDesc, listName) {
+function loadTrelloDraftIntoBot(cardName, cardDesc, listName, sourceCardId) {
   const { body, hashtags } = parseTrelloCardContent(cardDesc || '');
-  draftPhotos = {};    // clear stale photo from any previous card
-  draftAudiences = {}; // clear stale audience from any previous card
+  draftPhotos = {};       // clear stale photo from any previous card
+  draftAudiences = {};    // clear stale audience from any previous card
+  _activeTrelloCardId = sourceCardId || null; // track so save updates instead of duplicates
   // Navigate to Create Post page
   showPage('create');
   const id = 'trello_' + Date.now() + '_0';
