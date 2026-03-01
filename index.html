@@ -221,6 +221,21 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
 .resume-banner-text { flex: 1; color: var(--text); min-width: 200px; }
 .resume-banner-text em { color: #fbbf24; font-style: normal; font-weight: 500; }
 .autosave-indicator { font-size: 11px; color: var(--muted); text-align: right; margin-top: 4px; min-height: 16px; }
+
+/* Audience tagging */
+.audience-selector { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin:8px 0 2px; }
+.audience-label { font-size:11px; color:var(--muted); font-weight:600; white-space:nowrap; margin-right:2px; }
+.audience-btn { padding:3px 10px; border-radius:20px; border:1px solid var(--border); background:transparent; color:var(--muted); font-size:11px; font-weight:600; cursor:pointer; transition:all 0.15s; }
+.audience-btn:hover { border-color:var(--accent); color:var(--text); }
+.audience-btn.active.aud-owners  { background:rgba(99,102,241,0.15);  border-color:#6366f1; color:#818cf8; }
+.audience-btn.active.aud-tenants { background:rgba(20,184,166,0.15);  border-color:#14b8a6; color:#2dd4bf; }
+.audience-btn.active.aud-brokers { background:rgba(249,115,22,0.15);  border-color:#f97316; color:#fb923c; }
+.audience-btn.active.aud-general { background:rgba(148,163,184,0.15); border-color:#94a3b8; color:#cbd5e1; }
+.audience-badge { display:inline-block; padding:2px 8px; border-radius:12px; font-size:10px; font-weight:700; }
+.audience-badge.aud-owners  { background:rgba(99,102,241,0.15);  color:#818cf8; }
+.audience-badge.aud-tenants { background:rgba(20,184,166,0.15);  color:#2dd4bf; }
+.audience-badge.aud-brokers { background:rgba(249,115,22,0.15);  color:#fb923c; }
+.audience-badge.aud-general { background:rgba(148,163,184,0.15); color:#cbd5e1; }
 </style>
 </head>
 <body>
@@ -478,6 +493,14 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
           <div class="perf-chart-title">Engagement Rate by Style</div>
           <div id="chartStyleEngagement"></div>
         </div>
+        <div class="perf-chart-card">
+          <div class="perf-chart-title">Avg Likes by Audience</div>
+          <div id="chartAudienceLikes"></div>
+        </div>
+        <div class="perf-chart-card">
+          <div class="perf-chart-title">Engagement by Audience</div>
+          <div id="chartAudienceEngagement"></div>
+        </div>
       </div>
 
       <!-- Post list -->
@@ -567,6 +590,7 @@ let trendData = [];
 let trelloListIds = {};
 let trelloCardCache = {}; // { cardId: { name, desc, listName } } — avoids special-char issues in onclick
 let draftPhotos = {};     // { draftIndex: { base64, mimeType } } — photo to attach when posting
+let draftAudiences = {}; // { draftIndex: 'owners'|'tenants'|'brokers'|'general' }
 let calYear, calMonth;
 let calendarData    = {}; // { "2026-02-15": [{ text, pillar, type, id }] }
 let savedDrafts     = []; // persisted generated drafts
@@ -678,6 +702,7 @@ function saveActiveDraft() {
       photoBase64:  photo ? photo.base64   : null,
       photoMimeType: photo ? photo.mimeType : null,
       photoDataUrl: dataUrl,
+      audience:     draftAudiences[i] || null,
     });
     i++;
   }
@@ -768,6 +793,10 @@ function resumeActiveDraft() {
     }
   });
 
+  // Restore audience state
+  draftAudiences = {};
+  record.drafts.forEach((d, i) => { if (d.audience) draftAudiences[i] = d.audience; });
+
   const renderRestoredDraft = (d, i) => {
     const photoStrip = draftPhotoHTML(i);
     return `<div class="draft-card" id="draftCard${i}">
@@ -777,6 +806,7 @@ function resumeActiveDraft() {
       <div class="draft-body" id="draftBody${i}" contenteditable="true">${escHtmlFull(d.body)}</div>
       <div class="draft-hashtags" id="draftHash${i}" contenteditable="true">${escHtmlFull(d.hashtags)}</div>
       ${photoStrip}
+      ${draftAudienceHTML(i, d.audience || null)}
       <div class="draft-actions">
         <button class="btn btn-success btn-sm" onclick="saveToDraftsTrello(${i},'Draft')">💾 Save to Trello</button>
         <button class="btn btn-sm" onclick="copyPost(${i})">📋 Copy</button>
@@ -1342,7 +1372,8 @@ HASHTAGS: [8-10 hashtags, include some from: ${coreHashtags}]
 }
 
 function renderDrafts(text, style, pillar) {
-  draftPhotos = {}; // clear any photos from prior generation
+  draftPhotos = {};    // clear any photos from prior generation
+  draftAudiences = {}; // clear audience tags from prior generation
   clearActiveDraft();  // new generation replaces any saved draft
   hideResumeBanner();
   const blocks = text.split('---VARIANT---').slice(1);
@@ -1355,6 +1386,7 @@ function renderDrafts(text, style, pillar) {
       <div class="draft-label hot">• Draft</div>
       <div class="draft-body" id="draftBody0" contenteditable="true">${escHtmlFull(text.trim())}</div>
       ${draftPhotoHTML(0)}
+      ${draftAudienceHTML(0, null)}
       <div class="draft-actions">
         <button class="btn btn-success btn-sm" onclick="saveToDraftsTrello(0,'Draft')">💾 Save to Trello</button>
         <button class="btn btn-sm" onclick="scorePost(0)">📊 Score This Post</button>
@@ -1383,7 +1415,7 @@ function renderDrafts(text, style, pillar) {
     const colorClass = typeColors[type] || 'hot';
     const icon = typeIcons[type] || '•';
     const id = 'draft_' + Date.now() + '_' + i;
-    newDrafts.push({ id, text: post, hashtags, type, pillar: pillar || 'mixed', createdAt: new Date().toISOString() });
+    newDrafts.push({ id, text: post, hashtags, type, pillar: pillar || 'mixed', audience: null, createdAt: new Date().toISOString() });
     html += `<div class="draft-card" id="draftCard${i}">
       <div class="draft-label ${colorClass}" style="justify-content:space-between;width:100%">
         <span>${icon} ${type}</span>
@@ -1392,6 +1424,7 @@ function renderDrafts(text, style, pillar) {
       <div class="draft-body" id="draftBody${i}" contenteditable="true">${escHtmlFull(post)}</div>
       <div class="draft-hashtags" id="draftHash${i}">${hashtags}</div>
       ${draftPhotoHTML(i)}
+      ${draftAudienceHTML(i, null)}
       <div class="linkedin-preview" id="preview${i}">
         <div class="lp-header"><div class="lp-avatar">MB</div><div><div class="lp-name">${localStorage.getItem('userName')||'Mike Baum'}</div><div class="lp-title">${localStorage.getItem('userRole')||'Principal @ Baum Realty Group'}</div></div></div>
         <div class="lp-body" id="previewBody${i}"></div>
@@ -1702,7 +1735,8 @@ function parseTrelloCardContent(desc) {
 
 function loadTrelloDraftIntoBot(cardName, cardDesc, listName) {
   const { body, hashtags } = parseTrelloCardContent(cardDesc || '');
-  draftPhotos = {}; // clear stale photo from any previous card
+  draftPhotos = {};    // clear stale photo from any previous card
+  draftAudiences = {}; // clear stale audience from any previous card
   // Navigate to Create Post page
   showPage('create');
   const id = 'trello_' + Date.now() + '_0';
@@ -1724,6 +1758,7 @@ function loadTrelloDraftIntoBot(cardName, cardDesc, listName) {
       <div class="draft-body" id="draftBody0" contenteditable="true">${escHtmlFull(body)}</div>
       <div class="draft-hashtags" id="draftHash0" contenteditable="true">${escHtmlFull(hashtags)}</div>
       ${draftPhotoHTML(0)}
+      ${draftAudienceHTML(0, null)}
       <div class="linkedin-preview" id="preview0">
         <div class="lp-header"><div class="lp-avatar">MB</div><div><div class="lp-name">${escHtml(userName)}</div><div class="lp-title">${escHtml(userRole)}</div></div></div>
         <div class="lp-body" id="previewBody0"></div>
@@ -1890,6 +1925,36 @@ function removeDraftPhoto(idx) {
   saveActiveDraft(); // update saved state when photo removed
 }
 
+// ── AUDIENCE TAGGING ───────────────────────────────────────────
+const AUDIENCE_OPTS = [
+  { key:'owners',  label:'🏢 Owners',  cls:'aud-owners'  },
+  { key:'tenants', label:'🏪 Tenants', cls:'aud-tenants' },
+  { key:'brokers', label:'🤝 Brokers', cls:'aud-brokers' },
+  { key:'general', label:'🌐 General', cls:'aud-general' },
+];
+const AUDIENCE_LABELS = { owners:'🏢 Owners', tenants:'🏪 Tenants', brokers:'🤝 Brokers', general:'🌐 General' };
+
+function draftAudienceHTML(idx, selected) {
+  const buttons = AUDIENCE_OPTS.map(o =>
+    `<button class="audience-btn ${o.cls}${selected === o.key ? ' active' : ''}" onclick="setDraftAudience(${idx},'${o.key}',this)">${o.label}</button>`
+  ).join('');
+  return `<div class="audience-selector" id="audienceRow${idx}">
+    <span class="audience-label">Audience:</span>${buttons}
+  </div>`;
+}
+
+function setDraftAudience(idx, audience, el) {
+  draftAudiences[idx] = audience;
+  const row = document.getElementById('audienceRow' + idx);
+  if (row) row.querySelectorAll('.audience-btn').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  scheduleSave();
+}
+
+function getDraftAudience(idx) {
+  return draftAudiences[idx] || null;
+}
+
 async function uploadPhotoToLinkedIn(token, base64, mimeType) {
   const res = await fetchWithTimeout(LI_WORKER + '/upload-image', {
     method:  'POST',
@@ -1953,6 +2018,7 @@ async function postToLinkedIn(idx) {
         hashtags:    draftHash,
         pillar:      document.getElementById('pillarSelect')?.value || 'mixed',
         type:        (document.querySelector('#draftCard'+idx+' .draft-label span')?.textContent || 'Post').replace(/^[^\w]+/,'').trim(),
+        audience:    getDraftAudience(idx),
         publishedAt: new Date().toISOString(),
         hasPhoto:    !!imageAssetUrn,
         stats:       { likes: 0, comments: 0, shares: 0, lastFetched: null },
@@ -2017,17 +2083,24 @@ function renderPerformance() {
 
   // Charts
   renderBarChart('chartPillarLikes',  Object.entries(pillarGroups).map(([k,v]) => ({ label: pillarLabels[k]||k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#818cf8');
-  const styleGroups = {};
+  const styleGroups = {}, audienceGroups = {};
   posts.forEach(p => {
     const t = p.type || 'Post';
     if (!styleGroups[t]) styleGroups[t] = { likes: 0, comments: 0, count: 0 };
     styleGroups[t].likes    += (p.stats?.likes    || 0);
     styleGroups[t].comments += (p.stats?.comments || 0);
     styleGroups[t].count++;
+    const a = p.audience || 'untagged';
+    if (!audienceGroups[a]) audienceGroups[a] = { likes: 0, comments: 0, count: 0 };
+    audienceGroups[a].likes    += (p.stats?.likes    || 0);
+    audienceGroups[a].comments += (p.stats?.comments || 0);
+    audienceGroups[a].count++;
   });
-  renderBarChart('chartStyleLikes',       Object.entries(styleGroups).map(([k,v]) => ({ label: k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#f97316');
-  renderBarChart('chartPillarComments',   Object.entries(pillarGroups).map(([k,v]) => ({ label: pillarLabels[k]||k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#34d399');
-  renderBarChart('chartStyleEngagement',  Object.entries(styleGroups).map(([k,v]) => ({ label: k, val: v.count ? +((v.likes+v.comments)/v.count).toFixed(1) : 0 })), '#a78bfa');
+  renderBarChart('chartStyleLikes',        Object.entries(styleGroups).map(([k,v])    => ({ label: k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#f97316');
+  renderBarChart('chartPillarComments',    Object.entries(pillarGroups).map(([k,v])   => ({ label: pillarLabels[k]||k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#34d399');
+  renderBarChart('chartStyleEngagement',   Object.entries(styleGroups).map(([k,v])    => ({ label: k, val: v.count ? +((v.likes+v.comments)/v.count).toFixed(1) : 0 })), '#a78bfa');
+  renderBarChart('chartAudienceLikes',     Object.entries(audienceGroups).map(([k,v]) => ({ label: AUDIENCE_LABELS[k]||k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#14b8a6');
+  renderBarChart('chartAudienceEngagement',Object.entries(audienceGroups).map(([k,v]) => ({ label: AUDIENCE_LABELS[k]||k, val: v.count ? +((v.likes+v.comments)/v.count).toFixed(1) : 0 })), '#6366f1');
 
   // Post list
   const header = `<div class="perf-posts-header">
@@ -2039,7 +2112,7 @@ function renderPerformance() {
     return `<div class="perf-post-row">
       <div>
         <div class="perf-post-preview">${escHtmlFull((p.text||'').substring(0,70))}…</div>
-        <div class="perf-post-meta">${p.type || 'Post'} · ${date} · <span id="fetchedLabel${i}">${fetched}</span></div>
+        <div class="perf-post-meta">${p.type || 'Post'} · ${date}${p.audience ? ' · <span class="audience-badge aud-'+p.audience+'">' + (AUDIENCE_LABELS[p.audience]||p.audience) + '</span>' : ''} · <span id="fetchedLabel${i}">${fetched}</span></div>
       </div>
       <div class="perf-num likes" id="perfLikes${i}">${p.stats?.likes ?? '—'}</div>
       <div class="perf-num comments" id="perfComments${i}">${p.stats?.comments ?? '—'}</div>
@@ -2157,10 +2230,20 @@ function renderPerformanceSummary() {
     if (!styleGroups[t]) styleGroups[t] = { likes: 0, comments: 0, count: 0 };
     styleGroups[t].likes += (p.stats?.likes||0); styleGroups[t].comments += (p.stats?.comments||0); styleGroups[t].count++;
   });
-  renderBarChart('chartPillarLikes',     Object.entries(pillarGroups).map(([k,v]) => ({ label: pillarLabels[k]||k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#818cf8');
-  renderBarChart('chartStyleLikes',      Object.entries(styleGroups).map(([k,v])  => ({ label: k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#f97316');
-  renderBarChart('chartPillarComments',  Object.entries(pillarGroups).map(([k,v]) => ({ label: pillarLabels[k]||k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#34d399');
-  renderBarChart('chartStyleEngagement', Object.entries(styleGroups).map(([k,v])  => ({ label: k, val: v.count ? +((v.likes+v.comments)/v.count).toFixed(1) : 0 })), '#a78bfa');
+  const audienceGroups2 = {};
+  posts.forEach(p => {
+    const a = p.audience || 'untagged';
+    if (!audienceGroups2[a]) audienceGroups2[a] = { likes: 0, comments: 0, count: 0 };
+    audienceGroups2[a].likes    += (p.stats?.likes    || 0);
+    audienceGroups2[a].comments += (p.stats?.comments || 0);
+    audienceGroups2[a].count++;
+  });
+  renderBarChart('chartPillarLikes',        Object.entries(pillarGroups).map(([k,v])    => ({ label: pillarLabels[k]||k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#818cf8');
+  renderBarChart('chartStyleLikes',         Object.entries(styleGroups).map(([k,v])     => ({ label: k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#f97316');
+  renderBarChart('chartPillarComments',     Object.entries(pillarGroups).map(([k,v])    => ({ label: pillarLabels[k]||k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#34d399');
+  renderBarChart('chartStyleEngagement',    Object.entries(styleGroups).map(([k,v])     => ({ label: k, val: v.count ? +((v.likes+v.comments)/v.count).toFixed(1) : 0 })), '#a78bfa');
+  renderBarChart('chartAudienceLikes',      Object.entries(audienceGroups2).map(([k,v]) => ({ label: AUDIENCE_LABELS[k]||k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#14b8a6');
+  renderBarChart('chartAudienceEngagement', Object.entries(audienceGroups2).map(([k,v]) => ({ label: AUDIENCE_LABELS[k]||k, val: v.count ? +((v.likes+v.comments)/v.count).toFixed(1) : 0 })), '#6366f1');
 }
 
 function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
