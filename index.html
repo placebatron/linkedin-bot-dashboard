@@ -709,8 +709,9 @@ function saveActiveDraft() {
   }
   if (!drafts.length) return;
   const record = {
-    source:   _activeDraftMeta?.source   || 'unknown',
-    cardName: _activeDraftMeta?.cardName || 'Draft',
+    source:        _activeDraftMeta?.source   || 'unknown',
+    cardName:      _activeDraftMeta?.cardName || 'Draft',
+    trelloCardId:  _activeTrelloCardId || null,
     drafts,
     savedAt: new Date().toISOString(),
   };
@@ -797,6 +798,9 @@ function resumeActiveDraft() {
   // Restore audience state
   draftAudiences = {};
   record.drafts.forEach((d, i) => { if (d.audience) draftAudiences[i] = d.audience; });
+
+  // Restore source Trello card ID so Save updates the original card rather than creating a duplicate
+  _activeTrelloCardId = record.trelloCardId || null;
 
   const renderRestoredDraft = (d, i) => {
     const photoStrip = draftPhotoHTML(i);
@@ -1526,9 +1530,17 @@ ${post}`;
 async function saveToDraftsTrello(idx, type) {
   const key = localStorage.getItem('trelloKey'), token = localStorage.getItem('trelloToken');
   if (!key || !token) { showStatus('draftSaveStatus'+idx,'error','⚠️ Add Trello credentials in Settings.'); return; }
-  showStatus('draftSaveStatus'+idx,'info','Saving...');
+
+  // Find and disable the save button for this card to give clear feedback
+  const saveBtn = document.querySelector(`#draftCard${idx} .btn-success`);
+  const origLabel = saveBtn ? saveBtn.innerHTML : null;
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<span class="spinner"></span> Saving…'; }
+  showStatus('draftSaveStatus'+idx,'info','💾 Saving to Trello…');
+
   const body = document.getElementById('draftBody'+idx)?.innerText || '';
   const hash = document.getElementById('draftHash'+idx)?.innerText || '';
+
+  const resetBtn = () => { if (saveBtn && origLabel) { saveBtn.disabled = false; saveBtn.innerHTML = origLabel; } };
 
   // If this draft was loaded from an existing Trello card, update it — don't create a duplicate
   if (_activeTrelloCardId) {
@@ -1540,18 +1552,20 @@ async function saveToDraftsTrello(idx, type) {
       const card = await res.json();
       if (card.id) {
         showStatus('draftSaveStatus'+idx,'success','✅ Trello card updated!');
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '✅ Saved'; }
         clearActiveDraft();
       } else {
-        showStatus('draftSaveStatus'+idx,'error','❌ Update failed: ' + JSON.stringify(card.message || card));
+        showStatus('draftSaveStatus'+idx,'error','❌ Update failed: ' + (card.message || JSON.stringify(card)));
+        resetBtn();
       }
-    } catch(e) { showStatus('draftSaveStatus'+idx,'error','❌ ' + e.message); }
+    } catch(e) { showStatus('draftSaveStatus'+idx,'error','❌ ' + e.message); resetBtn(); }
     return;
   }
 
   // No source card — create a new card in Working Drafts
   await fetchTrelloListIds();
   const listId = trelloListIds['Working Drafts'];
-  if (!listId) { showStatus('draftSaveStatus'+idx,'error','Could not find "Working Drafts" list.'); return; }
+  if (!listId) { showStatus('draftSaveStatus'+idx,'error','❌ Could not find "Working Drafts" list on your Trello board.'); resetBtn(); return; }
   const cardName = '[' + type + '] ' + body.substring(0,55) + (body.length>55?'...':'');
   try {
     const res = await fetch('https://api.trello.com/1/cards', {
@@ -1562,11 +1576,13 @@ async function saveToDraftsTrello(idx, type) {
     if (card.id) {
       _activeTrelloCardId = card.id; // track the new card so subsequent saves update it
       showStatus('draftSaveStatus'+idx,'success','✅ Saved to Working Drafts on Trello!');
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '✅ Saved'; }
       clearActiveDraft();
     } else {
-      showStatus('draftSaveStatus'+idx,'error','❌ Failed to save: ' + JSON.stringify(card.message || card));
+      showStatus('draftSaveStatus'+idx,'error','❌ Failed to save: ' + (card.message || JSON.stringify(card)));
+      resetBtn();
     }
-  } catch(e) { showStatus('draftSaveStatus'+idx,'error','❌ ' + e.message); }
+  } catch(e) { showStatus('draftSaveStatus'+idx,'error','❌ ' + e.message); resetBtn(); }
 }
 
 function copyPost(idx) {
@@ -1761,6 +1777,7 @@ function loadTrelloDraftIntoBot(cardName, cardDesc, listName, sourceCardId) {
   draftPhotos = {};       // clear stale photo from any previous card
   draftAudiences = {};    // clear stale audience from any previous card
   _activeTrelloCardId = sourceCardId || null; // track so save updates instead of duplicates
+  clearActiveDraft();     // dismiss any resume banner — Trello card is the active draft now
   // Navigate to Create Post page
   showPage('create');
   const id = 'trello_' + Date.now() + '_0';
