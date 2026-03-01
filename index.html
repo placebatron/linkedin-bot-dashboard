@@ -2457,17 +2457,28 @@ function renderPerformance() {
   const rows = posts.map((p, i) => {
     const date = new Date(p.publishedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'});
     const fetched = p.stats?.lastFetched ? 'Updated ' + new Date(p.stats.lastFetched).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : 'Not fetched yet';
-    return `<div class="perf-post-row">
-      <div>
-        <div class="perf-post-preview">${escHtmlFull((p.text||'').substring(0,70))}…</div>
-        <div class="perf-post-meta">${p.type || 'Post'} · ${date}${p.audience ? ' · <span class="audience-badge aud-'+p.audience+'">' + (AUDIENCE_LABELS[p.audience]||p.audience) + '</span>' : ''} · <span id="fetchedLabel${i}">${fetched}</span></div>
+    return `<div style="border-bottom:1px solid var(--border)">
+      <div class="perf-post-row" style="border-bottom:none">
+        <div>
+          <div class="perf-post-preview">${escHtmlFull((p.text||'').substring(0,70))}…</div>
+          <div class="perf-post-meta">${p.type || 'Post'} · ${date}${p.audience ? ' · <span class="audience-badge aud-'+p.audience+'">' + (AUDIENCE_LABELS[p.audience]||p.audience) + '</span>' : ''} · <span id="fetchedLabel${i}">${fetched}</span></div>
+        </div>
+        <div class="perf-num likes" id="perfLikes${i}">${p.stats?.likes ?? '—'}</div>
+        <div class="perf-num comments" id="perfComments${i}">${p.stats?.comments ?? '—'}</div>
+        <div class="perf-num" style="color:#fbbf24" id="perfShares${i}">${p.stats?.shares ?? '—'}</div>
+        <div style="text-align:center"><span style="font-size:12px">${pillarLabels[p.pillar]||p.pillar||'—'}</span></div>
+        <div style="text-align:center;display:flex;gap:4px;justify-content:center;align-items:center">
+          ${p.liPostId ? `<button class="btn btn-sm perf-refresh-btn" title="Auto-fetch from LinkedIn" onclick="fetchPostStats(${i})">↻</button>` : ''}
+          <button class="btn btn-sm perf-refresh-btn" title="Enter stats manually" onclick="openManualStats(${i})" style="font-size:12px">✏️</button>
+        </div>
       </div>
-      <div class="perf-num likes" id="perfLikes${i}">${p.stats?.likes ?? '—'}</div>
-      <div class="perf-num comments" id="perfComments${i}">${p.stats?.comments ?? '—'}</div>
-      <div class="perf-num" style="color:#fbbf24" id="perfShares${i}">${p.stats?.shares ?? '—'}</div>
-      <div style="text-align:center"><span style="font-size:12px">${pillarLabels[p.pillar]||p.pillar||'—'}</span></div>
-      <div style="text-align:center;display:flex;gap:4px;justify-content:center">
-        ${p.liPostId ? `<button class="btn btn-sm perf-refresh-btn" onclick="fetchPostStats(${i})">↻</button>` : '<span style="font-size:11px;color:var(--muted)">No ID</span>'}
+      <div id="manualStats-${i}" style="display:none;padding:8px 16px 12px;background:var(--surface);gap:8px;align-items:center;flex-wrap:wrap">
+        <span style="font-size:12px;color:var(--muted);margin-right:4px">Enter stats manually:</span>
+        <label style="font-size:12px;display:flex;align-items:center;gap:4px">👍 <input type="number" id="mLikes-${i}" min="0" placeholder="Likes" style="width:70px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px"></label>
+        <label style="font-size:12px;display:flex;align-items:center;gap:4px">💬 <input type="number" id="mComments-${i}" min="0" placeholder="Comments" style="width:70px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px"></label>
+        <label style="font-size:12px;display:flex;align-items:center;gap:4px">🔄 <input type="number" id="mShares-${i}" min="0" placeholder="Shares" style="width:70px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px"></label>
+        <button class="btn btn-success btn-sm" onclick="saveManualStats(${i})">✓ Save</button>
+        <button class="btn btn-sm" onclick="cancelManualStats(${i})">✕</button>
       </div>
     </div>`;
   }).join('');
@@ -2532,9 +2543,22 @@ async function refreshAllStats() {
   if (!token) { showStatus('perfStatus','error','⚠️ LinkedIn not connected. Reconnect in Settings.'); return; }
   const btn = document.getElementById('refreshAllBtn');
   if (btn) { btn.disabled = true; btn.textContent = '↻ Refreshing…'; }
-  showStatus('perfStatus','info','🔄 Refreshing stats for all posts with LinkedIn IDs…');
+
   const withIds = publishedPosts.filter(p => p.liPostId);
-  let updated = 0;
+  const noIds   = publishedPosts.length - withIds.length;
+
+  if (!withIds.length) {
+    const msg = noIds > 0
+      ? `ℹ️ ${noIds} post${noIds>1?'s have':' has'} no LinkedIn ID — use the ✏️ button on each row to enter stats manually.`
+      : 'No published posts found.';
+    showStatus('perfStatus','info', msg);
+    if (btn) { btn.disabled = false; btn.textContent = '↻ Refresh All Stats'; }
+    return;
+  }
+
+  showStatus('perfStatus','info',`🔄 Refreshing stats for ${withIds.length} post${withIds.length>1?'s':''}…`);
+  let updated = 0, failed = 0, lastError = '';
+
   for (let i = 0; i < withIds.length; i++) {
     const idx = publishedPosts.indexOf(withIds[i]);
     try {
@@ -2544,16 +2568,26 @@ async function refreshAllStats() {
         body: JSON.stringify({ access_token: token, postId: withIds[i].liPostId }),
       }, 15000);
       const data = await res.json();
-      if (!data.error) {
+      if (data.error) {
+        failed++;
+        lastError = data.error + (data.detail ? ' — ' + JSON.stringify(data.detail) : '');
+      } else {
         publishedPosts[idx].stats = { likes: data.likes||0, comments: data.comments||0, shares: data.shares||0, lastFetched: new Date().toISOString() };
         updated++;
       }
-    } catch(e) { /* skip failures */ }
+    } catch(e) { failed++; lastError = e.message; }
     await new Promise(r => setTimeout(r, 400)); // rate-limit requests
   }
   persistPublished();
   renderPerformance();
-  showStatus('perfStatus','success',`✅ Updated ${updated} post${updated!==1?'s':''}.`);
+
+  if (updated > 0 && failed === 0) {
+    showStatus('perfStatus','success',`✅ Updated ${updated} post${updated>1?'s':''}.`);
+  } else if (updated > 0) {
+    showStatus('perfStatus','info',`✅ Updated ${updated}, ❌ ${failed} failed: ${lastError}`);
+  } else {
+    showStatus('perfStatus','error',`❌ LinkedIn API couldn't return stats (${lastError}). This is common for personal profiles — use the ✏️ button on each row to enter stats manually.`);
+  }
   if (btn) { btn.disabled = false; btn.textContent = '↻ Refresh All Stats'; }
 }
 
@@ -2595,6 +2629,43 @@ function renderPerformanceSummary() {
 }
 
 function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+
+// ── MANUAL STATS ENTRY ─────────────────────────────────────────
+function openManualStats(idx) {
+  // Close any other open forms first
+  document.querySelectorAll('[id^="manualStats-"]').forEach(el => el.style.display = 'none');
+  const post = publishedPosts[idx];
+  const form = document.getElementById('manualStats-' + idx);
+  if (!form) return;
+  const lEl = document.getElementById('mLikes-'    + idx);
+  const cEl = document.getElementById('mComments-' + idx);
+  const sEl = document.getElementById('mShares-'   + idx);
+  if (lEl) lEl.value = post.stats?.likes    ?? '';
+  if (cEl) cEl.value = post.stats?.comments ?? '';
+  if (sEl) sEl.value = post.stats?.shares   ?? '';
+  form.style.display = 'flex';
+  if (lEl) lEl.focus();
+}
+
+function saveManualStats(idx) {
+  const likes    = parseInt(document.getElementById('mLikes-'    + idx)?.value) || 0;
+  const comments = parseInt(document.getElementById('mComments-' + idx)?.value) || 0;
+  const shares   = parseInt(document.getElementById('mShares-'   + idx)?.value) || 0;
+  publishedPosts[idx].stats = { likes, comments, shares, lastFetched: new Date().toISOString() };
+  persistPublished();
+  setText('perfLikes'    + idx, likes);
+  setText('perfComments' + idx, comments);
+  setText('perfShares'   + idx, shares);
+  const label = document.getElementById('fetchedLabel' + idx);
+  if (label) label.textContent = 'Entered manually just now';
+  document.getElementById('manualStats-' + idx).style.display = 'none';
+  renderPerformanceSummary();
+}
+
+function cancelManualStats(idx) {
+  const form = document.getElementById('manualStats-' + idx);
+  if (form) form.style.display = 'none';
+}
 
 // ── Utilities ──────────────────────────────────────────────────
 function showStatus(id, type, msg) {
