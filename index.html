@@ -447,9 +447,9 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
     <div class="page" id="page-performance">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
         <div class="section-title">📊 Performance</div>
-        <button class="btn btn-sm" onclick="refreshAllStats()" id="refreshAllBtn">↻ Refresh All Stats</button>
+        <button class="btn btn-sm" onclick="refreshAllStats()" id="refreshAllBtn" title="LinkedIn restricts analytics API for personal profiles — may not return data">↻ Refresh All Stats</button>
       </div>
-      <div class="section-sub">Engagement data pulled live from LinkedIn for every post you've published through this tool.</div>
+      <div class="section-sub">Track engagement for every post published through this tool. Use ✏️ on any row to enter stats manually — LinkedIn's API restricts analytics access for personal profiles.</div>
       <div class="status-bar" id="perfStatus"></div>
 
       <!-- Summary stats -->
@@ -2532,8 +2532,11 @@ async function fetchPostStats(idx) {
     if (label) label.textContent = 'Updated just now';
     renderPerformanceSummary(); // re-render summary + charts only
   } catch(e) {
-    showStatus('perfStatus','error','❌ Could not fetch stats: ' + e.message);
-    if (label) label.textContent = 'Fetch failed';
+    const msg = e.message.includes('ACCESS_DENIED') || e.message.includes('403')
+      ? 'ℹ️ LinkedIn API restricts analytics for personal profiles. Use ✏️ to enter stats manually.'
+      : '⚠️ Could not fetch stats: ' + e.message;
+    showStatus('perfStatus', e.message.includes('ACCESS_DENIED') ? 'info' : 'error', msg);
+    if (label) label.textContent = 'Not available via API';
   }
   if (btn) { btn.textContent = '↻'; btn.disabled = false; }
 }
@@ -2581,12 +2584,15 @@ async function refreshAllStats() {
   persistPublished();
   renderPerformance();
 
+  const isAccessDenied = lastError.includes('ACCESS_DENIED') || lastError.includes('403');
   if (updated > 0 && failed === 0) {
     showStatus('perfStatus','success',`✅ Updated ${updated} post${updated>1?'s':''}.`);
   } else if (updated > 0) {
-    showStatus('perfStatus','info',`✅ Updated ${updated}, ❌ ${failed} failed: ${lastError}`);
+    showStatus('perfStatus','info',`✅ Updated ${updated}, ⚠️ ${failed} failed: ${lastError}`);
+  } else if (isAccessDenied) {
+    showStatus('perfStatus','info',`ℹ️ LinkedIn's API doesn't allow analytics for personal profiles — this is a LinkedIn restriction, not a connection issue. Use ✏️ on each row to enter your stats from LinkedIn's native analytics page.`);
   } else {
-    showStatus('perfStatus','error',`❌ LinkedIn API couldn't return stats (${lastError}). This is common for personal profiles — use the ✏️ button on each row to enter stats manually.`);
+    showStatus('perfStatus','info',`⚠️ Could not fetch stats: ${lastError}. Use ✏️ on each row to enter stats manually.`);
   }
   if (btn) { btn.disabled = false; btn.textContent = '↻ Refresh All Stats'; }
 }
