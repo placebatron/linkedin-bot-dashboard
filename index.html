@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LinkedIn Bot Dashboard — Baum Realty</title>
 <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root {
   --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a; --border: #2e3250;
@@ -447,9 +448,15 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
     <div class="page" id="page-performance">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
         <div class="section-title">📊 Performance</div>
-        <button class="btn btn-sm" onclick="refreshAllStats()" id="refreshAllBtn" title="LinkedIn restricts analytics API for personal profiles — may not return data">↻ Refresh All Stats</button>
+        <div style="display:flex;gap:8px;align-items:center">
+          <label class="btn btn-sm btn-linkedin" title="Import one or more LinkedIn PostAnalytics .xlsx exports" style="cursor:pointer">
+            📥 Import LinkedIn Export
+            <input type="file" accept=".xlsx" multiple style="display:none" onchange="importLinkedInExport(this.files)">
+          </label>
+          <button class="btn btn-sm" onclick="refreshAllStats()" id="refreshAllBtn" title="LinkedIn restricts analytics API for personal profiles — may not return data">↻ Refresh All Stats</button>
+        </div>
       </div>
-      <div class="section-sub">Track engagement for every post published through this tool. Use ✏️ on any row to enter stats manually — LinkedIn's API restricts analytics access for personal profiles.</div>
+      <div class="section-sub">Import LinkedIn's PostAnalytics .xlsx export files to sync stats automatically — or use ✏️ on any row to enter stats manually.</div>
       <div class="status-bar" id="perfStatus"></div>
 
       <!-- Summary stats -->
@@ -2452,7 +2459,7 @@ function renderPerformance() {
 
   // Post list
   const header = `<div class="perf-posts-header">
-    <div>Post</div><div style="text-align:center">👍 Likes</div><div style="text-align:center">💬 Comments</div><div style="text-align:center">🔄 Shares</div><div style="text-align:center">Pillar</div><div style="text-align:center">Actions</div>
+    <div>Post</div><div style="text-align:center">👁 Impressions</div><div style="text-align:center">👍 Likes</div><div style="text-align:center">💬 Comments</div><div style="text-align:center">🔄 Shares</div><div style="text-align:center">Actions</div>
   </div>`;
   const rows = posts.map((p, i) => {
     const date = new Date(p.publishedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'});
@@ -2464,10 +2471,10 @@ function renderPerformance() {
           <div class="perf-post-preview">${escHtmlFull((p.text||'').substring(0,70))}… ${urlLink}</div>
           <div class="perf-post-meta">${p.type || 'Post'} · ${date}${p.audience ? ' · <span class="audience-badge aud-'+p.audience+'">' + (AUDIENCE_LABELS[p.audience]||p.audience) + '</span>' : ''} · <span id="fetchedLabel${i}">${fetched}</span></div>
         </div>
+        <div class="perf-num" style="color:#a78bfa" id="perfImpressions${i}">${p.stats?.impressions ?? '—'}</div>
         <div class="perf-num likes" id="perfLikes${i}">${p.stats?.likes ?? '—'}</div>
         <div class="perf-num comments" id="perfComments${i}">${p.stats?.comments ?? '—'}</div>
         <div class="perf-num" style="color:#fbbf24" id="perfShares${i}">${p.stats?.shares ?? '—'}</div>
-        <div style="text-align:center"><span style="font-size:12px">${pillarLabels[p.pillar]||p.pillar||'—'}</span></div>
         <div style="text-align:center;display:flex;gap:4px;justify-content:center;align-items:center">
           ${p.liPostId ? `<button class="btn btn-sm perf-refresh-btn" title="Auto-fetch from LinkedIn" onclick="fetchPostStats(${i})">↻</button>` : ''}
           <button class="btn btn-sm perf-refresh-btn" title="Edit stats &amp; URL" onclick="openManualStats(${i})" style="font-size:12px">✏️</button>
@@ -2476,6 +2483,7 @@ function renderPerformance() {
       <div id="manualStats-${i}" style="display:none;padding:10px 16px 14px;background:var(--surface);flex-direction:column;gap:10px">
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <span style="font-size:12px;color:var(--muted);font-weight:600;min-width:80px">Stats:</span>
+          <label style="font-size:12px;display:flex;align-items:center;gap:4px">👁 <input type="number" id="mImpressions-${i}" min="0" placeholder="Impressions" style="width:90px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px"></label>
           <label style="font-size:12px;display:flex;align-items:center;gap:4px">👍 <input type="number" id="mLikes-${i}" min="0" placeholder="Likes" style="width:70px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px"></label>
           <label style="font-size:12px;display:flex;align-items:center;gap:4px">💬 <input type="number" id="mComments-${i}" min="0" placeholder="Comments" style="width:70px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px"></label>
           <label style="font-size:12px;display:flex;align-items:center;gap:4px">🔄 <input type="number" id="mShares-${i}" min="0" placeholder="Reposts" style="width:70px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px"></label>
@@ -2646,6 +2654,99 @@ function renderPerformanceSummary() {
 
 function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
 
+// ── LINKEDIN EXPORT IMPORT ─────────────────────────────────────
+function parseLinkedInExportXlsx(arrayBuffer) {
+  const wb = XLSX.read(arrayBuffer, { type: 'array' });
+  const ws = wb.Sheets['PERFORMANCE'];
+  if (!ws) throw new Error('No PERFORMANCE sheet found — is this a LinkedIn PostAnalytics export?');
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+  // Build a lookup: label (col 0) → value (col 1)
+  const kv = {};
+  rows.forEach(r => { if (r[0]) kv[String(r[0]).trim()] = String(r[1] ?? '').trim(); });
+  const parseNum = s => parseInt((s || '0').replace(/,/g, ''), 10) || 0;
+  return {
+    postUrl:     kv['Post URL']     || '',
+    postDate:    kv['Post Date']    || '',
+    impressions: parseNum(kv['Impressions']),
+    reached:     parseNum(kv['Members reached']),
+    reactions:   parseNum(kv['Reactions']),
+    comments:    parseNum(kv['Comments']),
+    reposts:     parseNum(kv['Reposts']),
+    saves:       parseNum(kv['Saves']),
+  };
+}
+
+async function importLinkedInExport(files) {
+  if (!files || !files.length) return;
+  showStatus('perfStatus', 'info', `⏳ Importing ${files.length} file${files.length > 1 ? 's' : ''}…`);
+  let matched = 0, unmatched = 0, errors = 0;
+  const unmatchedUrls = [];
+
+  for (const file of Array.from(files)) {
+    try {
+      const buf = await file.arrayBuffer();
+      const data = parseLinkedInExportXlsx(buf);
+      if (!data.postUrl) { errors++; continue; }
+
+      // Normalise URL for matching — strip trailing slash, query params
+      const norm = u => (u || '').replace(/[/?#].*$/, '').replace(/\/$/, '').toLowerCase();
+      const normUrl = norm(data.postUrl);
+
+      // Try to match to an existing publishedPost by liUrl or by extracting the share ID
+      const shareIdMatch = data.postUrl.match(/urn:li:(?:share|activity):(\d+)/i);
+      const shareId = shareIdMatch ? shareIdMatch[1] : null;
+
+      let idx = publishedPosts.findIndex(p =>
+        (p.liUrl && norm(p.liUrl) === normUrl) ||
+        (shareId && p.liUrl && p.liUrl.includes(shareId)) ||
+        (shareId && p.liPostId && p.liPostId.includes(shareId))
+      );
+
+      if (idx === -1) {
+        // No match — create a new entry from the export data
+        publishedPosts.unshift({
+          id:          'li_import_' + Date.now() + '_' + Math.random().toString(36).slice(2),
+          liPostId:    shareId ? 'urn:li:share:' + shareId : null,
+          liUrl:       data.postUrl,
+          text:        '(Imported from LinkedIn — ' + data.postDate + ')',
+          hashtags:    '',
+          pillar:      'mixed',
+          type:        'Imported',
+          audience:    null,
+          publishedAt: data.postDate ? new Date(data.postDate).toISOString() : new Date().toISOString(),
+          hasPhoto:    false,
+          stats:       { impressions: data.impressions, reached: data.reached, likes: data.reactions, comments: data.comments, shares: data.reposts, saves: data.saves, lastFetched: new Date().toISOString() },
+        });
+        unmatched++; // created new
+      } else {
+        publishedPosts[idx].stats = {
+          impressions: data.impressions,
+          reached:     data.reached,
+          likes:       data.reactions,
+          comments:    data.comments,
+          shares:      data.reposts,
+          saves:       data.saves,
+          lastFetched: new Date().toISOString(),
+        };
+        if (data.postUrl && !publishedPosts[idx].liUrl) publishedPosts[idx].liUrl = data.postUrl;
+        matched++;
+      }
+    } catch(e) { errors++; console.error('Import error:', file.name, e); }
+  }
+
+  // Reset file input so the same file can be re-imported
+  document.querySelectorAll('input[type=file][onchange*="importLinkedInExport"]').forEach(el => el.value = '');
+
+  persistPublished();
+  renderPerformance();
+
+  const parts = [];
+  if (matched)   parts.push(`✅ ${matched} post${matched>1?'s':''} updated`);
+  if (unmatched) parts.push(`➕ ${unmatched} new post${unmatched>1?'s':''} added`);
+  if (errors)    parts.push(`❌ ${errors} file${errors>1?'s':''} failed`);
+  showStatus('perfStatus', errors && !matched && !unmatched ? 'error' : 'success', parts.join(' · '));
+}
+
 // ── MANUAL STATS ENTRY ─────────────────────────────────────────
 function openManualStats(idx) {
   // Close any other open forms first
@@ -2653,14 +2754,16 @@ function openManualStats(idx) {
   const post = publishedPosts[idx];
   const form = document.getElementById('manualStats-' + idx);
   if (!form) return;
-  const lEl   = document.getElementById('mLikes-'    + idx);
-  const cEl   = document.getElementById('mComments-' + idx);
-  const sEl   = document.getElementById('mShares-'   + idx);
-  const urlEl = document.getElementById('mUrl-'      + idx);
-  if (lEl)   lEl.value   = post.stats?.likes    ?? '';
-  if (cEl)   cEl.value   = post.stats?.comments ?? '';
-  if (sEl)   sEl.value   = post.stats?.shares   ?? '';
-  if (urlEl) urlEl.value = post.liUrl           ?? '';
+  const iEl   = document.getElementById('mImpressions-' + idx);
+  const lEl   = document.getElementById('mLikes-'       + idx);
+  const cEl   = document.getElementById('mComments-'    + idx);
+  const sEl   = document.getElementById('mShares-'      + idx);
+  const urlEl = document.getElementById('mUrl-'         + idx);
+  if (iEl)   iEl.value   = post.stats?.impressions ?? '';
+  if (lEl)   lEl.value   = post.stats?.likes       ?? '';
+  if (cEl)   cEl.value   = post.stats?.comments    ?? '';
+  if (sEl)   sEl.value   = post.stats?.shares      ?? '';
+  if (urlEl) urlEl.value = post.liUrl              ?? '';
   form.style.display = 'flex';
   if (urlEl) urlEl.focus();
 }
@@ -2674,12 +2777,13 @@ function extractLiPostId(url) {
 }
 
 function saveManualStats(idx) {
-  const likes    = parseInt(document.getElementById('mLikes-'    + idx)?.value) || 0;
-  const comments = parseInt(document.getElementById('mComments-' + idx)?.value) || 0;
-  const shares   = parseInt(document.getElementById('mShares-'   + idx)?.value) || 0;
-  const rawUrl   = (document.getElementById('mUrl-' + idx)?.value || '').trim();
+  const impressions = parseInt(document.getElementById('mImpressions-' + idx)?.value) || 0;
+  const likes       = parseInt(document.getElementById('mLikes-'       + idx)?.value) || 0;
+  const comments    = parseInt(document.getElementById('mComments-'    + idx)?.value) || 0;
+  const shares      = parseInt(document.getElementById('mShares-'      + idx)?.value) || 0;
+  const rawUrl      = (document.getElementById('mUrl-' + idx)?.value || '').trim();
 
-  publishedPosts[idx].stats = { likes, comments, shares, lastFetched: new Date().toISOString() };
+  publishedPosts[idx].stats = { impressions, likes, comments, shares, lastFetched: new Date().toISOString() };
 
   if (rawUrl) {
     publishedPosts[idx].liUrl = rawUrl;
@@ -2691,9 +2795,10 @@ function saveManualStats(idx) {
   }
 
   persistPublished();
-  setText('perfLikes'    + idx, likes);
-  setText('perfComments' + idx, comments);
-  setText('perfShares'   + idx, shares);
+  setText('perfImpressions' + idx, impressions || '—');
+  setText('perfLikes'       + idx, likes);
+  setText('perfComments'    + idx, comments);
+  setText('perfShares'      + idx, shares);
   const label = document.getElementById('fetchedLabel' + idx);
   if (label) label.textContent = 'Updated manually just now';
   document.getElementById('manualStats-' + idx).style.display = 'none';
