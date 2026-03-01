@@ -1067,6 +1067,7 @@ async function loadWorkingDrafts() {
           <a href="${c.shortUrl}" target="_blank" class="btn btn-sm">📋 Open in Trello</a>
           <button class="btn btn-sm" onclick="moveToProduction('${c.id}')">🚀 Move to Production</button>
           <button class="btn btn-linkedin btn-sm" onclick="loadTrelloDraftFromCache('${c.id}')">✏️ Edit in Bot</button>
+          <button class="btn btn-sm" style="color:#c0392b;border-color:#c0392b" data-delete-card="${c.id}" onclick="deleteWorkingDraft('${c.id}')">🗑️ Delete</button>
         </div>
         <div id="collabStatus-${c.id}" class="status-bar" style="display:none"></div>
       </div>`;
@@ -1153,6 +1154,21 @@ async function archiveBrainstormCard(cardId) {
       method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ closed: true })
     });
   } catch(e) { console.error('Archive card:', e); }
+}
+
+async function deleteWorkingDraft(cardId) {
+  if (!confirm('Archive this draft? It will be removed from Working Drafts in Trello.')) return;
+  const key = localStorage.getItem('trelloKey'), token = localStorage.getItem('trelloToken');
+  if (!key || !token) return;
+  const btn = document.querySelector(`[data-delete-card="${cardId}"]`);
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  try {
+    await fetch(`https://api.trello.com/1/cards/${cardId}?key=${key}&token=${token}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ closed: true })
+    });
+    loadWorkingDrafts(); // refresh the list
+  } catch(e) { alert('Could not delete draft: ' + e.message); if (btn) { btn.disabled = false; btn.textContent = '🗑️ Delete'; } }
 }
 
 // ── Source Toggle ──────────────────────────────────────────────
@@ -1732,18 +1748,42 @@ function removeFromCalendar(dateKey, idx) {
 }
 
 function scheduleDraftToDate(draftId) {
-  // Just open current month's first open weekday as a convenience prompt
-  document.getElementById('scheduleModal').classList.add('open');
-  pendingScheduleDate = null;
   const draft = savedDrafts.find(d => d.id === draftId);
-  document.getElementById('modalTitle').textContent = '📅 Pick a day to schedule this post';
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('modalTitle').textContent = '📅 Schedule This Post';
   document.getElementById('modalSub').textContent = draft ? '"' + (draft.text||'').substring(0,60) + '…"' : '';
-  document.getElementById('modalPostList').innerHTML = '<div style="color:var(--muted);font-size:13px">Click any day on the calendar to schedule this post.</div>';
-  // Store pending
+  document.getElementById('modalPostList').innerHTML = `
+    <div style="margin-bottom:10px;font-size:13px;color:var(--muted)">Pick a date to add this post to your content calendar:</div>
+    <input type="date" id="scheduleDatePicker" value="${today}" min="${today}"
+      style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:15px;margin-bottom:14px;box-sizing:border-box">
+    <button class="btn btn-linkedin" style="width:100%;justify-content:center" onclick="confirmScheduleFromBot('${draftId}')">📅 Confirm Schedule</button>
+  `;
   pendingScheduleDate = '_pick_' + draftId;
+  document.getElementById('scheduleModal').classList.add('open');
+}
+
+function confirmScheduleFromBot(draftId) {
+  const dateVal = document.getElementById('scheduleDatePicker')?.value;
+  if (!dateVal) { alert('Please pick a date.'); return; }
+  const draft = savedDrafts.find(d => d.id === draftId);
+  if (!draft) { alert('Draft not found.'); return; }
+  if (!calendarData[dateVal]) calendarData[dateVal] = [];
+  if (!calendarData[dateVal].some(p => p.id === draftId)) {
+    calendarData[dateVal].push({ id: draft.id, text: draft.text, pillar: draft.pillar, type: draft.type });
+    persistCalendar();
+  }
   document.getElementById('scheduleModal').classList.remove('open');
-  // Highlight calendar cells on hover — just go to calendar tab
-  showPage('calendar');
+  pendingScheduleDate = null;
+  const d = new Date(dateVal + 'T12:00:00');
+  const formatted = d.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+  // Show confirmation in the draft status bar
+  const statusBar = document.getElementById('draftSaveStatus0');
+  if (statusBar) {
+    statusBar.textContent = '📅 Scheduled for ' + formatted;
+    statusBar.className = 'status-bar success';
+    statusBar.style.display = 'block';
+    setTimeout(() => { statusBar.style.display = 'none'; }, 5000);
+  }
 }
 
 function scheduleFromDraft(draftId) { scheduleDraftToDate(draftId); }
