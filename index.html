@@ -2397,6 +2397,8 @@ async function postToLinkedIn(idx) {
 
 // ── PERFORMANCE TRACKING ───────────────────────────────────────
 function renderPerformance() {
+  // Always reload from localStorage to pick up any external changes
+  publishedPosts = JSON.parse(localStorage.getItem('publishedPosts') || '[]');
   if (!publishedPosts.length) {
     document.getElementById('perfPostsList').innerHTML = '<div class="perf-empty">No published posts yet. Posts you publish through this tool will appear here automatically.</div>';
     ['perfTotalPosts','perfTotalLikes','perfTotalComments','perfTopPillar'].forEach(id => {
@@ -2452,7 +2454,7 @@ function renderPerformance() {
     audienceGroups[a].count++;
   });
   renderBarChart('chartStyleLikes',        Object.entries(styleGroups).map(([k,v])    => ({ label: k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#f97316');
-  renderBarChart('chartPillarComments',    Object.entries(pillarGroups).map(([k,v])   => ({ label: pillarLabels[k]||k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#34d399');
+  renderBarChart('chartPillarComments',    Object.entries(pillarGroups).map(([k,v])   => ({ label: pillarLabels[k]||k, val: v.count ? +(v.comments/v.count).toFixed(1) : 0 })), '#34d399');
   renderBarChart('chartStyleEngagement',   Object.entries(styleGroups).map(([k,v])    => ({ label: k, val: v.count ? +((v.likes+v.comments)/v.count).toFixed(1) : 0 })), '#a78bfa');
   renderBarChart('chartAudienceLikes',     Object.entries(audienceGroups).map(([k,v]) => ({ label: AUDIENCE_LABELS[k]||k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#14b8a6');
   renderBarChart('chartAudienceEngagement',Object.entries(audienceGroups).map(([k,v]) => ({ label: AUDIENCE_LABELS[k]||k, val: v.count ? +((v.likes+v.comments)/v.count).toFixed(1) : 0 })), '#6366f1');
@@ -2646,7 +2648,7 @@ function renderPerformanceSummary() {
   });
   renderBarChart('chartPillarLikes',        Object.entries(pillarGroups).map(([k,v])    => ({ label: pillarLabels[k]||k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#818cf8');
   renderBarChart('chartStyleLikes',         Object.entries(styleGroups).map(([k,v])     => ({ label: k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#f97316');
-  renderBarChart('chartPillarComments',     Object.entries(pillarGroups).map(([k,v])    => ({ label: pillarLabels[k]||k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#34d399');
+  renderBarChart('chartPillarComments',     Object.entries(pillarGroups).map(([k,v])    => ({ label: pillarLabels[k]||k, val: v.count ? +(v.comments/v.count).toFixed(1) : 0 })), '#34d399');
   renderBarChart('chartStyleEngagement',    Object.entries(styleGroups).map(([k,v])     => ({ label: k, val: v.count ? +((v.likes+v.comments)/v.count).toFixed(1) : 0 })), '#a78bfa');
   renderBarChart('chartAudienceLikes',      Object.entries(audienceGroups2).map(([k,v]) => ({ label: AUDIENCE_LABELS[k]||k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#14b8a6');
   renderBarChart('chartAudienceEngagement', Object.entries(audienceGroups2).map(([k,v]) => ({ label: AUDIENCE_LABELS[k]||k, val: v.count ? +((v.likes+v.comments)/v.count).toFixed(1) : 0 })), '#6366f1');
