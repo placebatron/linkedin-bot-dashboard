@@ -2112,17 +2112,62 @@ async function loadProductionCards() {
     cards.forEach(c => { trelloCardCache[c.id] = { name: c.name, desc: c.desc || '', listName: 'Production' }; });
     container.innerHTML = cards.map(c => {
       const preview = (c.desc || '').substring(0, 200);
-      return `<div class="draft-card">
+      return `<div class="draft-card" id="prodCard-${c.id}">
         <div style="font-weight:600;margin-bottom:6px">${escHtmlFull(c.name)}</div>
         ${preview ? `<div class="draft-body" style="cursor:default">${escHtmlFull(preview)}${(c.desc||'').length > 200 ? '...' : ''}</div>` : ''}
         <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
           <a href="${c.shortUrl}" target="_blank" class="btn btn-sm">📋 Open in Trello</a>
           <button class="btn btn-linkedin btn-sm" onclick="loadTrelloDraftFromCache('${c.id}')">✏️ Edit in Bot</button>
+          <button class="btn btn-sm" data-move-drafts="${c.id}" onclick="moveBackToDrafts('${c.id}')">↩ Back to Drafts</button>
+          <button class="btn btn-sm" style="color:#c0392b;border-color:#c0392b" data-delete-prod="${c.id}" onclick="deleteProductionCard('${c.id}')">🗑️ Delete</button>
         </div>
       </div>`;
     }).join('');
     hideStatus('productionStatus');
   } catch(e) { showStatus('productionStatus','error','❌ ' + e.message); }
+}
+
+async function deleteProductionCard(cardId) {
+  if (!confirm('Archive this card? It will be removed from Production in Trello.')) return;
+  const key = localStorage.getItem('trelloKey'), token = localStorage.getItem('trelloToken');
+  if (!key || !token) return;
+  const btn = document.querySelector(`[data-delete-prod="${cardId}"]`);
+  if (btn) { btn.disabled = true; btn.textContent = 'Archiving…'; }
+  try {
+    await fetch(`https://api.trello.com/1/cards/${cardId}?key=${key}&token=${token}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ closed: true })
+    });
+    const card = document.getElementById('prodCard-' + cardId);
+    if (card) card.remove();
+    showStatus('productionStatus', 'success', '🗑️ Card archived.');
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = '🗑️ Delete'; }
+    showStatus('productionStatus', 'error', '❌ ' + e.message);
+  }
+}
+
+async function moveBackToDrafts(cardId) {
+  if (!confirm('Move this card back to Working Drafts?')) return;
+  const key = localStorage.getItem('trelloKey'), token = localStorage.getItem('trelloToken');
+  if (!key || !token) return;
+  const btn = document.querySelector(`[data-move-drafts="${cardId}"]`);
+  if (btn) { btn.disabled = true; btn.textContent = 'Moving…'; }
+  try {
+    await fetchTrelloListIds();
+    const listId = trelloListIds['Working Drafts'];
+    if (!listId) { alert('Could not find "Working Drafts" list on your board.'); if (btn) { btn.disabled = false; btn.textContent = '↩ Move to Drafts'; } return; }
+    await fetch(`https://api.trello.com/1/cards/${cardId}?key=${key}&token=${token}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idList: listId })
+    });
+    const card = document.getElementById('prodCard-' + cardId);
+    if (card) card.remove();
+    showStatus('productionStatus', 'success', '↩ Card moved back to Working Drafts.');
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = '↩ Move to Drafts'; }
+    showStatus('productionStatus', 'error', '❌ ' + e.message);
+  }
 }
 
 // ── LINKEDIN INTEGRATION ───────────────────────────────────────
