@@ -3,2875 +3,419 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LinkedIn Bot Dashboard — Baum Realty</title>
-<script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<title>BaumAgents — AI Tools for Baum Realty Group</title>
 <style>
 :root {
-  --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a; --border: #2e3250;
-  --accent: #4f6ef7; --accent2: #7c3aed; --text: #e8eaf6; --muted: #8b90b0;
-  --success: #10b981; --warning: #f59e0b; --danger: #ef4444;
-  --pillar1: #4f6ef7; --pillar2: #7c3aed; --pillar3: #f59e0b; --pillar4: #10b981;
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface2: #22263a;
+  --border: #2e3250;
+  --accent: #4f6ef7;
+  --accent2: #7c3aed;
+  --text: #e8eaf6;
+  --muted: #8b90b0;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
-.app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
-.sidebar { background: var(--surface); border-right: 1px solid var(--border); padding: 24px 16px; display: flex; flex-direction: column; gap: 24px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
-.main { padding: 24px; overflow-y: auto; }
-.logo { display: flex; align-items: center; gap: 10px; padding: 0 8px; }
-.logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
-.logo-text { font-size: 15px; font-weight: 700; }
-.logo-sub { font-size: 11px; color: var(--muted); }
-.nav-label { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; padding: 0 8px; }
-.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 14px; color: var(--muted); transition: all 0.15s; }
-.nav-item:hover { background: var(--surface2); color: var(--text); }
-.nav-item.active { background: linear-gradient(135deg, rgba(79,110,247,0.2), rgba(124,58,237,0.2)); color: var(--text); border: 1px solid rgba(79,110,247,0.3); }
-.nav-icon { font-size: 16px; }
-.pillar-tag { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: all 0.15s; }
-.pillar-tag.p1 { background: rgba(79,110,247,0.15); color: #818cf8; border-color: rgba(79,110,247,0.3); }
-.pillar-tag.p2 { background: rgba(124,58,237,0.15); color: #a78bfa; border-color: rgba(124,58,237,0.3); }
-.pillar-tag.p3 { background: rgba(245,158,11,0.15); color: #fbbf24; border-color: rgba(245,158,11,0.3); }
-.pillar-tag.p4 { background: rgba(16,185,129,0.15); color: #34d399; border-color: rgba(16,185,129,0.3); }
-.pillar-tag.active { opacity: 1; }
-.pillar-tag:not(.active) { opacity: 0.4; }
-.pillars-grid { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 4px; }
-.section-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
-.section-sub { font-size: 14px; color: var(--muted); margin-bottom: 24px; }
-.page { display: none; }
-.page.active { display: block; }
-.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
-.btn { padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; }
-.btn:hover { border-color: var(--accent); color: var(--accent); }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; color: white; }
-.btn-primary:hover { opacity: 0.9; color: white; border: none; }
-.btn-success { background: var(--success); border: none; color: #0a0a0a; font-weight: 600; }
-.btn-success:hover { opacity: 0.85; color: #0a0a0a; border: none; }
-.btn-linkedin { background: #0077b5; border: none; color: white; font-weight: 600; }
-.btn-linkedin:hover { background: #006097; color: white; border: none; }
-.btn-sm { padding: 5px 10px; font-size: 12px; }
-.btn-approve { background:#34d399 !important; color:#0a0a0a !important; border:none !important; }
-.btn-edits   { background:#f87171 !important; color:#0a0a0a !important; border:none !important; }
-.spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.status-bar { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-top: 10px; display: none; }
-.status-bar.info    { background: rgba(79,110,247,0.15); border: 1px solid rgba(79,110,247,0.3); color: #818cf8; }
-.status-bar.success { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: #34d399; }
-.status-bar.error   { background: rgba(239,68,68,0.15);  border: 1px solid rgba(239,68,68,0.3);  color: #f87171; }
-.status-bar.warning { background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); color: #fbbf24; }
-input, textarea, select { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px; padding: 10px 12px; width: 100%; font-family: inherit; transition: border 0.15s; }
-input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
-label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; margin-bottom: 6px; }
-.form-group { margin-bottom: 16px; }
-.char-count { font-size: 11px; color: var(--muted); text-align: right; margin-top: 4px; }
-.char-count.over { color: var(--danger); }
-.tabs { display: flex; gap: 4px; margin-bottom: 20px; background: var(--surface); border-radius: 10px; padding: 4px; border: 1px solid var(--border); }
-.tab { flex: 1; padding: 8px; text-align: center; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--muted); transition: all 0.15s; }
-.tab.active { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.upload-zone { border: 2px dashed var(--border); border-radius: 10px; padding: 20px; text-align: center; cursor: pointer; transition: border 0.15s; }
-.upload-zone:hover { border-color: var(--accent); }
-.upload-text { font-size: 13px; color: var(--muted); margin-top: 8px; }
-.draft-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-.draft-label { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 4px 10px; border-radius: 6px; margin-bottom: 12px; width: fit-content; }
-.draft-label.hot     { background: rgba(239,68,68,0.15); color: #f87171; }
-.draft-label.insight { background: rgba(79,110,247,0.15); color: #818cf8; }
-.draft-label.story   { background: rgba(16,185,129,0.15); color: #34d399; }
-.draft-body { font-size: 14px; line-height: 1.7; white-space: pre-wrap; border: 1px solid transparent; border-radius: 6px; padding: 8px; transition: border 0.15s; min-height: 60px; }
-.draft-body:focus { border-color: var(--accent); outline: none; background: rgba(79,110,247,0.04); }
-.draft-hashtags { font-size: 12px; color: #818cf8; margin-top: 8px; padding: 6px 8px; }
-.draft-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-.linkedin-preview { display: none; background: white; border-radius: 12px; padding: 16px; margin: 12px 0; }
-.linkedin-preview.visible { display: block; }
-.lp-header { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
-.lp-avatar { width: 40px; height: 40px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px; flex-shrink: 0; }
-.lp-name { font-weight: 700; color: #000; font-size: 14px; }
-.lp-title { color: #666; font-size: 12px; }
-.lp-body { font-size: 14px; color: #1a1a1a; line-height: 1.6; white-space: pre-wrap; }
-.lp-hashtags { color: #0077b5; font-size: 13px; margin-top: 8px; }
-.lp-actions { display: flex; gap: 16px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #e0e0e0; }
-.lp-action { color: #666; font-size: 13px; cursor: pointer; }
-.lp-fold { color: #999; cursor: pointer; }
-.preview-toggle { cursor: pointer; color: var(--muted); font-size: 11px; font-weight: 500; }
-.scores { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 12px 0; }
-.score-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px; }
-.score-label { font-size: 11px; font-weight: 700; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
-.score-bar-wrap { background: var(--surface2); border-radius: 4px; height: 4px; margin-bottom: 4px; overflow: hidden; }
-.score-bar { height: 4px; border-radius: 4px; transition: width 1s ease; }
-.score-num { font-size: 16px; font-weight: 700; }
-.score-note { font-size: 11px; color: var(--muted); line-height: 1.4; margin-top: 2px; }
-.trend-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
-.trend-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-.trend-pillar-badge { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 3px 9px; border-radius: 20px; }
-.trend-pillar-badge.cre    { background: rgba(79,110,247,0.15); color: #818cf8; }
-.trend-pillar-badge.ci     { background: rgba(124,58,237,0.15); color: #a78bfa; }
-.trend-pillar-badge.fb     { background: rgba(245,158,11,0.15); color: #fbbf24; }
-.trend-pillar-badge.retail { background: rgba(16,185,129,0.15); color: #34d399; }
-.trend-number { font-size: 11px; color: var(--muted); font-weight: 600; }
-.trend-headline { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
-.trend-context { font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 10px; }
-.trend-hook-label { font-size: 11px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
-.trend-hook { font-size: 13px; color: var(--text); font-style: italic; margin-bottom: 10px; padding: 8px 12px; background: rgba(79,110,247,0.08); border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; }
-.trend-actions { display: flex; gap: 8px; }
-.pillar-filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
-.pillar-filter-btn { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
-.pillar-filter-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(79,110,247,0.1); }
-.brainstorm-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; cursor: pointer; transition: all 0.15s; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-.brainstorm-item:hover { border-color: var(--accent); background: rgba(79,110,247,0.06); }
-.brainstorm-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
-.brainstorm-desc { font-size: 12px; color: var(--muted); }
-.status-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
-.status-badge.pending     { background: rgba(245,158,11,0.15); color: #fbbf24; }
-.status-badge.approved    { background: rgba(16,185,129,0.15); color: #34d399; }
-.status-badge.needs-edits { background: rgba(239,68,68,0.15); color: #f87171; }
-.collab-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
-.collab-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-.collab-refresh { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; padding: 2px 6px; border-radius: 4px; }
-.collab-refresh:hover { color: var(--text); }
-.comments-section { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 12px; }
-.comments-label { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
-.comment-item { background: var(--surface); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
-.comment-author { font-size: 12px; font-weight: 600; color: var(--accent); margin-right: 8px; }
-.comment-date { font-size: 11px; color: var(--muted); }
-.comment-text { font-size: 13px; margin-top: 4px; line-height: 1.5; }
-.no-comments { font-size: 13px; color: var(--muted); padding: 8px 0; }
-.comment-input-wrap { display: flex; gap: 8px; margin-top: 10px; }
-.comment-input-wrap textarea { min-height: 60px; resize: vertical; }
-.source-toggle { padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
-.source-toggle.active { border-color: var(--accent2); color: #a78bfa; background: rgba(124,58,237,0.1); }
-.li-status-connected    { color: var(--success); font-size: 13px; padding: 8px 12px; background: rgba(16,185,129,0.1); border-radius: 8px; border: 1px solid rgba(16,185,129,0.3); }
-.li-status-disconnected { color: var(--warning); font-size: 13px; padding: 8px 12px; background: rgba(245,158,11,0.1); border-radius: 8px; border: 1px solid rgba(245,158,11,0.3); }
-.settings-section { margin-bottom: 28px; padding-bottom: 28px; border-bottom: 1px solid var(--border); }
-.settings-section:last-child { border-bottom: none; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
 
-/* Performance styles */
-.perf-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
-.perf-stat { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; text-align: center; }
-.perf-stat-num { font-size: 28px; font-weight: 800; margin-bottom: 2px; }
-.perf-stat-label { font-size: 12px; color: var(--muted); font-weight: 500; }
-.perf-stat-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
-.perf-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-.perf-chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
-.perf-chart-title { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 14px; }
-.perf-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.perf-bar-label { font-size: 12px; width: 110px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.perf-bar-wrap { flex: 1; background: var(--surface2); border-radius: 4px; height: 8px; overflow: hidden; }
-.perf-bar-fill { height: 8px; border-radius: 4px; transition: width 0.8s ease; }
-.perf-bar-val { font-size: 12px; font-weight: 700; width: 32px; text-align: right; flex-shrink: 0; }
-.perf-posts-list { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-.perf-posts-header { display: grid; grid-template-columns: 1fr 80px 80px 80px 80px 100px; gap: 8px; padding: 10px 16px; background: var(--surface2); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
-.perf-post-row { display: grid; grid-template-columns: 1fr 80px 80px 80px 80px 100px; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--border); align-items: center; transition: background 0.1s; }
-.perf-post-row:last-child { border-bottom: none; }
-.perf-post-row:hover { background: rgba(79,110,247,0.04); }
-.perf-post-preview { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.perf-post-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
-.perf-num { font-size: 14px; font-weight: 700; text-align: center; }
-.perf-num.likes { color: #818cf8; }
-.perf-num.comments { color: #34d399; }
-.perf-num.shares { color: #fbbf24; }
-.perf-refresh-btn { font-size: 11px; padding: 3px 8px; }
-.perf-empty { padding: 40px; text-align: center; color: var(--muted); font-size: 14px; }
-.perf-fetching { color: var(--muted); font-size: 12px; animation: pulse 1.2s ease-in-out infinite; }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+/* ── Header ── */
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 0 40px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+.logo-mark {
+  width: 38px;
+  height: 38px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 800;
+  color: white;
+  letter-spacing: -1px;
+}
+.logo-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+}
+.logo-org {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.header-badge {
+  background: rgba(79,110,247,0.12);
+  border: 1px solid rgba(79,110,247,0.25);
+  color: #818cf8;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+  letter-spacing: 0.04em;
+}
 
-/* Calendar styles */
-.cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-.cal-nav-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text); width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
-.cal-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
-.cal-month-label { font-size: 18px; font-weight: 700; }
-.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-.cal-header { text-align: center; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; padding: 6px 0; }
-.cal-cell { min-height: 80px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 6px; cursor: pointer; transition: all 0.15s; vertical-align: top; }
-.cal-cell:hover { border-color: var(--accent); }
-.cal-cell.today { border-color: var(--accent); background: rgba(79,110,247,0.08); }
-.cal-cell.other-month { opacity: 0.35; }
-.cal-day-num { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 4px; }
-.cal-cell.today .cal-day-num { color: var(--accent); }
-.cal-post-chip { display: block; font-size: 10px; font-weight: 600; padding: 2px 5px; border-radius: 4px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
-.cal-post-chip.cre    { background: rgba(79,110,247,0.2); color: #818cf8; }
-.cal-post-chip.ci     { background: rgba(124,58,237,0.2); color: #a78bfa; }
-.cal-post-chip.fb     { background: rgba(245,158,11,0.2); color: #fbbf24; }
-.cal-post-chip.retail { background: rgba(16,185,129,0.2); color: #34d399; }
-.cal-post-chip.mixed  { background: rgba(139,144,176,0.2); color: var(--muted); }
-.cal-saved-drafts { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-top: 20px; }
-.cal-draft-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--border); gap: 12px; }
-.cal-draft-item:last-child { border-bottom: none; }
-.cal-draft-text { font-size: 13px; line-height: 1.5; flex: 1; }
-.cal-draft-meta { font-size: 11px; color: var(--muted); margin-top: 3px; }
-.cal-schedule-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted); font-size: 11px; padding: 3px 8px; border-radius: 6px; cursor: pointer; white-space: nowrap; transition: all 0.15s; }
-.cal-schedule-btn:hover { border-color: var(--accent); color: var(--accent); }
-.cal-schedule-btn.scheduled { background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.4); color: #34d399; }
-.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; }
-.modal-overlay.open { display: flex; }
-.modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; width: 440px; max-width: 95vw; max-height: 80vh; overflow-y: auto; }
-.modal-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
-.modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
-.modal-post-list { display: flex; flex-direction: column; gap: 8px; }
-.modal-post-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; cursor: pointer; transition: all 0.15s; }
-.modal-post-item:hover { border-color: var(--accent); }
-.modal-post-preview { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.editable { border: 1px solid transparent; border-radius: 6px; padding: 4px; transition: border 0.15s; }
-.editable:focus { border-color: var(--accent); outline: none; background: rgba(79,110,247,0.05); }
-@media (max-width: 1100px) { .grid-2 { grid-template-columns: 1fr; } }
-@media (max-width: 768px) { .app { grid-template-columns: 1fr; } .sidebar { height: auto; position: static; } .cal-grid { gap: 2px; } .cal-cell { min-height: 60px; } }
-.draft-photo-section { margin: 10px 0 4px; padding: 10px 12px; background: rgba(79,110,247,0.04); border: 1px dashed var(--border); border-radius: 8px; }
-.draft-photo-section .photo-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
-.draft-photo-thumb { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
-.draft-photo-thumb img { max-height: 80px; max-width: 120px; border-radius: 6px; border: 1px solid var(--border); object-fit: cover; }
-.resume-banner { display: none; align-items: center; gap: 12px; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.35); border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; font-size: 13px; flex-wrap: wrap; }
-.resume-banner-text { flex: 1; color: var(--text); min-width: 200px; }
-.resume-banner-text em { color: #fbbf24; font-style: normal; font-weight: 500; }
-.autosave-indicator { font-size: 11px; color: var(--muted); text-align: right; margin-top: 4px; min-height: 16px; }
+/* ── Hero ── */
+.hero {
+  text-align: center;
+  padding: 72px 40px 56px;
+  max-width: 700px;
+  margin: 0 auto;
+}
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(79,110,247,0.1);
+  border: 1px solid rgba(79,110,247,0.2);
+  color: #818cf8;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 5px 14px;
+  border-radius: 20px;
+  margin-bottom: 20px;
+}
+.hero h1 {
+  font-size: 42px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  background: linear-gradient(135deg, var(--text) 40%, var(--muted));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 16px;
+}
+.hero p {
+  font-size: 16px;
+  color: var(--muted);
+  line-height: 1.65;
+  max-width: 520px;
+  margin: 0 auto;
+}
 
-/* Audience tagging */
-.audience-selector { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin:8px 0 2px; }
-.audience-label { font-size:11px; color:var(--muted); font-weight:600; white-space:nowrap; margin-right:2px; }
-.audience-btn { padding:3px 10px; border-radius:20px; border:1px solid var(--border); background:transparent; color:var(--muted); font-size:11px; font-weight:600; cursor:pointer; transition:all 0.15s; }
-.audience-btn:hover { border-color:var(--accent); color:var(--text); }
-.audience-btn.active.aud-owners  { background:rgba(99,102,241,0.15);  border-color:#6366f1; color:#818cf8; }
-.audience-btn.active.aud-tenants { background:rgba(20,184,166,0.15);  border-color:#14b8a6; color:#2dd4bf; }
-.audience-btn.active.aud-brokers { background:rgba(249,115,22,0.15);  border-color:#f97316; color:#fb923c; }
-.audience-btn.active.aud-general { background:rgba(148,163,184,0.15); border-color:#94a3b8; color:#cbd5e1; }
-.audience-badge { display:inline-block; padding:2px 8px; border-radius:12px; font-size:10px; font-weight:700; }
-.audience-badge.aud-owners  { background:rgba(99,102,241,0.15);  color:#818cf8; }
-.audience-badge.aud-tenants { background:rgba(20,184,166,0.15);  color:#2dd4bf; }
-.audience-badge.aud-brokers { background:rgba(249,115,22,0.15);  color:#fb923c; }
-.audience-badge.aud-general { background:rgba(148,163,184,0.15); color:#cbd5e1; }
+/* ── App Grid ── */
+.apps-section {
+  padding: 0 40px 80px;
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+}
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.apps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+/* ── App Card ── */
+.app-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  text-decoration: none;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+.app-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.2s;
+  border-radius: 16px;
+}
+.app-card:hover {
+  border-color: transparent;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+}
+.app-card.linkedin::before  { background: linear-gradient(135deg, rgba(0,119,181,0.1), rgba(0,96,149,0.05)); }
+.app-card.voss::before      { background: linear-gradient(135deg, rgba(79,110,247,0.1), rgba(124,58,237,0.05)); }
+.app-card.coming::before    { background: linear-gradient(135deg, rgba(139,144,176,0.05), transparent); }
+.app-card:hover::before     { opacity: 1; }
+.app-card.linkedin:hover { border-color: rgba(0,119,181,0.4); }
+.app-card.voss:hover     { border-color: rgba(79,110,247,0.4); }
+.app-card.coming         { opacity: 0.55; cursor: default; pointer-events: none; }
+
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.app-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  flex-shrink: 0;
+}
+.app-icon.linkedin-icon { background: linear-gradient(135deg, #0077b5, #005f93); }
+.app-icon.voss-icon     { background: linear-gradient(135deg, #4f6ef7, #7c3aed); }
+.app-icon.core-icon     { background: linear-gradient(135deg, #10b981, #059669); }
+.app-icon.research-icon { background: linear-gradient(135deg, #f59e0b, #d97706); }
+
+.card-status {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+.status-live   { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.status-new    { background: rgba(79,110,247,0.15); color: #818cf8; border: 1px solid rgba(79,110,247,0.3); }
+.status-coming { background: rgba(139,144,176,0.1); color: var(--muted); border: 1px solid var(--border); }
+
+.app-name {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+.app-tagline {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 4px;
+}
+.card-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.tag {
+  font-size: 11px;
+  color: var(--muted);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+.card-arrow {
+  font-size: 18px;
+  color: var(--muted);
+  transition: all 0.2s;
+}
+.app-card:hover .card-arrow {
+  color: var(--accent);
+  transform: translateX(3px);
+}
+
+/* ── Coming Soon Placeholder ── */
+.app-card.coming .card-arrow { display: none; }
+
+/* ── Footer ── */
+footer {
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+  padding: 20px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.footer-left {
+  font-size: 12px;
+  color: var(--muted);
+}
+.footer-right {
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.footer-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--success);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.85); }
+}
+
+@media (max-width: 600px) {
+  header { padding: 0 20px; }
+  .hero { padding: 48px 20px 40px; }
+  .hero h1 { font-size: 30px; }
+  .apps-section { padding: 0 20px 60px; }
+  footer { flex-direction: column; gap: 8px; text-align: center; }
+}
 </style>
 </head>
 <body>
-<div class="app">
-  <!-- SIDEBAR -->
-  <div class="sidebar">
-    <div class="logo">
-      <div class="logo-icon">🔗</div>
-      <div>
-        <div class="logo-text">LinkedIn Bot</div>
-        <div class="logo-sub">Baum Realty Group</div>
-      </div>
-    </div>
+
+<header>
+  <a class="logo" href="/">
+    <div class="logo-mark">BA</div>
     <div>
-      <div class="nav-label" style="margin-bottom:8px">Workspace</div>
-      <div class="nav-item active" onclick="showPage('create',this)"><span class="nav-icon">✏️</span> Create Post</div>
-      <div class="nav-item" onclick="showPage('trends',this)"><span class="nav-icon">🔥</span> Trending Ideas <span style="font-size:10px;background:linear-gradient(135deg,#f97316,#ef4444);color:white;padding:2px 6px;border-radius:10px;margin-left:4px">LIVE</span></div>
-      <div class="nav-item" onclick="showPage('brainstorms',this)"><span class="nav-icon">💡</span> Brainstorms</div>
-      <div class="nav-item" onclick="showPage('drafts',this)"><span class="nav-icon">📄</span> Working Drafts</div>
-      <div class="nav-item" onclick="showPage('production',this)"><span class="nav-icon">🚀</span> Production</div>
-      <div class="nav-item" onclick="showPage('calendar',this)"><span class="nav-icon">📅</span> Content Calendar</div>
-      <div class="nav-item" onclick="showPage('performance',this)"><span class="nav-icon">📊</span> Performance</div>
-      <div class="nav-item" onclick="showPage('settings',this)"><span class="nav-icon">⚙️</span> Settings</div>
+      <div class="logo-name">BaumAgents</div>
+      <div class="logo-org">Baum Realty Group</div>
     </div>
-    <div>
-      <div class="nav-label" style="margin-bottom:8px">Pillars</div>
-      <div class="pillars-grid">
-        <div class="pillar-tag p1 active" onclick="togglePillar(this,'cre')">🏢 CRE</div>
-        <div class="pillar-tag p2 active" onclick="togglePillar(this,'ci')">🎭 Creative Industrial</div>
-        <div class="pillar-tag p3 active" onclick="togglePillar(this,'fb')">🍽️ Chicago F&amp;B</div>
-        <div class="pillar-tag p4 active" onclick="togglePillar(this,'retail')">🛍️ Retail Trends</div>
-      </div>
-    </div>
+  </a>
+  <div class="header-badge">Internal Tools</div>
+</header>
+
+<div class="hero">
+  <div class="hero-eyebrow">
+    <span>⚡</span> AI-Powered Brokerage Platform
   </div>
+  <h1>Your AI toolkit for commercial real estate</h1>
+  <p>Tools built for the BRG team — research smarter, reach out better, close more deals.</p>
+</div>
 
-  <!-- MAIN -->
-  <div class="main">
+<div class="apps-section">
+  <div class="section-label">Available Apps</div>
+  <div class="apps-grid">
 
-    <!-- CREATE POST -->
-    <div class="page active" id="page-create">
-      <div class="section-title">Create a Post</div>
-      <div class="section-sub">Add raw material and I'll draft LinkedIn posts in Mike's voice.</div>
-      <div class="grid-2" id="createGrid" style="grid-template-columns: 1.2fr 1fr">
-        <div>
-          <div class="card">
-            <div class="form-group">
-              <label>Raw Material</label>
-              <textarea id="draftText" rows="5" placeholder="Paste a thought, observation, deal story, article excerpt, or anything else you want to post about..." oninput="updateCharCount('draftText','draftCharCount',2000)"></textarea>
-              <div class="char-count" id="draftCharCount">0 / 2000</div>
-            </div>
-            <div class="form-group">
-              <label>Article / Link (optional)</label>
-              <input type="url" id="linkInput" placeholder="https://..." />
-            </div>
-            <div class="form-group">
-              <label>Image (optional)</label>
-              <div class="upload-zone" onclick="document.getElementById('imgUpload').click()">
-                <div style="font-size: 24px">📎</div>
-                <div class="upload-text">Click to attach an image</div>
-              </div>
-              <input type="file" id="imgUpload" accept="image/*,.heic,.heif" style="display:none" onchange="handleImage(this)" />
-              <img id="imagePreview" style="display:none;max-width:100%;border-radius:8px;margin-top:10px" />
-            </div>
-            <div style="display:flex;gap:12px;margin-bottom:4px">
-              <div class="form-group" style="flex:1;margin-bottom:0">
-                <label>Content Pillar</label>
-                <select id="pillarSelect">
-                  <option value="cre">🏢 CRE</option>
-                  <option value="ci">🎭 Creative Industrial</option>
-                  <option value="fb">🍽️ Chicago F&amp;B</option>
-                  <option value="retail">🛍️ Retail Trends</option>
-                  <option value="mixed">🔀 Mixed</option>
-                </select>
-              </div>
-              <div class="form-group" style="flex:1;margin-bottom:0">
-                <label>Post Style</label>
-                <select id="styleSelect">
-                  <option value="all">All 3 Variants</option>
-                  <option value="hot">🔥 Hot Take</option>
-                  <option value="insight">💡 Insight</option>
-                  <option value="story">📖 Story</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-group" style="margin-top:16px">
-              <button class="btn btn-primary" id="generateBtn" onclick="generatePosts()" style="width:100%;justify-content:center;padding:12px">✨ Generate Post Drafts</button>
-              <div class="status-bar" id="generateStatus"></div>
-            </div>
-          </div>
+    <!-- LinkedIn Bot -->
+    <a class="app-card linkedin" href="linkedin.html">
+      <div class="card-header">
+        <div class="app-icon linkedin-icon">💼</div>
+        <span class="card-status status-live">Live</span>
+      </div>
+      <div>
+        <div class="app-name">LinkedIn Outreach Bot</div>
+        <div class="app-tagline">Generate AI-powered LinkedIn posts and connection messages across all four content pillars. Upload contacts, draft and schedule outreach at scale.</div>
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">LinkedIn</span>
+          <span class="tag">Outreach</span>
+          <span class="tag">Content</span>
         </div>
-        <div>
-          <!-- Resume Banner: shown when returning to page with a saved draft -->
-          <div id="resumeBanner" class="resume-banner">
-            <span style="font-size:20px">📝</span>
-            <div class="resume-banner-text" id="resumeBannerText">You have an unsaved draft.</div>
-            <button class="btn btn-primary btn-sm" onclick="resumeActiveDraft()">↩ Resume Draft</button>
-            <button class="btn btn-sm" onclick="dismissActiveDraft()" style="opacity:0.7">Dismiss</button>
-          </div>
-          <div id="draftsOutput"></div>
+        <div class="card-arrow">→</div>
+      </div>
+    </a>
+
+    <!-- Voss Email Rewriter -->
+    <a class="app-card voss" href="voss.html">
+      <div class="card-header">
+        <div class="app-icon voss-icon">🎯</div>
+        <span class="card-status status-new">New</span>
+      </div>
+      <div>
+        <div class="app-name">Voss Email Rewriter</div>
+        <div class="app-tagline">Rewrite your cold outreach emails using Chris Voss's FBI negotiation tactics — tactical empathy, labeling, calibrated questions, and more.</div>
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">Email</span>
+          <span class="tag">Negotiation</span>
+          <span class="tag">Outreach</span>
+        </div>
+        <div class="card-arrow">→</div>
+      </div>
+    </a>
+
+    <!-- Coming Soon: CORE Research -->
+    <div class="app-card coming">
+      <div class="card-header">
+        <div class="app-icon research-icon">🔍</div>
+        <span class="card-status status-coming">Coming Soon</span>
+      </div>
+      <div>
+        <div class="app-name">CORE Research Agent</div>
+        <div class="app-tagline">Automated ownership and tenant research — pull CoStar, Crexi, and Cook County records directly into your CORE CRM pipeline.</div>
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">CORE CRM</span>
+          <span class="tag">Research</span>
+          <span class="tag">Data</span>
         </div>
       </div>
     </div>
 
-    <!-- TRENDING IDEAS -->
-    <div class="page" id="page-trends">
-      <div class="section-title">🔥 Trending Ideas</div>
-      <div class="section-sub">Pull current headlines across your pillars — enhanced with custom keywords, priority sources, and URL context.</div>
-      <div class="card" id="trendsInputGrid" style="margin-bottom:20px;display:grid;grid-template-columns:1fr 1fr;gap:20px">
-        <div>
-          <div class="form-group">
-            <label>Custom Keywords <span style="font-size:11px;font-weight:400;color:var(--muted)">(optional — clears after search)</span></label>
-            <input id="customKeywords" placeholder="e.g. Logan Square, dark kitchens, industrial conversion..." />
-          </div>
-          <div class="form-group">
-            <label>Topic Layer <span style="font-size:11px;font-weight:400;color:var(--muted)">(optional — layers topic into search)</span></label>
-            <input id="topicLayer" placeholder="e.g. interest rates, lease renewals..." />
-          </div>
-          <div class="form-group">
-            <label>URL Context <span style="font-size:11px;font-weight:400;color:var(--muted)">(optional — extracts topic from link)</span></label>
-            <input id="urlContext" type="url" placeholder="https://..." />
-            <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-top:6px">Paste any article URL and I'll extract its topic and find related discussion across the web, Twitter/X, LinkedIn, and your selected sources.</div>
-          </div>
-        </div>
-        <div>
-          <div class="form-group">
-            <label>Priority Sources</label>
-            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">
-              <button class="source-toggle" onclick="toggleSource(this)" data-src="CoStar">CoStar</button>
-              <button class="source-toggle" onclick="toggleSource(this)" data-src="Bisnow">Bisnow</button>
-              <button class="source-toggle" onclick="toggleSource(this)" data-src="Crain's Chicago Business">Crain's Chicago</button>
-              <button class="source-toggle" onclick="toggleSource(this)" data-src="GlobeSt">GlobeSt</button>
-              <button class="source-toggle" onclick="toggleSource(this)" data-src="The Real Deal">The Real Deal</button>
-              <button class="source-toggle" onclick="toggleSource(this)" data-src="Eater Chicago">Eater Chicago</button>
-              <button class="source-toggle" onclick="toggleSource(this)" data-src="Chicago Tribune">Chicago Tribune</button>
-              <button class="source-toggle" onclick="toggleSource(this)" data-src="LinkedIn">LinkedIn</button>
-              <button class="source-toggle" onclick="toggleSource(this)" data-src="Twitter/X">Twitter/X</button>
-            </div>
-          </div>
-          <div style="margin-top:16px">
-            <button class="btn btn-primary" onclick="generateTrends()" id="trendsBtn" style="width:100%;justify-content:center;padding:12px">🔥 Find Trending Topics</button>
-            <div class="status-bar" id="trendStatus"></div>
-          </div>
-        </div>
+    <!-- Coming Soon: BAM Manager -->
+    <div class="app-card coming">
+      <div class="card-header">
+        <div class="app-icon core-icon">🏢</div>
+        <span class="card-status status-coming">Coming Soon</span>
       </div>
-      <div class="pillar-filter-row" id="pillarFilterRow">
-        <button class="pillar-filter-btn active" onclick="filterTrends('all',this)">All Pillars</button>
-        <button class="pillar-filter-btn" onclick="filterTrends('cre',this)">🏢 CRE</button>
-        <button class="pillar-filter-btn" onclick="filterTrends('ci',this)">🎭 Creative Industrial</button>
-        <button class="pillar-filter-btn" onclick="filterTrends('fb',this)">🍽️ Chicago F&amp;B</button>
-        <button class="pillar-filter-btn" onclick="filterTrends('retail',this)">🛍️ Retail</button>
+      <div>
+        <div class="app-name">BAM Assistant</div>
+        <div class="app-tagline">Property management automation for Baum Asset Management — tenant communications, maintenance workflows, and reporting tools.</div>
       </div>
-      <div id="trendsOutput"></div>
-    </div>
-
-    <!-- BRAINSTORMS -->
-    <div class="page" id="page-brainstorms">
-      <div class="section-title">💡 Brainstorms</div>
-      <div class="section-sub">Cards from your Trello "Brainstorms" list. Click one to use it as post material.</div>
-      <button class="btn" onclick="loadBrainstorms()" style="margin-bottom:16px">↻ Load Brainstorms</button>
-      <div class="status-bar" id="brainstormStatus"></div>
-      <div id="brainstormsList"></div>
-    </div>
-
-    <!-- WORKING DRAFTS -->
-    <div class="page" id="page-drafts">
-      <div class="section-title">📄 Working Drafts</div>
-      <div class="section-sub">Posts saved to your Trello "Working Drafts" list. Click <strong>Edit in Bot</strong> to load any card into the editor for scoring, preview, and publishing.</div>
-      <button class="btn" onclick="loadWorkingDrafts()" style="margin-bottom:16px">↻ Load Working Drafts</button>
-      <div class="status-bar" id="workingDraftsStatus"></div>
-      <div id="workingDraftsList"></div>
-    </div>
-
-    <!-- PRODUCTION -->
-    <div class="page" id="page-production">
-      <div class="section-title">🚀 Production</div>
-      <div class="section-sub">Cards approved and moved to your Trello "Production" list. Click <strong>Edit in Bot</strong> to load any card into the editor for final edits, scoring, preview, and publishing.</div>
-      <button class="btn" onclick="loadProductionCards()" style="margin-bottom:16px">↻ Load Production Cards</button>
-      <div class="status-bar" id="productionStatus"></div>
-      <div id="productionList"></div>
-    </div>
-
-    <!-- CONTENT CALENDAR -->
-    <div class="page" id="page-calendar">
-      <div class="section-title">📅 Content Calendar</div>
-      <div class="section-sub">Schedule and plan your LinkedIn posts. Click any day to assign a draft.</div>
-      <div class="card" style="margin-bottom:20px">
-        <div class="cal-nav">
-          <button class="cal-nav-btn" onclick="calShift(-1)">‹</button>
-          <div class="cal-month-label" id="calMonthLabel"></div>
-          <button class="cal-nav-btn" onclick="calShift(1)">›</button>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">BAM</span>
+          <span class="tag">Management</span>
+          <span class="tag">Tenants</span>
         </div>
-        <div class="cal-grid" id="calGrid">
-          <div class="cal-header">Sun</div>
-          <div class="cal-header">Mon</div>
-          <div class="cal-header">Tue</div>
-          <div class="cal-header">Wed</div>
-          <div class="cal-header">Thu</div>
-          <div class="cal-header">Fri</div>
-          <div class="cal-header">Sat</div>
-        </div>
-      </div>
-      <div class="cal-saved-drafts">
-        <div style="font-size:14px;font-weight:700;margin-bottom:12px">📋 Saved Drafts — Ready to Schedule</div>
-        <div id="calDraftPool"></div>
       </div>
     </div>
 
-    <!-- PERFORMANCE -->
-    <div class="page" id="page-performance">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
-        <div class="section-title">📊 Performance</div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <label class="btn btn-sm btn-linkedin" title="Import one or more LinkedIn PostAnalytics .xlsx exports" style="cursor:pointer">
-            📥 Import LinkedIn Export
-            <input type="file" accept=".xlsx" multiple style="display:none" onchange="importLinkedInExport(this.files)">
-          </label>
-          <button class="btn btn-sm" onclick="refreshAllStats()" id="refreshAllBtn" title="LinkedIn restricts analytics API for personal profiles — may not return data">↻ Refresh All Stats</button>
-        </div>
-      </div>
-      <div class="section-sub">Import LinkedIn's PostAnalytics .xlsx export files to sync stats automatically — or use ✏️ on any row to enter stats manually.</div>
-      <div class="status-bar" id="perfStatus"></div>
-
-      <!-- Summary stats -->
-      <div class="perf-summary" id="perfSummary">
-        <div class="perf-stat">
-          <div class="perf-stat-num" id="perfTotalPosts">—</div>
-          <div class="perf-stat-label">Posts Published</div>
-        </div>
-        <div class="perf-stat">
-          <div class="perf-stat-num" style="color:#818cf8" id="perfTotalLikes">—</div>
-          <div class="perf-stat-label">Total Likes</div>
-          <div class="perf-stat-sub" id="perfAvgLikes"></div>
-        </div>
-        <div class="perf-stat">
-          <div class="perf-stat-num" style="color:#34d399" id="perfTotalComments">—</div>
-          <div class="perf-stat-label">Total Comments</div>
-          <div class="perf-stat-sub" id="perfAvgComments"></div>
-        </div>
-        <div class="perf-stat">
-          <div class="perf-stat-num" style="color:#f59e0b" id="perfTopPillar">—</div>
-          <div class="perf-stat-label">Top Pillar</div>
-          <div class="perf-stat-sub" id="perfTopPillarSub"></div>
-        </div>
-      </div>
-
-      <!-- Charts -->
-      <div class="perf-charts">
-        <div class="perf-chart-card">
-          <div class="perf-chart-title">Avg Likes by Pillar</div>
-          <div id="chartPillarLikes"></div>
-        </div>
-        <div class="perf-chart-card">
-          <div class="perf-chart-title">Avg Likes by Post Style</div>
-          <div id="chartStyleLikes"></div>
-        </div>
-        <div class="perf-chart-card">
-          <div class="perf-chart-title">Avg Comments by Pillar</div>
-          <div id="chartPillarComments"></div>
-        </div>
-        <div class="perf-chart-card">
-          <div class="perf-chart-title">Engagement Rate by Style</div>
-          <div id="chartStyleEngagement"></div>
-        </div>
-        <div class="perf-chart-card">
-          <div class="perf-chart-title">Avg Likes by Audience</div>
-          <div id="chartAudienceLikes"></div>
-        </div>
-        <div class="perf-chart-card">
-          <div class="perf-chart-title">Engagement by Audience</div>
-          <div id="chartAudienceEngagement"></div>
-        </div>
-      </div>
-
-      <!-- Post list -->
-      <div class="perf-posts-list" id="perfPostsList">
-        <div class="perf-empty">No published posts yet. Posts you publish through this tool will appear here automatically.</div>
-      </div>
-    </div>
-
-    <!-- SETTINGS -->
-    <div class="page" id="page-settings">
-      <div class="section-title">⚙️ Settings</div>
-      <div class="section-sub">Configure your API credentials. Saved in your browser only — never transmitted anywhere else.</div>
-      <div class="card">
-        <div class="settings-section">
-          <div style="font-size:15px;font-weight:700;margin-bottom:12px">🤖 Your Voice Profile</div>
-          <div class="form-group">
-            <label>Your Name</label>
-            <input id="userName" placeholder="Mike Baum" />
-          </div>
-          <div class="form-group">
-            <label>Your Role / Title</label>
-            <input id="userRole" placeholder="Principal at Baum Realty Group | Founder, Baum Asset Management" />
-          </div>
-          <div class="form-group">
-            <label>Voice / POV Description</label>
-            <textarea id="userPov" rows="4" placeholder="Conversational, non-transactional CRE thought leader. 13+ years in Chicago CRE, commercial real estate attorney background. Draws on deal experience, market knowledge, and Chicago neighborhood expertise. Never pitching — always teaching or observing."></textarea>
-          </div>
-          <div class="form-group">
-            <label>Core Hashtags</label>
-            <input id="coreHashtags" placeholder="#ChicagoCRE #CRE #RetailTrends #CreativeIndustrial #CommercialRealEstate" />
-          </div>
-        </div>
-        <div class="settings-section">
-          <div style="font-size:15px;font-weight:700;margin-bottom:12px">🔑 API Keys</div>
-          <div class="form-group">
-            <label>Anthropic API Key</label>
-            <input id="anthropicKey" type="password" placeholder="sk-ant-..." />
-          </div>
-          <div class="form-group">
-            <label>Trello API Key</label>
-            <input id="trelloKey" type="password" placeholder="Trello API Key..." />
-          </div>
-          <div class="form-group">
-            <label>Trello Token</label>
-            <input id="trelloToken" type="password" placeholder="Trello Token..." />
-          </div>
-        </div>
-        <div class="settings-section">
-          <div style="font-size:15px;font-weight:700;margin-bottom:12px">🔗 LinkedIn Connection</div>
-          <div id="liStatusDisplay" class="li-status-disconnected">⚠️ Not connected — click Connect LinkedIn below</div>
-          <div style="display:flex;gap:8px;margin-top:12px">
-            <button class="btn btn-linkedin" onclick="connectLinkedIn()">🔗 Connect LinkedIn</button>
-            <button class="btn" onclick="disconnectLinkedIn()">Disconnect</button>
-          </div>
-          <div class="status-bar" id="liSettingsStatus"></div>
-        </div>
-        <button class="btn btn-primary" onclick="saveSettings()" style="padding:10px 24px">💾 Save Settings</button>
-        <div class="status-bar" id="settingsStatus"></div>
-      </div>
-    </div>
-
-  </div><!-- /main -->
-</div><!-- /app -->
-
-<!-- SCHEDULE MODAL -->
-<div class="modal-overlay" id="scheduleModal" onclick="closeModal(event)">
-  <div class="modal">
-    <div class="modal-title" id="modalTitle">Schedule Post</div>
-    <div class="modal-sub" id="modalSub"></div>
-    <div class="modal-post-list" id="modalPostList"></div>
-    <button class="btn" onclick="closeModal()" style="margin-top:16px;width:100%;justify-content:center">Cancel</button>
   </div>
 </div>
 
-<script>
-// ── Constants ──────────────────────────────────────────────────
-const MODEL_WRITING  = 'claude-sonnet-4-6';
-const MODEL_RESEARCH = 'claude-haiku-4-5-20251001';
-const LI_WORKER      = 'https://worker-small-mountain-69ba.mike-3ac.workers.dev';
-const API_TIMEOUT_MS = 50000; // 50 seconds
+<footer>
+  <div class="footer-left">© 2026 Baum Realty Group · Internal use only</div>
+  <div class="footer-right">
+    <div class="footer-dot"></div>
+    All systems operational
+  </div>
+</footer>
 
-// ── State ──────────────────────────────────────────────────────
-let activePillars = ['cre','ci','fb','retail'];
-let imageBase64 = null;
-let imageMimeType = 'image/jpeg';
-let trendData = [];
-let trelloListIds = {};
-let trelloCardCache = {}; // { cardId: { name, desc, listName } } — avoids special-char issues in onclick
-let draftPhotos = {};     // { draftIndex: { base64, mimeType } } — photo to attach when posting
-let draftAudiences = {}; // { draftIndex: 'owners'|'tenants'|'brokers'|'general' }
-let inlineEditorAudience = {}; // { cardId: audience } — for Working Drafts inline editor
-let inlineEditorPhotos   = {}; // { cardId: { base64, mimeType } } — for Working Drafts inline editor
-let _activeTrelloCardId = null; // card ID when editing an existing Trello card — used to update rather than create
-let calYear, calMonth;
-let calendarData    = {}; // { "2026-02-15": [{ text, pillar, type, id }] }
-let savedDrafts     = []; // persisted generated drafts
-let publishedPosts  = []; // posts published to LinkedIn { id, liPostId, text, pillar, type, publishedAt, stats }
-let pendingScheduleDate = null;
-
-// ── Init ───────────────────────────────────────────────────────
-window.onload = () => {
-  // OAuth popup callback: worker redirects popup to #linkedin_token=...
-  // Detect that, relay to opener via postMessage, then close.
-  const hash = window.location.hash;
-  if (hash.includes('linkedin_token=') && window.opener) {
-    const params = new URLSearchParams(hash.substring(1));
-    const token = params.get('linkedin_token');
-    if (token) {
-      window.opener.postMessage({ linkedinToken: decodeURIComponent(token) }, '*');
-      window.close();
-      return;
-    }
-  }
-
-  const now = new Date();
-  calYear  = now.getFullYear();
-  calMonth = now.getMonth();
-  loadFromStorage();
-  renderCalendar();
-  renderDraftPool();
-  showResumeBanner(); // show resume banner immediately on page load if a saved draft exists
-};
-
-// Flush any pending auto-save immediately when the tab is hidden or closed
-window.addEventListener('beforeunload', saveActiveDraft);
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden') saveActiveDraft();
-});
-
-// ── Storage ────────────────────────────────────────────────────
-function loadFromStorage() {
-  ['trelloKey','trelloToken','anthropicKey','userName','userRole','userPov','coreHashtags'].forEach(f => {
-    const v = localStorage.getItem(f);
-    if (v && document.getElementById(f)) document.getElementById(f).value = v;
-  });
-  try { calendarData   = JSON.parse(localStorage.getItem('calendarData')   || '{}'); } catch(e) { calendarData = {}; }
-  try { savedDrafts    = JSON.parse(localStorage.getItem('savedDrafts')    || '[]'); } catch(e) { savedDrafts = []; }
-  try { publishedPosts = JSON.parse(localStorage.getItem('publishedPosts') || '[]'); } catch(e) { publishedPosts = []; }
-}
-
-function saveSettings() {
-  ['trelloKey','trelloToken','anthropicKey','userName','userRole','userPov','coreHashtags'].forEach(f => {
-    const el = document.getElementById(f);
-    if (el) localStorage.setItem(f, el.value.trim());
-  });
-  showStatus('settingsStatus','success','✅ Settings saved!');
-}
-
-function persistCalendar()   { localStorage.setItem('calendarData',   JSON.stringify(calendarData)); }
-function persistDrafts()     { localStorage.setItem('savedDrafts',    JSON.stringify(savedDrafts)); }
-function persistPublished()  { localStorage.setItem('publishedPosts', JSON.stringify(publishedPosts)); }
-
-// ── Nav ────────────────────────────────────────────────────────
-function navItemFor(pageName) {
-  return [...document.querySelectorAll('.nav-item')].find(n => (n.getAttribute('onclick')||'').includes("'" + pageName + "'")) || null;
-}
-function showPage(name, el) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-' + name).classList.add('active');
-  const navEl = el || navItemFor(name);
-  if (navEl) navEl.classList.add('active');
-  if (name === 'settings')    updateLiStatus();
-  if (name === 'calendar')    { renderCalendar(); renderDraftPool(); }
-  if (name === 'performance') renderPerformance();
-  if (name === 'create') {
-    const draftsOutput = document.getElementById('draftsOutput');
-    if (draftsOutput && !draftsOutput.innerHTML.trim()) {
-      showResumeBanner();
-    } else {
-      hideResumeBanner();
-    }
-  }
-}
-
-// ── Draft Auto-Save ─────────────────────────────────────────────
-let _autoSaveTimer = null;
-let _activeDraftMeta = null; // { source, cardName }
-
-function timeSince(isoStr) {
-  const sec = Math.floor((Date.now() - new Date(isoStr)) / 1000);
-  if (sec < 60)  return 'just now';
-  const min = Math.floor(sec / 60);
-  if (min < 60)  return min + 'm ago';
-  const hr = Math.floor(min / 60);
-  if (hr < 24)   return hr + 'h ago';
-  return Math.floor(hr / 24) + 'd ago';
-}
-
-function saveActiveDraft() {
-  const drafts = [];
-  let i = 0;
-  while (true) {
-    const bodyEl = document.getElementById('draftBody' + i);
-    if (!bodyEl) break;
-    const hashEl = document.getElementById('draftHash' + i);
-    const photo   = draftPhotos[i];
-    const dataUrl = photo ? (document.getElementById('photoThumbImg' + i)?.src || null) : null;
-    drafts.push({
-      body:         bodyEl.innerText || bodyEl.textContent || '',
-      hashtags:     hashEl ? (hashEl.innerText || hashEl.textContent || '') : '',
-      photoBase64:  photo ? photo.base64   : null,
-      photoMimeType: photo ? photo.mimeType : null,
-      photoDataUrl: dataUrl,
-      audience:     draftAudiences[i] || null,
-    });
-    i++;
-  }
-  if (!drafts.length) return;
-  const record = {
-    source:        _activeDraftMeta?.source   || 'unknown',
-    cardName:      _activeDraftMeta?.cardName || 'Draft',
-    trelloCardId:  _activeTrelloCardId || null,
-    drafts,
-    savedAt: new Date().toISOString(),
-  };
-  try {
-    localStorage.setItem('activeDraft', JSON.stringify(record));
-  } catch(e) {
-    // Quota exceeded — retry without photo binary (keep dataUrl for thumbnail)
-    const slim = { ...record, drafts: record.drafts.map(d => ({ ...d, photoBase64: null, photoMimeType: null })) };
-    try { localStorage.setItem('activeDraft', JSON.stringify(slim)); } catch(e2) { /* give up */ }
-  }
-  // Show brief autosave indicator on all visible draft cards
-  document.querySelectorAll('.autosave-indicator').forEach(el => {
-    el.textContent = '✓ Draft saved';
-    setTimeout(() => { el.textContent = ''; }, 2500);
-  });
-}
-
-function scheduleSave() {
-  clearTimeout(_autoSaveTimer);
-  _autoSaveTimer = setTimeout(saveActiveDraft, 1500);
-}
-
-function clearActiveDraft() {
-  localStorage.removeItem('activeDraft');
-  _activeDraftMeta = null;
-  hideResumeBanner();
-}
-
-function setupDraftAutoSave(meta) {
-  _activeDraftMeta = meta;
-  // Attach input listeners after DOM settles
-  setTimeout(() => {
-    let i = 0;
-    while (true) {
-      const bodyEl = document.getElementById('draftBody' + i);
-      if (!bodyEl) break;
-      // Use a named handler so duplicate attach is harmless (replaceWith trick not needed since DOM is new each time)
-      bodyEl.addEventListener('input', scheduleSave);
-      const hashEl = document.getElementById('draftHash' + i);
-      if (hashEl) hashEl.addEventListener('input', scheduleSave);
-      i++;
-    }
-  }, 80);
-}
-
-function showResumeBanner() {
-  let record;
-  try { record = JSON.parse(localStorage.getItem('activeDraft') || 'null'); } catch(e) { record = null; }
-  if (!record) return;
-  const banner = document.getElementById('resumeBanner');
-  if (!banner) return;
-  const ago   = timeSince(record.savedAt);
-  const label = record.source === 'trello' ? `Trello: "${record.cardName}"` : record.cardName;
-  const hasPhoto = record.drafts.some(d => d.photoBase64 || d.photoDataUrl);
-  document.getElementById('resumeBannerText').innerHTML =
-    `Unsaved draft from <em>${ago}</em> — ${escHtml(label)}${hasPhoto ? ' · 📷 Photo attached' : ''}`;
-  banner.style.display = 'flex';
-}
-
-function hideResumeBanner() {
-  const banner = document.getElementById('resumeBanner');
-  if (banner) banner.style.display = 'none';
-}
-
-function resumeActiveDraft() {
-  let record;
-  try { record = JSON.parse(localStorage.getItem('activeDraft') || 'null'); } catch(e) { record = null; }
-  if (!record || !record.drafts?.length) { hideResumeBanner(); return; }
-  hideResumeBanner();
-
-  // Restore photo state — use photoBase64 if available; fall back to extracting from photoDataUrl
-  // (photoBase64 is stripped when localStorage quota is exceeded, but photoDataUrl is always kept)
-  draftPhotos = {};
-  record.drafts.forEach((d, i) => {
-    if (d.photoBase64) {
-      draftPhotos[i] = { base64: d.photoBase64, mimeType: d.photoMimeType || 'image/jpeg' };
-    } else if (d.photoDataUrl && d.photoDataUrl.includes(',')) {
-      const [header, b64] = d.photoDataUrl.split(',');
-      const mime = (header.match(/:(.*?);/) || [])[1] || 'image/jpeg';
-      draftPhotos[i] = { base64: b64, mimeType: mime };
-    }
-  });
-
-  // Restore audience state
-  draftAudiences = {};
-  record.drafts.forEach((d, i) => { if (d.audience) draftAudiences[i] = d.audience; });
-
-  // Restore source Trello card ID so Save updates the original card rather than creating a duplicate
-  _activeTrelloCardId = record.trelloCardId || null;
-
-  const renderRestoredDraft = (d, i) => {
-    const photoStrip = draftPhotoHTML(i);
-    return `<div class="draft-card" id="draftCard${i}">
-      <div class="draft-label insight" style="justify-content:space-between;width:100%">
-        <span>📝 ${i === 0 && record.drafts.length === 1 ? escHtml(record.source === 'trello' ? 'Trello Draft' : 'Draft') : 'Draft ' + (i+1)}</span>
-      </div>
-      <div class="draft-body" id="draftBody${i}" contenteditable="true">${escHtmlFull(d.body)}</div>
-      <div class="draft-hashtags" id="draftHash${i}" contenteditable="true">${escHtmlFull(d.hashtags)}</div>
-      ${photoStrip}
-      ${draftAudienceHTML(i, d.audience || null)}
-      <div class="draft-actions">
-        <button class="btn btn-success btn-sm" onclick="saveToDraftsTrello(${i},'Draft')">💾 Save to Trello</button>
-        <button class="btn btn-sm" onclick="copyPost(${i})">📋 Copy</button>
-        <button class="btn btn-linkedin btn-sm" onclick="postToLinkedIn(${i})" id="liBtn${i}">🔗 Post to LinkedIn</button>
-      </div>
-      <div class="autosave-indicator"></div>
-      <div id="draftSaveStatus${i}" class="status-bar"></div>
-    </div>`;
-  };
-
-  const sourceLabel = record.source === 'trello' ? `Trello: <em>${escHtml(record.cardName.substring(0,60))}</em>` : `<em>${escHtml(record.cardName.substring(0,60))}</em>`;
-  const header = `<div style="font-size:13px;color:var(--muted);margin-bottom:12px">↩ Resumed — ${sourceLabel} · <span style="opacity:0.6">${timeSince(record.savedAt)}</span></div>`;
-
-  const output = document.getElementById('draftsOutput');
-  output.innerHTML = header + record.drafts.map(renderRestoredDraft).join('');
-
-  // Restore photo thumbnails
-  record.drafts.forEach((d, i) => {
-    if (d.photoDataUrl) {
-      const imgEl   = document.getElementById('photoThumbImg' + i);
-      const thumbEl = document.getElementById('photoThumb' + i);
-      const nameEl  = document.getElementById('photoName'   + i);
-      if (imgEl)   imgEl.src = d.photoDataUrl;
-      if (thumbEl) thumbEl.style.display = 'flex';
-      if (nameEl)  nameEl.textContent = (d.photoBase64 || d.photoDataUrl) ? '📷 Restored photo' : '📷 Photo (re-attach to re-upload)';
-    }
-  });
-
-  setupDraftAutoSave({ source: record.source, cardName: record.cardName });
-  setTimeout(() => output.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
-}
-
-function dismissActiveDraft() {
-  clearActiveDraft();
-  hideResumeBanner();
-}
-
-// ── Pillars ────────────────────────────────────────────────────
-function togglePillar(el, key) {
-  el.classList.toggle('active');
-  activePillars = activePillars.includes(key)
-    ? activePillars.filter(p => p !== key)
-    : [...activePillars, key];
-}
-
-// ── Image Upload ───────────────────────────────────────────────
-function handleImage(input) {
-  const file = input.files[0];
-  if (!file) return;
-  const supported = ['image/jpeg','image/png','image/gif','image/webp'];
-  const isHEIC = file.type === 'image/heic' || file.type === 'image/heif'
-    || file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif');
-  if (!supported.includes(file.type) && !isHEIC) {
-    showStatus('generateStatus','error','❌ Unsupported image type. Please use JPEG, PNG, GIF, WebP, or HEIC.'); return;
-  }
-  if (isHEIC) {
-    showStatus('generateStatus','info','🔄 Converting HEIC to JPEG...');
-    heic2any({ blob: file, toType: 'image/jpeg', quality: 0.85 })
-      .then(blob => {
-        imageMimeType = 'image/jpeg';
-        const url = URL.createObjectURL(blob);
-        const img = new Image();
-        img.onload = () => {
-          compressToLimit(img, file.name + ' (HEIC → JPEG)');
-          URL.revokeObjectURL(url);
-          hideStatus('generateStatus');
-        };
-        img.src = url;
-      })
-      .catch(err => {
-        showStatus('generateStatus','error','❌ Could not convert HEIC: ' + (err.message || err));
-      });
-    return;
-  }
-  imageMimeType = 'image/jpeg'; // always compress to JPEG
-  const reader = new FileReader();
-  reader.onload = e => {
-    const img = new Image();
-    img.onload = () => {
-      compressToLimit(img, file.name);
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
-}
-
-// Compress image to stay under Anthropic's 5 MB base64 limit
-function compressToLimit(img, fileName) {
-  const MAX_B64 = 5 * 1024 * 1024; // 5 MB
-  const canvas  = document.createElement('canvas');
-  let quality   = 0.85;
-  let scale     = 1.0;
-  let dataUrl, b64;
-
-  // Iteratively reduce quality then scale until under limit
-  for (let attempt = 0; attempt < 8; attempt++) {
-    canvas.width  = Math.round(img.naturalWidth  * scale);
-    canvas.height = Math.round(img.naturalHeight * scale);
-    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-    dataUrl = canvas.toDataURL('image/jpeg', quality);
-    b64     = dataUrl.split(',')[1];
-    if (b64.length <= MAX_B64) break;
-    // Alternate between reducing quality and reducing dimensions
-    if (attempt % 2 === 0) quality = Math.max(quality - 0.15, 0.3);
-    else                   scale   = Math.max(scale   - 0.2,  0.3);
-  }
-
-  imageBase64 = b64;
-  const sizeMB  = (b64.length / 1024 / 1024).toFixed(1);
-  const wasCompressed = scale < 1.0 || quality < 0.85;
-  const prev = document.getElementById('imagePreview');
-  prev.src = dataUrl; prev.style.display = 'block';
-  document.querySelector('.upload-text').textContent =
-    wasCompressed
-      ? `✅ ${fileName} — compressed to ${sizeMB} MB (Anthropic limit: 5 MB)`
-      : `✅ ${fileName} (${sizeMB} MB)`;
-}
-
-function updateCharCount(inputId, countId, max) {
-  const len = document.getElementById(inputId).value.length;
-  const el  = document.getElementById(countId);
-  el.textContent = `${len} / ${max}`;
-  el.className = 'char-count' + (len > max ? ' over' : '');
-}
-
-// ── Fetch with Timeout ─────────────────────────────────────────
-async function fetchWithTimeout(url, options, timeoutMs = API_TIMEOUT_MS) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const res = await fetch(url, { ...options, signal: controller.signal });
-    clearTimeout(timer);
-    return res;
-  } catch (e) {
-    clearTimeout(timer);
-    if (e.name === 'AbortError') throw new Error('Request timed out after ' + Math.round(timeoutMs/1000) + 's. Try again.');
-    throw e;
-  }
-}
-
-// ── Trello ─────────────────────────────────────────────────────
-async function fetchTrelloListIds() {
-  const key = localStorage.getItem('trelloKey'), token = localStorage.getItem('trelloToken');
-  if (!key || !token) return;
-  try {
-    const boards = await (await fetch(`https://api.trello.com/1/members/me/boards?key=${key}&token=${token}&fields=name`)).json();
-    const liBoard = boards.find(b => /linkedin/i.test(b.name));
-    if (!liBoard) return;
-    const lists = await (await fetch(`https://api.trello.com/1/boards/${liBoard.id}/lists?key=${key}&token=${token}`)).json();
-    lists.forEach(l => { trelloListIds[l.name] = l.id; });
-  } catch(e) { console.error('Trello init:', e); }
-}
-
-async function loadBrainstorms() {
-  const key = localStorage.getItem('trelloKey'), token = localStorage.getItem('trelloToken');
-  if (!key || !token) { showStatus('brainstormStatus','error','⚠️ Add Trello credentials in Settings.'); return; }
-  showStatus('brainstormStatus','info','Loading brainstorms...');
-  await fetchTrelloListIds();
-  const listId = trelloListIds['Brainstorms'];
-  if (!listId) { showStatus('brainstormStatus','error','Could not find "Brainstorms" list on your LinkedIn Bot board.'); return; }
-  try {
-    const cards = await (await fetch(`https://api.trello.com/1/lists/${listId}/cards?key=${key}&token=${token}`)).json();
-    const container = document.getElementById('brainstormsList');
-    if (!cards.length) {
-      container.innerHTML = '<div style="color:var(--muted);font-size:14px">No cards in Brainstorms yet.</div>';
-      hideStatus('brainstormStatus'); return;
-    }
-    container.innerHTML = cards.map(c => `
-      <div class="brainstorm-item" onclick="useBrainstorm('${c.id}','${escHtml(c.name)}','${escHtml(c.desc||'')}')">
-        <div>
-          <div class="brainstorm-name">${c.name}</div>
-          ${c.desc ? `<div class="brainstorm-desc">${c.desc.substring(0,100)}${c.desc.length>100?'...':''}</div>` : ''}
-        </div>
-        <span style="color:var(--accent);font-size:18px">→</span>
-      </div>`).join('');
-    hideStatus('brainstormStatus');
-  } catch(e) { showStatus('brainstormStatus','error','❌ ' + e.message); }
-}
-
-function useBrainstorm(cardId, name, desc) {
-  const fullText = name + (desc ? '\n\n' + desc : '');
-  const lower = fullText.toLowerCase();
-  let pillar = 'mixed';
-  if (/\b(cre|commercial real estate|office|industrial|cap rate|noi|lease|landlord|vacancy)\b/.test(lower)) pillar = 'cre';
-  else if (/\b(creative industrial|adaptive reuse|warehouse|flex space|maker|studio space)\b/.test(lower)) pillar = 'ci';
-  else if (/\b(food|beverage|restaurant|bar|cafe|dining|chef|f&b|beer|cocktail|kitchen)\b/.test(lower)) pillar = 'fb';
-  else if (/\b(retail|store|brand|consumer|shopping|ecommerce|brick|pop.up|tenant)\b/.test(lower)) pillar = 'retail';
-  let style = 'all';
-  if (/\b(hot take|unpopular|controversial|bold)\b/.test(lower)) style = 'hot';
-  else if (/\b(insight|data|trend|analysis|observation)\b/.test(lower)) style = 'insight';
-  else if (/\b(story|celebrate|proud|shoutout|excited)\b/.test(lower)) style = 'story';
-  document.getElementById('draftText').value = fullText;
-  document.getElementById('pillarSelect').value = pillar;
-  document.getElementById('styleSelect').value = style;
-  document.getElementById('linkInput').value = '';
-  window._activeBrainstormCardId = cardId;
-  showPage('create');
-  showStatus('generateStatus','info','💡 Brainstorm loaded: "' + name.substring(0,60) + '" — Hit Generate when ready!');
-}
-
-async function loadWorkingDrafts() {
-  const key = localStorage.getItem('trelloKey'), token = localStorage.getItem('trelloToken');
-  if (!key || !token) { showStatus('workingDraftsStatus','error','⚠️ Add Trello credentials in Settings.'); return; }
-  showStatus('workingDraftsStatus','info','Loading...');
-  await fetchTrelloListIds();
-  const listId = trelloListIds['Working Drafts'];
-  if (!listId) { showStatus('workingDraftsStatus','error','Could not find "Working Drafts" list on your LinkedIn Bot board.'); return; }
-  try {
-    const cards = await (await fetch(`https://api.trello.com/1/lists/${listId}/cards?key=${key}&token=${token}&fields=name,desc,shortUrl,labels`)).json();
-    const container = document.getElementById('workingDraftsList');
-    if (!cards.length) {
-      container.innerHTML = '<div style="color:var(--muted);font-size:14px">No cards in Working Drafts yet.</div>';
-      hideStatus('workingDraftsStatus'); return;
-    }
-    const commentsByCard = {};
-    await Promise.all(cards.map(async c => {
-      try {
-        const actions = await (await fetch(`https://api.trello.com/1/cards/${c.id}/actions?key=${key}&token=${token}&filter=commentCard`)).json();
-        commentsByCard[c.id] = actions;
-      } catch(e) { commentsByCard[c.id] = []; }
-    }));
-    // Cache card data by ID to avoid quoting issues in onclick attributes
-    cards.forEach(c => { trelloCardCache[c.id] = { name: c.name, desc: c.desc || '', listName: 'Working Drafts' }; });
-    container.innerHTML = cards.map(c => {
-      const labelNames = (c.labels||[]).map(l => l.name.toLowerCase());
-      let statusClass = 'pending', statusText = '⏳ Pending Review';
-      if (labelNames.some(l => l.includes('approved'))) { statusClass='approved'; statusText='✅ Approved'; }
-      else if (labelNames.some(l => l.includes('edit') || l.includes('revision'))) { statusClass='needs-edits'; statusText='✏️ Needs Edits'; }
-      const comments = commentsByCard[c.id] || [];
-      const commentsHtml = comments.length
-        ? comments.map(a => `<div class="comment-item"><div><span class="comment-author">${escHtmlFull(a.memberCreator&&a.memberCreator.fullName||'Team')}</span><span class="comment-date">${new Date(a.date).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</span></div><div class="comment-text">${escHtmlFull(a.data&&a.data.text||'')}</div></div>`).join('')
-        : '<div class="no-comments">No comments yet.</div>';
-      return `<div class="draft-card" id="wdCard-${c.id}">
-        <div class="collab-bar">
-          <span class="status-badge ${statusClass}">${statusText}</span>
-          <div class="collab-actions">
-            <button class="btn btn-sm btn-approve" onclick="setDraftStatus('${c.id}','approved')">✅ Approve</button>
-            <button class="btn btn-sm btn-edits" onclick="setDraftStatus('${c.id}','needs-edits')">✏️ Request Edits</button>
-            <button class="collab-refresh" onclick="loadWorkingDrafts()">↻</button>
-          </div>
-        </div>
-        <div style="font-weight:600;margin-bottom:6px">${escHtmlFull(c.name)}</div>
-        <div id="ieStaticPreview-${c.id}">
-          ${c.desc ? `<div class="draft-body">${escHtmlFull(c.desc.substring(0,300))}${c.desc.length>300?'...':''}</div>` : ''}
-        </div>
-        <!-- Inline editor (hidden until Edit is clicked) -->
-        <div id="inlineEditor-${c.id}" style="display:none;margin-top:10px;padding-top:12px;border-top:1px solid var(--border)">
-          <div style="font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px">✏️ Editing</div>
-          <div id="ieBody-${c.id}" contenteditable="true"
-            style="min-height:80px;border:1px solid var(--border);border-radius:8px;padding:10px;font-size:14px;margin-bottom:8px;outline:none;white-space:pre-wrap;background:var(--bg);line-height:1.55"></div>
-          <div id="ieHash-${c.id}" contenteditable="true"
-            style="border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;color:#0a66c2;margin-bottom:10px;outline:none;background:var(--bg)"></div>
-          <div id="ieAudience-${c.id}" style="margin-bottom:10px"></div>
-          <div class="draft-photo-section" style="margin-bottom:10px">
-            <div class="photo-label">📷 Photo <span style="font-weight:400;color:var(--muted)">(optional)</span></div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <input type="file" accept="image/*,.heic,.heif" style="display:none" id="iePhotoFile-${c.id}" onchange="attachInlinePhoto(event,'${c.id}')">
-              <button class="btn btn-sm" onclick="document.getElementById('iePhotoFile-${c.id}').click()" style="font-size:12px;padding:4px 12px">📎 Choose photo</button>
-              <span id="iePhotoName-${c.id}" style="font-size:12px;color:var(--muted)"></span>
-            </div>
-            <div class="draft-photo-thumb" id="iePhotoThumb-${c.id}" style="display:none">
-              <img id="iePhotoThumbImg-${c.id}" alt="photo preview">
-              <button class="btn btn-sm" onclick="removeInlinePhoto('${c.id}')" style="font-size:11px;padding:2px 8px;color:var(--danger);border-color:var(--danger)">✕ Remove</button>
-            </div>
-          </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn btn-success btn-sm" id="ieSaveBtn-${c.id}" onclick="saveInlineEditorToTrello('${c.id}')">💾 Save</button>
-            <button class="btn btn-sm" onclick="scheduleInlineEditor('${c.id}')">📅 Schedule</button>
-            <button class="btn btn-linkedin btn-sm" id="iePostBtn-${c.id}" onclick="postInlineEditorToLinkedIn('${c.id}')">🔗 Post to LinkedIn</button>
-            <button class="btn btn-sm" onclick="closeInlineEditor('${c.id}')">✕ Cancel</button>
-          </div>
-          <div id="ieStatus-${c.id}" class="status-bar" style="display:none;margin-top:8px"></div>
-        </div>
-        <div class="comments-section">
-          <div class="comments-label">💬 Team Comments (${comments.length})</div>
-          ${commentsHtml}
-          <div class="comment-input-wrap">
-            <textarea id="commentInput-${c.id}" placeholder="Add a comment for your team..."></textarea>
-            <button class="btn btn-secondary btn-sm" onclick="postTrelloComment('${c.id}')">Send</button>
-          </div>
-        </div>
-        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-          <a href="${c.shortUrl}" target="_blank" class="btn btn-sm">📋 Open in Trello</a>
-          <button class="btn btn-sm" onclick="moveToProduction('${c.id}')">🚀 Move to Production</button>
-          <button class="btn btn-linkedin btn-sm" onclick="openInlineEditor('${c.id}')">✏️ Edit</button>
-          <button class="btn btn-sm" style="color:#c0392b;border-color:#c0392b" data-delete-card="${c.id}" onclick="deleteWorkingDraft('${c.id}')">🗑️ Delete</button>
-        </div>
-        <div id="collabStatus-${c.id}" class="status-bar" style="display:none"></div>
-      </div>`;
-    }).join('');
-    hideStatus('workingDraftsStatus');
-  } catch(e) { showStatus('workingDraftsStatus','error','❌ ' + e.message); }
-}
-
-async function setDraftStatus(cardId, status) {
-  const key = localStorage.getItem('trelloKey'), token = localStorage.getItem('trelloToken');
-  if (!key || !token) return;
-  await fetchTrelloListIds();
-  try {
-    const boards = await (await fetch(`https://api.trello.com/1/members/me/boards?key=${key}&token=${token}&fields=name`)).json();
-    const liBoard = boards.find(b => /linkedin/i.test(b.name));
-    if (!liBoard) return;
-    const boardLabels = await (await fetch(`https://api.trello.com/1/boards/${liBoard.id}/labels?key=${key}&token=${token}`)).json();
-    const wantedName = status === 'approved' ? 'Approved' : 'Needs Edits';
-    const wantedColor = status === 'approved' ? 'green' : 'red';
-    let label = boardLabels.find(l => l.name === wantedName);
-    if (!label) {
-      const res = await fetch(`https://api.trello.com/1/labels?key=${key}&token=${token}`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ name: wantedName, color: wantedColor, idBoard: liBoard.id })
-      });
-      label = await res.json();
-    }
-    const card = await (await fetch(`https://api.trello.com/1/cards/${cardId}?key=${key}&token=${token}&fields=idLabels`)).json();
-    for (const lid of (card.idLabels||[])) {
-      const lbl = boardLabels.find(l => l.id === lid);
-      if (lbl && (lbl.name === 'Approved' || lbl.name === 'Needs Edits')) {
-        await fetch(`https://api.trello.com/1/cards/${cardId}/idLabels/${lid}?key=${key}&token=${token}`, { method:'DELETE' });
-      }
-    }
-    await fetch(`https://api.trello.com/1/cards/${cardId}/idLabels?key=${key}&token=${token}`, {
-      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ value: label.id })
-    });
-    const userName = localStorage.getItem('userName') || 'Mike';
-    const commentText = status === 'approved'
-      ? `✅ Approved by ${userName} on ${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`
-      : `✏️ Edits requested by ${userName} on ${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
-    await fetch(`https://api.trello.com/1/cards/${cardId}/actions/comments?key=${key}&token=${token}`, {
-      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ text: commentText })
-    });
-    loadWorkingDrafts();
-  } catch(e) { console.error('setDraftStatus:', e); }
-}
-
-async function postTrelloComment(cardId) {
-  const key = localStorage.getItem('trelloKey'), token = localStorage.getItem('trelloToken');
-  const input = document.getElementById('commentInput-' + cardId);
-  const text = input && input.value && input.value.trim();
-  if (!text || !key || !token) return;
-  const statusEl = document.getElementById('collabStatus-' + cardId);
-  if (statusEl) { statusEl.style.display='block'; statusEl.className='status-bar info'; statusEl.textContent='Posting...'; }
-  try {
-    await fetch(`https://api.trello.com/1/cards/${cardId}/actions/comments?key=${key}&token=${token}`, {
-      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ text })
-    });
-    if (input) input.value = '';
-    if (statusEl) { statusEl.className='status-bar success'; statusEl.textContent='✅ Comment posted!'; setTimeout(()=>{ statusEl.style.display='none'; },2500); }
-    loadWorkingDrafts();
-  } catch(e) { if (statusEl) { statusEl.className='status-bar error'; statusEl.textContent='❌ ' + e.message; } }
-}
-
-async function moveToProduction(cardId) {
-  const key = localStorage.getItem('trelloKey'), token = localStorage.getItem('trelloToken');
-  await fetchTrelloListIds();
-  const listId = trelloListIds['Production'];
-  if (!listId) { alert('Could not find "Production" list on your board.'); return; }
-  try {
-    await fetch(`https://api.trello.com/1/cards/${cardId}?key=${key}&token=${token}`, {
-      method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ idList: listId })
-    });
-    loadWorkingDrafts();
-  } catch(e) { alert('Failed to move card: ' + e.message); }
-}
-
-async function archiveBrainstormCard(cardId) {
-  const key = localStorage.getItem('trelloKey'), token = localStorage.getItem('trelloToken');
-  if (!key || !token) return;
-  try {
-    await fetch(`https://api.trello.com/1/cards/${cardId}?key=${key}&token=${token}`, {
-      method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ closed: true })
-    });
-  } catch(e) { console.error('Archive card:', e); }
-}
-
-async function deleteWorkingDraft(cardId) {
-  if (!confirm('Archive this draft? It will be removed from Working Drafts in Trello.')) return;
-  const key = localStorage.getItem('trelloKey'), token = localStorage.getItem('trelloToken');
-  if (!key || !token) return;
-  const btn = document.querySelector(`[data-delete-card="${cardId}"]`);
-  if (btn) { btn.disabled = true; btn.textContent = '…'; }
-  try {
-    await fetch(`https://api.trello.com/1/cards/${cardId}?key=${key}&token=${token}`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ closed: true })
-    });
-    loadWorkingDrafts(); // refresh the list
-  } catch(e) { alert('Could not delete draft: ' + e.message); if (btn) { btn.disabled = false; btn.textContent = '🗑️ Delete'; } }
-}
-
-// ── INLINE EDITOR (Working Drafts) ─────────────────────────────
-function openInlineEditor(cardId) {
-  // Close any other open inline editors first
-  document.querySelectorAll('[id^="inlineEditor-"]').forEach(el => {
-    if (el.id !== 'inlineEditor-' + cardId) el.style.display = 'none';
-  });
-  document.querySelectorAll('[id^="ieStaticPreview-"]').forEach(el => {
-    if (el.id !== 'ieStaticPreview-' + cardId) el.style.display = '';
-  });
-
-  const card = trelloCardCache[cardId];
-  if (!card) { alert('Card data not cached — please reload the list.'); return; }
-  const { body, hashtags } = parseTrelloCardContent(card.desc || '');
-
-  const bodyEl = document.getElementById('ieBody-' + cardId);
-  const hashEl = document.getElementById('ieHash-' + cardId);
-  if (bodyEl) bodyEl.innerText = body;
-  if (hashEl) hashEl.innerText = hashtags;
-
-  // Render audience selector
-  const audEl = document.getElementById('ieAudience-' + cardId);
-  if (audEl) {
-    const cur = inlineEditorAudience[cardId] || null;
-    const buttons = AUDIENCE_OPTS.map(o =>
-      `<button class="audience-btn ${o.cls}${cur === o.key ? ' active' : ''}" onclick="setInlineAudience('${cardId}','${o.key}',this)">${o.label}</button>`
-    ).join('');
-    audEl.innerHTML = `<div class="audience-selector"><span class="audience-label">Audience:</span>${buttons}</div>`;
-  }
-
-  // Reset photo state for this card
-  delete inlineEditorPhotos[cardId];
-  const thumbEl = document.getElementById('iePhotoThumb-' + cardId);
-  const nameEl  = document.getElementById('iePhotoName-'  + cardId);
-  const fileEl  = document.getElementById('iePhotoFile-'  + cardId);
-  if (thumbEl) thumbEl.style.display = 'none';
-  if (nameEl)  nameEl.textContent = '';
-  if (fileEl)  fileEl.value = '';
-
-  document.getElementById('ieStaticPreview-' + cardId).style.display = 'none';
-  const editor = document.getElementById('inlineEditor-' + cardId);
-  if (editor) { editor.style.display = 'block'; if (bodyEl) setTimeout(() => bodyEl.focus(), 50); }
-}
-
-function closeInlineEditor(cardId) {
-  const editor = document.getElementById('inlineEditor-' + cardId);
-  if (editor) editor.style.display = 'none';
-  const preview = document.getElementById('ieStaticPreview-' + cardId);
-  if (preview) preview.style.display = '';
-  const status = document.getElementById('ieStatus-' + cardId);
-  if (status) status.style.display = 'none';
-}
-
-function setInlineAudience(cardId, audience, el) {
-  inlineEditorAudience[cardId] = audience;
-  const row = el.closest('.audience-selector');
-  if (row) row.querySelectorAll('.audience-btn').forEach(b => b.classList.remove('active'));
-  if (el) el.classList.add('active');
-}
-
-async function saveInlineEditorToTrello(cardId) {
-  const key = localStorage.getItem('trelloKey'), token = localStorage.getItem('trelloToken');
-  if (!key || !token) { showIeStatus(cardId, 'error', '⚠️ Add Trello credentials in Settings.'); return; }
-  const body = (document.getElementById('ieBody-' + cardId)?.innerText || '').trim();
-  const hash = (document.getElementById('ieHash-' + cardId)?.innerText || '').trim();
-  const saveBtn = document.getElementById('ieSaveBtn-' + cardId);
-  if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<span class="spinner"></span> Saving…'; }
-  showIeStatus(cardId, 'info', '💾 Saving to Trello…');
-  try {
-    const res = await fetch(`https://api.trello.com/1/cards/${cardId}?key=${key}&token=${token}`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ desc: body + (hash ? '\n\n' + hash : '') })
-    });
-    const data = await res.json();
-    if (data.id) {
-      if (trelloCardCache[cardId]) trelloCardCache[cardId].desc = body + (hash ? '\n\n' + hash : '');
-      // Update the static preview text without full reload
-      const combined = body + (hash ? '\n\n' + hash : '');
-      const prev = document.getElementById('ieStaticPreview-' + cardId);
-      if (prev) {
-        const existingBody = prev.querySelector('.draft-body');
-        if (existingBody) existingBody.textContent = combined.substring(0, 300) + (combined.length > 300 ? '…' : '');
-        else prev.innerHTML = `<div class="draft-body">${escHtmlFull(combined.substring(0,300))}${combined.length>300?'...':''}</div>`;
-      }
-      showIeStatus(cardId, 'success', '✅ Saved to Trello!');
-      if (saveBtn) {
-        saveBtn.disabled = false; saveBtn.innerHTML = '✅ Saved';
-        setTimeout(() => { if (saveBtn) saveBtn.innerHTML = '💾 Save'; }, 3000);
-      }
-    } else {
-      showIeStatus(cardId, 'error', '❌ ' + (data.message || 'Save failed'));
-      if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '💾 Save'; }
-    }
-  } catch(e) {
-    showIeStatus(cardId, 'error', '❌ ' + e.message);
-    if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '💾 Save'; }
-  }
-}
-
-function scheduleInlineEditor(cardId) {
-  const body = (document.getElementById('ieBody-' + cardId)?.innerText || '').trim();
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('modalTitle').textContent = '📅 Schedule This Draft';
-  document.getElementById('modalSub').textContent = body ? '"' + body.substring(0, 60) + '…"' : '';
-  document.getElementById('modalPostList').innerHTML = `
-    <div style="margin-bottom:10px;font-size:13px;color:var(--muted)">Pick a date to add this post to your content calendar:</div>
-    <input type="date" id="scheduleDatePicker" value="${today}" min="${today}"
-      style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:15px;margin-bottom:14px;box-sizing:border-box">
-    <button class="btn btn-linkedin" style="width:100%;justify-content:center" onclick="confirmInlineSchedule('${cardId}')">📅 Confirm Schedule</button>
-  `;
-  pendingScheduleDate = '_ie_' + cardId;
-  document.getElementById('scheduleModal').classList.add('open');
-}
-
-function confirmInlineSchedule(cardId) {
-  const dateVal = document.getElementById('scheduleDatePicker')?.value;
-  if (!dateVal) { alert('Please pick a date.'); return; }
-  const body = (document.getElementById('ieBody-' + cardId)?.innerText || '').trim();
-  const hash = (document.getElementById('ieHash-' + cardId)?.innerText || '').trim();
-  const tempId = 'ie_sched_' + cardId;
-  if (!calendarData[dateVal]) calendarData[dateVal] = [];
-  if (!calendarData[dateVal].some(p => p.id === tempId)) {
-    calendarData[dateVal].push({ id: tempId, text: body, pillar: 'mixed', type: 'Working Draft' });
-    persistCalendar();
-  }
-  document.getElementById('scheduleModal').classList.remove('open');
-  pendingScheduleDate = null;
-  const d = new Date(dateVal + 'T12:00:00');
-  const formatted = d.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
-  showIeStatus(cardId, 'success', '📅 Scheduled for ' + formatted);
-}
-
-async function postInlineEditorToLinkedIn(cardId) {
-  const liToken = localStorage.getItem('linkedinToken');
-  if (!liToken) { showPage('settings'); showStatus('liSettingsStatus','error','⚠️ Please connect your LinkedIn account first.'); return; }
-  const body = (document.getElementById('ieBody-' + cardId)?.innerText || '').trim();
-  const hash = (document.getElementById('ieHash-' + cardId)?.innerText || '').trim();
-  const fullText = body + (hash ? '\n\n' + hash : '');
-  if (fullText.length < 10) { showIeStatus(cardId, 'error', '❌ Post is too short.'); return; }
-  const postBtn = document.getElementById('iePostBtn-' + cardId);
-  if (postBtn) { postBtn.disabled = true; postBtn.textContent = '⏳ Posting…'; }
-  showIeStatus(cardId, 'info', '⏳ Posting to LinkedIn…');
-  try {
-    // Upload photo if one is attached
-    let imageAssetUrn = null;
-    const photo = inlineEditorPhotos[cardId];
-    if (photo) {
-      if (postBtn) postBtn.textContent = '⏳ Uploading photo…';
-      showIeStatus(cardId, 'info', '⏳ Uploading photo…');
-      imageAssetUrn = await uploadPhotoToLinkedIn(liToken, photo.base64, photo.mimeType);
-      if (postBtn) postBtn.textContent = '⏳ Publishing…';
-    }
-    const postBody = { access_token: liToken, text: fullText };
-    if (imageAssetUrn) postBody.imageAssetUrn = imageAssetUrn;
-    const res = await fetchWithTimeout(LI_WORKER + '/post', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(postBody)
-    }, 30000);
-    const data = await res.json();
-    if (data.success || data.postId || data.id) {
-      showIeStatus(cardId, 'success', '✅ Posted to LinkedIn' + (imageAssetUrn ? ' with photo!' : '!'));
-      if (postBtn) { postBtn.textContent = '✅ Posted!'; postBtn.style.background = '#16a34a'; }
-      publishedPosts.unshift({
-        id: 'pub_' + Date.now(), liPostId: data.postId || data.id || null,
-        text: body, hashtags: hash, pillar: 'mixed', type: 'Working Draft',
-        audience: inlineEditorAudience[cardId] || null,
-        publishedAt: new Date().toISOString(), hasPhoto: !!imageAssetUrn,
-        stats: { likes: 0, comments: 0, shares: 0, lastFetched: null }
-      });
-      publishedPosts = publishedPosts.slice(0, 100);
-      persistPublished();
-      setTimeout(() => { if (postBtn) { postBtn.disabled = false; postBtn.textContent = '🔗 Post to LinkedIn'; postBtn.style.background = ''; } }, 4000);
-    } else if (data.error?.includes('expired')) {
-      localStorage.removeItem('linkedinToken'); updateLiStatus();
-      if (postBtn) { postBtn.disabled = false; postBtn.textContent = '🔗 Post to LinkedIn'; }
-      showIeStatus(cardId, 'error', '❌ LinkedIn token expired. Reconnect in Settings.');
-    } else {
-      throw new Error(data.error || data.message || JSON.stringify(data));
-    }
-  } catch(e) {
-    if (postBtn) { postBtn.disabled = false; postBtn.textContent = '🔗 Post to LinkedIn'; }
-    showIeStatus(cardId, 'error', '❌ Post failed: ' + e.message);
-  }
-}
-
-function showIeStatus(cardId, type, msg) {
-  const el = document.getElementById('ieStatus-' + cardId);
-  if (!el) return;
-  el.textContent = msg;
-  el.className = 'status-bar ' + type;
-  el.style.display = 'block';
-  if (type === 'success') setTimeout(() => { el.style.display = 'none'; }, 5000);
-}
-
-// ── Source Toggle ──────────────────────────────────────────────
-function toggleSource(el) { el.classList.toggle('active'); }
-function getActiveSources() {
-  return Array.from(document.querySelectorAll('.source-toggle.active')).map(el => el.dataset.src);
-}
-
-// ── TREND GENERATION ───────────────────────────────────────────
-async function generateTrends() {
-  const anthropicKey = localStorage.getItem('anthropicKey');
-  if (!anthropicKey) { showStatus('trendStatus','error','⚠️ Add your Anthropic API key in Settings first.'); return; }
-  const btn = document.getElementById('trendsBtn');
-  btn.innerHTML = '<span class="spinner"></span> Scanning trends...';
-  btn.disabled = true;
-  showStatus('trendStatus','info','🔥 Scanning current trends across your 4 pillars — this takes ~20 seconds with live web search...');
-  const customKeywords = document.getElementById('customKeywords').value.trim();
-  const topicLayer     = document.getElementById('topicLayer').value.trim();
-  const urlContext     = document.getElementById('urlContext').value.trim();
-  const activeSources  = getActiveSources();
-  const userName = localStorage.getItem('userName') || 'Mike Baum';
-  const userRole  = localStorage.getItem('userRole') || 'Principal at Baum Realty Group, Chicago';
-  const keywordsSection = customKeywords
-    ? `\nFOCUS KEYWORDS: Prioritize finding trends related to these specific topics: ${customKeywords}.` : '';
-  const topicSection = topicLayer
-    ? `\nTOPIC LAYER: Weight results toward this theme: ${topicLayer}.` : '';
-  const sourcesSection  = activeSources.length
-    ? `\nPRIORITY SOURCES: Explicitly search for content from: ${activeSources.join(', ')}.` : '';
-  const urlSection = urlContext
-    ? `\nURL CONTEXT: The user submitted this URL: ${urlContext}\nSearch for related discussion on Twitter/X, LinkedIn, and news sites. Use its themes to enrich your trend ideas.` : '';
-  const prompt = `You are a trend researcher for ${userName}, ${userRole}.
-
-TODAY'S DATE: ${new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}
-
-Search for the most current, relevant headlines and developments (within the last 2-4 weeks) across these 4 content pillars:
-1. CRE (pillar key: cre) — Commercial real estate: office, industrial, retail leasing, investment, cap rates, Chicago market
-2. Creative Industrial (pillar key: ci) — Adaptive reuse, warehouse conversion, flex/maker space, mixed-use industrial Chicago
-3. Chicago F&B (pillar key: fb) — Restaurants, bars, ghost kitchens, food halls, chef news, Chicago dining scene
-4. Retail Trends (pillar key: retail) — Retail real estate, tenant expansion/contraction, e-commerce vs brick-and-mortar, pop-ups
-${keywordsSection}${topicSection}${sourcesSection}${urlSection}
-
-Generate exactly 4 trend ideas (one per pillar) in this EXACT format with no extra text:
-
-===TREND===
-PILLAR: [cre|ci|fb|retail]
-HEADLINE: [specific, punchy headline from actual recent news — include company/place names when possible]
-CONTEXT: [2-3 sentences of context — what's happening, why it matters, any data/numbers]
-HOOK: [a ready-to-use opening hook for a LinkedIn post — under 30 words, provocative, no "I" as first word]
-STYLE: [hot|insight|story]
-===END===
-
-Repeat for each pillar. Use actual recent news — be specific.`;
-
-  try {
-    const res = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'x-api-key':anthropicKey,
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true'
-      },
-      body: JSON.stringify({
-        model: MODEL_RESEARCH,
-        max_tokens: 2000,
-        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-        messages:[{ role:'user', content: prompt }]
-      })
-    }, 65000);
-    const data = await res.json();
-    if (!res.ok) {
-      const errMsg = data?.error?.message || JSON.stringify(data?.error) || res.statusText;
-      showStatus('trendStatus','error','❌ API error: ' + errMsg);
-    } else {
-      const text = data.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
-      renderTrends(text);
-      hideStatus('trendStatus');
-      document.getElementById('customKeywords').value = '';
-    }
-  } catch(e) {
-    showStatus('trendStatus','error','❌ ' + e.message);
-  }
-  btn.innerHTML = '🔥 Find Trending Topics';
-  btn.disabled = false;
-}
-
-function renderTrends(text) {
-  const blocks = text.split('===TREND===').slice(1).map(b => b.split('===END===')[0]);
-  if (!blocks.length) {
-    document.getElementById('trendsOutput').innerHTML = '<div style="color:var(--muted);padding:20px">Could not parse trends. Try generating again.</div>';
-    return;
-  }
-  trendData = blocks.map((block, i) => {
-    const get = k => { const m = block.match(new RegExp(k + ':\\s*(.+)')); return m ? m[1].trim() : ''; };
-    return { pillar: get('PILLAR'), headline: get('HEADLINE'), context: get('CONTEXT'), hook: get('HOOK'), style: get('STYLE'), index: i };
-  });
-  displayTrendCards(trendData);
-}
-
-function displayTrendCards(trends) {
-  const pillarLabels = { cre:'🏢 CRE', ci:'🎭 Creative Industrial', fb:'🍽️ Chicago F&B', retail:'🛍️ Retail' };
-  const styleIcons   = { hot:'🔥', insight:'💡', story:'📖' };
-  document.getElementById('trendsOutput').innerHTML = trends.map(t => `
-    <div class="trend-card" data-pillar="${t.pillar}">
-      <div class="trend-header">
-        <span class="trend-pillar-badge ${t.pillar}">${pillarLabels[t.pillar] || t.pillar}</span>
-        <span class="trend-number">${styleIcons[t.style] || '•'} ${(t.style||'').toUpperCase()}</span>
-      </div>
-      <div class="trend-headline">${t.headline}</div>
-      <div class="trend-context">${t.context}</div>
-      <div class="trend-hook-label">Suggested Hook</div>
-      <div class="trend-hook">${t.hook}</div>
-      <div class="trend-actions">
-        <button class="btn btn-primary btn-sm" onclick="useTrend(${t.index})">✏️ Write This Post</button>
-        <button class="btn btn-sm" onclick="copyTrendHook(${t.index})">📋 Copy Hook</button>
-      </div>
-    </div>`).join('') || '<div style="color:var(--muted)">No trends found. Try generating again.</div>';
-}
-
-function filterTrends(pillar, btn) {
-  document.querySelectorAll('.pillar-filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  displayTrendCards(pillar === 'all' ? trendData : trendData.filter(t => t.pillar === pillar));
-}
-
-function useTrend(idx) {
-  const t = trendData[idx];
-  if (!t) return;
-  document.getElementById('draftText').value = t.hook + '\n\n' + t.context;
-  document.getElementById('pillarSelect').value = t.pillar;
-  document.getElementById('styleSelect').value = t.style === 'hot' ? 'hot' : t.style === 'story' ? 'story' : 'insight';
-  document.getElementById('linkInput').value = '';
-  window._activeBrainstormCardId = null;
-  showPage('create');
-  showStatus('generateStatus','info','🔥 Trend loaded: "' + t.headline.substring(0,60) + '" — Hit Generate!');
-}
-
-function copyTrendHook(idx) {
-  const t = trendData[idx];
-  if (t) navigator.clipboard.writeText(t.hook).then(() => {}).catch(() => {});
-}
-
-// ── GENERATE POSTS ─────────────────────────────────────────────
-async function generatePosts() {
-  const anthropicKey = localStorage.getItem('anthropicKey');
-  if (!anthropicKey) { showStatus('generateStatus','error','⚠️ Add your Anthropic API key in Settings first.'); return; }
-  const draftText  = document.getElementById('draftText').value.trim();
-  const linkInput  = document.getElementById('linkInput').value.trim();
-  const pillar     = document.getElementById('pillarSelect').value;
-  const style      = document.getElementById('styleSelect').value;
-  const userName   = localStorage.getItem('userName') || 'Mike Baum';
-  const userRole   = localStorage.getItem('userRole') || 'Principal at Baum Realty Group | Founder, Baum Asset Management';
-  const userPov    = localStorage.getItem('userPov') || 'Conversational, non-transactional CRE thought leader. 13 years in Chicago CRE, commercial real estate attorney background. Never pitching — always teaching or observing.';
-  const coreHashtags = localStorage.getItem('coreHashtags') || '#ChicagoCRE #CRE #RetailTrends #CreativeIndustrial #CommercialRealEstate';
-  if (!draftText && !linkInput && !imageBase64) { showStatus('generateStatus','error','⚠️ Add some raw material first.'); return; }
-  const btn = document.getElementById('generateBtn');
-  btn.innerHTML = '<span class="spinner"></span> Generating...';
-  btn.disabled = true;
-  showStatus('generateStatus','info','✨ Drafting posts in your voice...');
-  const pillarLabels = { cre:'Commercial Real Estate', ci:'Creative Industrial', fb:'Chicago Food & Beverage', retail:'Retail Trends', mixed:'Mixed' };
-  const styleInstructions = {
-    all: 'Generate 3 variants:\n1) 🔥 Hot Take — bold, provocative, takes a clear stance\n2) 💡 Insight/Observation — data-informed, teaches something\n3) 📖 Story/Celebration — personal, warm, narrative',
-    hot:     'Generate 1 variant: 🔥 Hot Take — bold, provocative, takes a clear stance',
-    insight: 'Generate 1 variant: 💡 Insight/Observation — data-informed, teaches something',
-    story:   'Generate 1 variant: 📖 Story/Celebration — personal, warm, narrative'
-  };
-  const userContent = [];
-  if (imageBase64) userContent.push({ type:'image', source:{ type:'base64', media_type: imageMimeType, data:imageBase64 } });
-  userContent.push({ type:'text', text:`You are a ghostwriter for ${userName}, ${userRole}.
-
-MIKE'S VOICE — INTERNALIZE THESE RULES:
-- ${userPov}
-- Writes like he's talking to a peer at a Chicago coffee shop, not broadcasting to an audience
-- Commercial real estate attorney background — precise, structured, knows the deal mechanics
-- 13+ years in Chicago CRE, knows the neighborhoods, tenants, and players by name
-- Non-transactional. Never pitching. Never "reach out for a free consult."
-- Uses specific details: deal types, Chicago neighborhoods, tenant names, dollar amounts when available
-- 150–250 words. Line breaks between thoughts for readability.
-- NO hashtags in the body text. NO emoji unless truly appropriate.
-- Hook must stop the scroll: punchy, specific, a bit provocative. Never starts with "I" as the first word.
-- End with a genuine question that invites dialogue (not "What do you think?" — be specific).
-- No buzzwords: no "synergy," "ecosystem," "game-changer," "leverage," "reimagine."
-- Read the raw material, find the most interesting angle, and write from that angle.
-
-CONTENT PILLAR: ${pillarLabels[pillar]}
-RAW MATERIAL: ${draftText || '(See image/link)'}
-${linkInput ? `REFERENCE LINK: ${linkInput}` : ''}
-
-TASK: ${styleInstructions[style]}
-
-Format each variant EXACTLY like this (no extra text):
----VARIANT---
-TYPE: [Hot Take | Insight | Story]
-POST:
-[post body here — no inline hashtags]
-HASHTAGS: [8-10 hashtags, include some from: ${coreHashtags}]
----END---`});
-  try {
-    const res = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'x-api-key':anthropicKey,
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true'
-      },
-      body: JSON.stringify({ model: MODEL_WRITING, max_tokens: 2500, messages:[{ role:'user', content:userContent }] })
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      const errMsg = data?.error?.message || JSON.stringify(data?.error) || res.statusText;
-      showStatus('generateStatus','error','❌ API error: ' + errMsg);
-    } else {
-      const text = data.content?.[0]?.text || '';
-      renderDrafts(text, style, pillar);
-      hideStatus('generateStatus');
-    }
-  } catch(e) { showStatus('generateStatus','error','❌ ' + e.message); }
-  btn.innerHTML = '✨ Generate Post Drafts';
-  btn.disabled = false;
-  if (window._activeBrainstormCardId) { archiveBrainstormCard(window._activeBrainstormCardId); window._activeBrainstormCardId = null; }
-}
-
-function renderDrafts(text, style, pillar) {
-  draftPhotos = {};       // clear any photos from prior generation
-  draftAudiences = {};    // clear audience tags from prior generation
-  _activeTrelloCardId = null; // new generation — not editing an existing card
-  clearActiveDraft();    // new generation replaces any saved draft
-  hideResumeBanner();
-  const blocks = text.split('---VARIANT---').slice(1);
-  if (!blocks.length) {
-    const id = 'draft_' + Date.now() + '_0';
-    const draftObj = { id, text: text.trim(), hashtags:'', type:'Draft', pillar: pillar || 'mixed', createdAt: new Date().toISOString() };
-    savedDrafts.unshift(draftObj);
-    persistDrafts();
-    document.getElementById('draftsOutput').innerHTML = `<div class="draft-card">
-      <div class="draft-label hot">• Draft</div>
-      <div class="draft-body" id="draftBody0" contenteditable="true">${escHtmlFull(text.trim())}</div>
-      ${draftPhotoHTML(0)}
-      ${draftAudienceHTML(0, null)}
-      <div class="draft-actions">
-        <button class="btn btn-success btn-sm" onclick="saveToDraftsTrello(0,'Draft')">💾 Save to Trello</button>
-        <button class="btn btn-sm" onclick="scorePost(0)">📊 Score This Post</button>
-        <button class="btn btn-sm" onclick="copyPost(0)">📋 Copy</button>
-        <button class="btn btn-linkedin btn-sm" onclick="postToLinkedIn(0)" id="liBtn0">🔗 Post to LinkedIn</button>
-        <button class="btn btn-sm" onclick="scheduleFromDraft('${id}')">📅 Schedule</button>
-      </div>
-      <div id="scoresSection0" style="display:none"><div class="scores" id="scores0"></div></div>
-      <div class="autosave-indicator"></div>
-      <div id="draftSaveStatus0" class="status-bar"></div>
-    </div>`;
-    setupDraftAutoSave({ source: 'generated', cardName: 'Draft' });
-    return;
-  }
-  const typeColors = {'Hot Take':'hot','Insight':'insight','Story':'story'};
-  const typeIcons  = {'Hot Take':'🔥','Insight':'💡','Story':'📖'};
-  let html = `<div style="font-size:13px;color:var(--muted);margin-bottom:12px">✨ ${blocks.length} draft${blocks.length>1?'s':''} generated</div>`;
-  const newDrafts = [];
-  blocks.forEach((block, i) => {
-    const typeMatch = block.match(/TYPE:\s*(.+)/);
-    const postMatch = block.match(/POST:\n([\s\S]+?)(?=HASHTAGS:|---END---|$)/);
-    const hashMatch = block.match(/HASHTAGS:\s*(.+)/);
-    const type = typeMatch ? typeMatch[1].trim() : 'Draft';
-    const post = postMatch ? postMatch[1].trim() : block.trim();
-    const hashtags = hashMatch ? hashMatch[1].trim() : '';
-    const colorClass = typeColors[type] || 'hot';
-    const icon = typeIcons[type] || '•';
-    const id = 'draft_' + Date.now() + '_' + i;
-    newDrafts.push({ id, text: post, hashtags, type, pillar: pillar || 'mixed', audience: null, createdAt: new Date().toISOString() });
-    html += `<div class="draft-card" id="draftCard${i}">
-      <div class="draft-label ${colorClass}" style="justify-content:space-between;width:100%">
-        <span>${icon} ${type}</span>
-        <span class="preview-toggle" onclick="togglePreview(${i})">📱 Preview</span>
-      </div>
-      <div class="draft-body" id="draftBody${i}" contenteditable="true">${escHtmlFull(post)}</div>
-      <div class="draft-hashtags" id="draftHash${i}">${hashtags}</div>
-      ${draftPhotoHTML(i)}
-      ${draftAudienceHTML(i, null)}
-      <div class="linkedin-preview" id="preview${i}">
-        <div class="lp-header"><div class="lp-avatar">MB</div><div><div class="lp-name">${localStorage.getItem('userName')||'Mike Baum'}</div><div class="lp-title">${localStorage.getItem('userRole')||'Principal @ Baum Realty Group'}</div></div></div>
-        <div class="lp-body" id="previewBody${i}"></div>
-        <div class="lp-hashtags" id="previewHash${i}"></div>
-        <div class="lp-actions"><span class="lp-action">👍 Like</span><span class="lp-action">💬 Comment</span><span class="lp-action">🔄 Repost</span><span class="lp-action">✉️ Send</span></div>
-      </div>
-      <div id="scoresSection${i}" style="display:none"><div class="scores" id="scores${i}"></div></div>
-      <div class="draft-actions">
-        <button class="btn btn-success btn-sm" onclick="saveToDraftsTrello(${i},'${escJs(type)}')">💾 Save to Trello</button>
-        <button class="btn btn-sm" onclick="scorePost(${i})">📊 Score</button>
-        <button class="btn btn-sm" onclick="copyPost(${i})">📋 Copy</button>
-        <button class="btn btn-linkedin btn-sm" onclick="postToLinkedIn(${i})" id="liBtn${i}">🔗 Post to LinkedIn</button>
-        <button class="btn btn-sm" onclick="scheduleFromDraft('${id}')">📅 Schedule</button>
-      </div>
-      <div class="autosave-indicator"></div>
-      <div id="draftSaveStatus${i}" class="status-bar"></div>
-    </div>`;
-  });
-  document.getElementById('draftsOutput').innerHTML = html;
-  blocks.forEach((block, i) => {
-    const postMatch = block.match(/POST:\n([\s\S]+?)(?=HASHTAGS:|---END---|$)/);
-    const hashMatch = block.match(/HASHTAGS:\s*(.+)/);
-    populatePreview(i, postMatch ? postMatch[1].trim() : '', hashMatch ? hashMatch[1].trim() : '');
-  });
-  // Persist new drafts (prepend)
-  savedDrafts = [...newDrafts, ...savedDrafts].slice(0, 50);
-  persistDrafts();
-  setupDraftAutoSave({ source: 'generated', cardName: blocks.length + ' draft' + (blocks.length > 1 ? 's' : '') });
-}
-
-function populatePreview(i, post, hashtags) {
-  const FOLD = 210;
-  const pb = document.getElementById('previewBody'+i), ph = document.getElementById('previewHash'+i);
-  if (!pb) return;
-  pb.innerHTML = post.length > FOLD ? escHtmlFull(post.substring(0,FOLD)) + '<span style="color:#999">... </span><span class="lp-fold">see more</span>' : escHtmlFull(post);
-  if (ph) ph.textContent = hashtags;
-}
-
-function togglePreview(i) {
-  const el = document.getElementById('preview'+i);
-  if (!el) return;
-  el.classList.toggle('visible');
-  populatePreview(i, document.getElementById('draftBody'+i)?.innerText||'', document.getElementById('draftHash'+i)?.innerText||'');
-}
-
-// ── ON-DEMAND SCORING ──────────────────────────────────────────
-async function scorePost(i) {
-  const anthropicKey = localStorage.getItem('anthropicKey');
-  if (!anthropicKey) { showStatus('draftSaveStatus'+i, 'error', '⚠️ Add Anthropic key in Settings.'); return; }
-  const sec = document.getElementById('scoresSection'+i);
-  if (sec) sec.style.display = 'block';
-  const scoresEl = document.getElementById('scores'+i);
-  if (scoresEl) scoresEl.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px">📊 Scoring...</div>';
-  const post = document.getElementById('draftBody'+i)?.innerText || '';
-  const userPov = localStorage.getItem('userPov') || 'Conversational CRE thought leader, Chicago-based.';
-  const prompt = `Score this LinkedIn post on 3 dimensions for a Chicago CRE thought leader. Reply ONLY in JSON:
-{"hook":{"score":8,"note":"one sentence"},"engagement":{"score":7,"note":"one sentence"},"brand":{"score":9,"note":"one sentence"}}
-Voice profile: ${userPov}
-POST:
-${post}`;
-  try {
-    const res = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':anthropicKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body: JSON.stringify({ model: MODEL_RESEARCH, max_tokens: 300, messages:[{ role:'user', content:prompt }] })
-    }, 20000);
-    const data = await res.json();
-    let rawScore = (data.content?.[0]?.text||'{}').replace(/```json|```/g,'').trim();
-    const jsonMatch = rawScore.match(/\{[\s\S]*\}/);
-    rawScore = jsonMatch ? jsonMatch[0] : '{}';
-    const scores = JSON.parse(rawScore);
-    if (scoresEl) scoresEl.innerHTML = `
-      <div class="score-card">
-        <div class="score-label">🎣 Hook</div>
-        <div class="score-bar-wrap"><div class="score-bar" style="width:${(scores.hook?.score||0)*10}%;background:#f97316"></div></div>
-        <div class="score-num">${scores.hook?.score||'--'}/10</div>
-        <div class="score-note">${scores.hook?.note||''}</div>
-      </div>
-      <div class="score-card">
-        <div class="score-label">💬 Engagement</div>
-        <div class="score-bar-wrap"><div class="score-bar" style="width:${(scores.engagement?.score||0)*10}%;background:#818cf8"></div></div>
-        <div class="score-num">${scores.engagement?.score||'--'}/10</div>
-        <div class="score-note">${scores.engagement?.note||''}</div>
-      </div>
-      <div class="score-card">
-        <div class="score-label">✨ On-Brand</div>
-        <div class="score-bar-wrap"><div class="score-bar" style="width:${(scores.brand?.score||0)*10}%;background:#34d399"></div></div>
-        <div class="score-num">${scores.brand?.score||'--'}/10</div>
-        <div class="score-note">${scores.brand?.note||''}</div>
-      </div>`;
-  } catch(e) {
-    if (scoresEl) scoresEl.innerHTML = '<div style="color:var(--danger);font-size:12px;padding:8px">❌ Scoring failed: ' + e.message + '</div>';
-  }
-}
-
-// ── SAVE TO TRELLO ─────────────────────────────────────────────
-async function saveToDraftsTrello(idx, type) {
-  const key = localStorage.getItem('trelloKey'), token = localStorage.getItem('trelloToken');
-  if (!key || !token) { showStatus('draftSaveStatus'+idx,'error','⚠️ Add Trello credentials in Settings.'); return; }
-
-  // Find and disable the save button for this card to give clear feedback
-  const saveBtn = document.querySelector(`#draftCard${idx} .btn-success`);
-  const origLabel = saveBtn ? saveBtn.innerHTML : null;
-  if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<span class="spinner"></span> Saving…'; }
-  showStatus('draftSaveStatus'+idx,'info','💾 Saving to Trello…');
-
-  const body = document.getElementById('draftBody'+idx)?.innerText || '';
-  const hash = document.getElementById('draftHash'+idx)?.innerText || '';
-
-  const resetBtn = () => { if (saveBtn && origLabel) { saveBtn.disabled = false; saveBtn.innerHTML = origLabel; } };
-
-  // If this draft was loaded from an existing Trello card, update it — don't create a duplicate
-  if (_activeTrelloCardId) {
-    try {
-      const res = await fetch(`https://api.trello.com/1/cards/${_activeTrelloCardId}?key=${key}&token=${token}`, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ desc: body + (hash ? '\n\n' + hash : '') })
-      });
-      const card = await res.json();
-      if (card.id) {
-        showStatus('draftSaveStatus'+idx,'success','✅ Trello card updated!');
-        if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '✅ Saved'; }
-        clearActiveDraft();
-      } else {
-        showStatus('draftSaveStatus'+idx,'error','❌ Update failed: ' + (card.message || JSON.stringify(card)));
-        resetBtn();
-      }
-    } catch(e) { showStatus('draftSaveStatus'+idx,'error','❌ ' + e.message); resetBtn(); }
-    return;
-  }
-
-  // No source card — create a new card in Working Drafts
-  await fetchTrelloListIds();
-  const listId = trelloListIds['Working Drafts'];
-  if (!listId) { showStatus('draftSaveStatus'+idx,'error','❌ Could not find "Working Drafts" list on your Trello board.'); resetBtn(); return; }
-  const cardName = '[' + type + '] ' + body.substring(0,55) + (body.length>55?'...':'');
-  try {
-    const res = await fetch('https://api.trello.com/1/cards', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ name: cardName, desc: body + (hash ? '\n\n' + hash : ''), idList: listId, key, token })
-    });
-    const card = await res.json();
-    if (card.id) {
-      _activeTrelloCardId = card.id; // track the new card so subsequent saves update it
-      showStatus('draftSaveStatus'+idx,'success','✅ Saved to Working Drafts on Trello!');
-      if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '✅ Saved'; }
-      clearActiveDraft();
-    } else {
-      showStatus('draftSaveStatus'+idx,'error','❌ Failed to save: ' + (card.message || JSON.stringify(card)));
-      resetBtn();
-    }
-  } catch(e) { showStatus('draftSaveStatus'+idx,'error','❌ ' + e.message); resetBtn(); }
-}
-
-function copyPost(idx) {
-  const body = document.getElementById('draftBody'+idx)?.innerText||'';
-  const hash = document.getElementById('draftHash'+idx)?.innerText||'';
-  navigator.clipboard.writeText(body+'\n\n'+hash).then(() => {}).catch(() => {});
-}
-
-// ── CONTENT CALENDAR ───────────────────────────────────────────
-function calShift(dir) {
-  calMonth += dir;
-  if (calMonth > 11) { calMonth = 0; calYear++; }
-  if (calMonth < 0)  { calMonth = 11; calYear--; }
-  renderCalendar();
-}
-
-function renderCalendar() {
-  const label = new Date(calYear, calMonth, 1).toLocaleDateString('en-US',{month:'long',year:'numeric'});
-  document.getElementById('calMonthLabel').textContent = label;
-  const grid = document.getElementById('calGrid');
-  // Remove old cells (keep 7 header divs)
-  while (grid.children.length > 7) grid.removeChild(grid.lastChild);
-  const today = new Date();
-  const firstDay = new Date(calYear, calMonth, 1).getDay();
-  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
-  const daysInPrev  = new Date(calYear, calMonth, 0).getDate();
-  let day = 1, nextDay = 1, col = 0;
-  // prev month fill
-  for (let i = 0; i < firstDay; i++) {
-    const cell = makeCalCell(calYear, calMonth-1, daysInPrev - firstDay + 1 + i, true);
-    grid.appendChild(cell); col++;
-  }
-  // current month
-  while (day <= daysInMonth) {
-    const isToday = (day === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear());
-    const cell = makeCalCell(calYear, calMonth, day, false, isToday);
-    grid.appendChild(cell); day++; col++;
-  }
-  // next month fill
-  while (col % 7 !== 0) {
-    const cell = makeCalCell(calYear, calMonth+1, nextDay++, true);
-    grid.appendChild(cell); col++;
-  }
-}
-
-function makeCalCell(year, month, day, otherMonth, isToday) {
-  const d = new Date(year, month, day);
-  const key = d.toISOString().split('T')[0];
-  const cell = document.createElement('div');
-  cell.className = 'cal-cell' + (otherMonth?' other-month':'') + (isToday?' today':'');
-  cell.onclick = () => openScheduleModal(key);
-  cell.innerHTML = `<div class="cal-day-num">${day}</div>`;
-  const posts = calendarData[key] || [];
-  posts.forEach(p => {
-    const chip = document.createElement('span');
-    chip.className = 'cal-post-chip ' + (p.pillar || 'mixed');
-    chip.textContent = p.type + ': ' + (p.text||'').substring(0,18) + '…';
-    chip.title = p.text || '';
-    chip.onclick = (e) => { e.stopPropagation(); openScheduleModal(key); };
-    cell.appendChild(chip);
-  });
-  return cell;
-}
-
-function renderDraftPool() {
-  const container = document.getElementById('calDraftPool');
-  if (!container) return;
-  if (!savedDrafts.length) {
-    container.innerHTML = '<div style="color:var(--muted);font-size:13px">Generate posts first — they\'ll appear here ready to schedule.</div>';
-    return;
-  }
-  container.innerHTML = savedDrafts.slice(0,20).map(d => {
-    const isScheduled = Object.values(calendarData).some(arr => arr.some(p => p.id === d.id));
-    const dateScheduled = isScheduled
-      ? Object.entries(calendarData).find(([k,arr]) => arr.some(p => p.id === d.id))?.[0]
-      : null;
-    return `<div class="cal-draft-item">
-      <div style="flex:1">
-        <div class="cal-draft-text">${escHtmlFull((d.text||'').substring(0,100))}${(d.text||'').length>100?'…':''}</div>
-        <div class="cal-draft-meta">${d.type} · ${d.pillar} · ${new Date(d.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>
-      </div>
-      <button class="cal-schedule-btn ${isScheduled?'scheduled':''}" onclick="scheduleDraftToDate('${d.id}')">
-        ${isScheduled ? '📅 ' + dateScheduled : '+ Schedule'}
-      </button>
-    </div>`;
-  }).join('');
-}
-
-function openScheduleModal(dateKey) {
-  pendingScheduleDate = dateKey;
-  const d = new Date(dateKey + 'T12:00:00');
-  document.getElementById('modalTitle').textContent = '📅 ' + d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
-  const existing = calendarData[dateKey] || [];
-  let html = '';
-  if (existing.length) {
-    html += `<div style="margin-bottom:12px"><div style="font-size:13px;font-weight:600;color:var(--muted);margin-bottom:8px">Scheduled on this day:</div>`;
-    html += existing.map((p,i) => `<div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:6px">
-      <div style="font-size:12px;flex:1">${escHtmlFull((p.text||'').substring(0,80))}…</div>
-      <button class="btn btn-sm" style="color:var(--danger);margin-left:8px" onclick="removeFromCalendar('${dateKey}',${i})">✕</button>
-    </div>`).join('');
-    html += '</div>';
-  }
-  if (savedDrafts.length) {
-    html += `<div style="font-size:13px;font-weight:600;color:var(--muted);margin-bottom:8px">Add a draft:</div>`;
-    html += '<div class="modal-post-list">';
-    html += savedDrafts.slice(0,15).map(d => `
-      <div class="modal-post-item" onclick="addToCalendar('${dateKey}','${d.id}')">
-        <div style="font-size:13px;font-weight:600;margin-bottom:2px">${d.type} · ${d.pillar}</div>
-        <div class="modal-post-preview">${escHtmlFull((d.text||'').substring(0,100))}</div>
-      </div>`).join('');
-    html += '</div>';
-  } else {
-    html += '<div style="color:var(--muted);font-size:13px">No saved drafts yet. Generate some posts first.</div>';
-  }
-  document.getElementById('modalSub').textContent = '';
-  document.getElementById('modalPostList').innerHTML = html;
-  document.getElementById('scheduleModal').classList.add('open');
-}
-
-function closeModal(e) {
-  if (!e || e.target === document.getElementById('scheduleModal')) {
-    document.getElementById('scheduleModal').classList.remove('open');
-    pendingScheduleDate = null;
-  }
-}
-
-function addToCalendar(dateKey, draftId) {
-  const draft = savedDrafts.find(d => d.id === draftId);
-  if (!draft) return;
-  if (!calendarData[dateKey]) calendarData[dateKey] = [];
-  if (calendarData[dateKey].some(p => p.id === draftId)) return; // already there
-  calendarData[dateKey].push({ id: draft.id, text: draft.text, pillar: draft.pillar, type: draft.type });
-  persistCalendar();
-  document.getElementById('scheduleModal').classList.remove('open');
-  renderCalendar();
-  renderDraftPool();
-}
-
-function removeFromCalendar(dateKey, idx) {
-  if (!calendarData[dateKey]) return;
-  calendarData[dateKey].splice(idx, 1);
-  if (!calendarData[dateKey].length) delete calendarData[dateKey];
-  persistCalendar();
-  openScheduleModal(dateKey); // re-open to refresh
-  renderCalendar();
-  renderDraftPool();
-}
-
-function scheduleDraftToDate(draftId) {
-  const draft = savedDrafts.find(d => d.id === draftId);
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('modalTitle').textContent = '📅 Schedule This Post';
-  document.getElementById('modalSub').textContent = draft ? '"' + (draft.text||'').substring(0,60) + '…"' : '';
-  document.getElementById('modalPostList').innerHTML = `
-    <div style="margin-bottom:10px;font-size:13px;color:var(--muted)">Pick a date to add this post to your content calendar:</div>
-    <input type="date" id="scheduleDatePicker" value="${today}" min="${today}"
-      style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:15px;margin-bottom:14px;box-sizing:border-box">
-    <button class="btn btn-linkedin" style="width:100%;justify-content:center" onclick="confirmScheduleFromBot('${draftId}')">📅 Confirm Schedule</button>
-  `;
-  pendingScheduleDate = '_pick_' + draftId;
-  document.getElementById('scheduleModal').classList.add('open');
-}
-
-function confirmScheduleFromBot(draftId) {
-  const dateVal = document.getElementById('scheduleDatePicker')?.value;
-  if (!dateVal) { alert('Please pick a date.'); return; }
-  const draft = savedDrafts.find(d => d.id === draftId);
-  if (!draft) { alert('Draft not found.'); return; }
-  if (!calendarData[dateVal]) calendarData[dateVal] = [];
-  if (!calendarData[dateVal].some(p => p.id === draftId)) {
-    calendarData[dateVal].push({ id: draft.id, text: draft.text, pillar: draft.pillar, type: draft.type });
-    persistCalendar();
-  }
-  document.getElementById('scheduleModal').classList.remove('open');
-  pendingScheduleDate = null;
-  const d = new Date(dateVal + 'T12:00:00');
-  const formatted = d.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
-  // Show confirmation in the draft status bar
-  const statusBar = document.getElementById('draftSaveStatus0');
-  if (statusBar) {
-    statusBar.textContent = '📅 Scheduled for ' + formatted;
-    statusBar.className = 'status-bar success';
-    statusBar.style.display = 'block';
-    setTimeout(() => { statusBar.style.display = 'none'; }, 5000);
-  }
-}
-
-function scheduleFromDraft(draftId) { scheduleDraftToDate(draftId); }
-
-// ── TRELLO → BOT EDITOR ────────────────────────────────────────
-function loadTrelloDraftFromCache(cardId) {
-  const card = trelloCardCache[cardId];
-  if (!card) { alert('Card data not cached — please reload the list and try again.'); return; }
-  loadTrelloDraftIntoBot(card.name, card.desc, card.listName, cardId);
-}
-
-function parseTrelloCardContent(desc) {
-  // Separate hashtags (last block of #tags) from body text
-  const parts = desc.split('\n\n');
-  const lastPart = (parts[parts.length - 1] || '').trim();
-  const isHashtagBlock = lastPart.startsWith('#') && lastPart.split(/\s+/).every(w => w === '' || w.startsWith('#'));
-  if (isHashtagBlock && parts.length > 1) {
-    return { body: parts.slice(0, -1).join('\n\n').trim(), hashtags: lastPart };
-  }
-  // Fallback: look for a line that is all hashtags
-  const lines = desc.split('\n');
-  const hIdx = lines.findIndex(l => l.trim().startsWith('#') && l.trim().split(/\s+/).every(w => w.startsWith('#')));
-  if (hIdx > 0) {
-    return { body: lines.slice(0, hIdx).join('\n').trim(), hashtags: lines.slice(hIdx).join(' ').trim() };
-  }
-  return { body: desc.trim(), hashtags: '' };
-}
-
-function loadTrelloDraftIntoBot(cardName, cardDesc, listName, sourceCardId) {
-  const { body, hashtags } = parseTrelloCardContent(cardDesc || '');
-  draftPhotos = {};       // clear stale photo from any previous card
-  draftAudiences = {};    // clear stale audience from any previous card
-  _activeTrelloCardId = sourceCardId || null; // track so save updates instead of duplicates
-  clearActiveDraft();     // dismiss any resume banner — Trello card is the active draft now
-  // Navigate to Create Post page
-  showPage('create');
-  const id = 'trello_' + Date.now() + '_0';
-  const draftObj = { id, text: body, hashtags, type: listName || 'Trello', pillar: 'mixed', createdAt: new Date().toISOString() };
-  savedDrafts.unshift(draftObj);
-  persistDrafts();
-  const userName = localStorage.getItem('userName') || 'Mike Baum';
-  const userRole  = localStorage.getItem('userRole') || 'Principal @ Baum Realty Group';
-  const output = document.getElementById('draftsOutput');
-  output.innerHTML = `
-    <div style="font-size:13px;color:var(--muted);margin-bottom:12px">
-      📋 Loaded from Trello${listName ? ' · ' + listName : ''}: <em>${escHtml(cardName.substring(0,70))}</em>
-    </div>
-    <div class="draft-card" id="draftCard0">
-      <div class="draft-label insight" style="justify-content:space-between;width:100%">
-        <span>📋 ${escHtml(listName || 'Trello Import')}</span>
-        <span class="preview-toggle" onclick="togglePreview(0)">📱 Preview</span>
-      </div>
-      <div class="draft-body" id="draftBody0" contenteditable="true">${escHtmlFull(body)}</div>
-      <div class="draft-hashtags" id="draftHash0" contenteditable="true">${escHtmlFull(hashtags)}</div>
-      ${draftPhotoHTML(0)}
-      ${draftAudienceHTML(0, null)}
-      <div class="linkedin-preview" id="preview0">
-        <div class="lp-header"><div class="lp-avatar">MB</div><div><div class="lp-name">${escHtml(userName)}</div><div class="lp-title">${escHtml(userRole)}</div></div></div>
-        <div class="lp-body" id="previewBody0"></div>
-        <div class="lp-hashtags" id="previewHash0"></div>
-        <div class="lp-actions"><span class="lp-action">👍 Like</span><span class="lp-action">💬 Comment</span><span class="lp-action">🔄 Repost</span><span class="lp-action">✉️ Send</span></div>
-      </div>
-      <div id="scoresSection0" style="display:none"><div class="scores" id="scores0"></div></div>
-      <div class="draft-actions">
-        <button class="btn btn-success btn-sm" onclick="saveToDraftsTrello(0,'Draft')">💾 Save to Trello</button>
-        <button class="btn btn-sm" onclick="scorePost(0)">📊 Score</button>
-        <button class="btn btn-sm" onclick="copyPost(0)">📋 Copy</button>
-        <button class="btn btn-linkedin btn-sm" onclick="postToLinkedIn(0)" id="liBtn0">🔗 Post to LinkedIn</button>
-        <button class="btn btn-sm" onclick="scheduleFromDraft('${id}')">📅 Schedule</button>
-      </div>
-      <div class="autosave-indicator"></div>
-      <div id="draftSaveStatus0" class="status-bar"></div>
-    </div>`;
-  populatePreview(0, body, hashtags);
-  setupDraftAutoSave({ source: 'trello', cardName: cardName });
-  setTimeout(() => output.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-}
-
-async function loadProductionCards() {
-  const key = localStorage.getItem('trelloKey'), token = localStorage.getItem('trelloToken');
-  if (!key || !token) { showStatus('productionStatus','error','⚠️ Add Trello credentials in Settings.'); return; }
-  showStatus('productionStatus','info','Loading production cards...');
-  await fetchTrelloListIds();
-  const listId = trelloListIds['Production'];
-  if (!listId) { showStatus('productionStatus','error','Could not find "Production" list on your LinkedIn Bot board.'); return; }
-  try {
-    const cards = await (await fetch(`https://api.trello.com/1/lists/${listId}/cards?key=${key}&token=${token}&fields=name,desc,shortUrl,labels`)).json();
-    const container = document.getElementById('productionList');
-    if (!cards.length) {
-      container.innerHTML = '<div style="color:var(--muted);font-size:14px">No cards in Production yet.</div>';
-      hideStatus('productionStatus'); return;
-    }
-    // Cache card data by ID to avoid quoting issues in onclick attributes
-    cards.forEach(c => { trelloCardCache[c.id] = { name: c.name, desc: c.desc || '', listName: 'Production' }; });
-    container.innerHTML = cards.map(c => {
-      const preview = (c.desc || '').substring(0, 200);
-      return `<div class="draft-card" id="prodCard-${c.id}">
-        <div style="font-weight:600;margin-bottom:6px">${escHtmlFull(c.name)}</div>
-        ${preview ? `<div class="draft-body" style="cursor:default">${escHtmlFull(preview)}${(c.desc||'').length > 200 ? '...' : ''}</div>` : ''}
-        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-          <a href="${c.shortUrl}" target="_blank" class="btn btn-sm">📋 Open in Trello</a>
-          <button class="btn btn-linkedin btn-sm" onclick="loadTrelloDraftFromCache('${c.id}')">✏️ Edit in Bot</button>
-          <button class="btn btn-sm" data-move-drafts="${c.id}" onclick="moveBackToDrafts('${c.id}')">↩ Back to Drafts</button>
-          <button class="btn btn-sm" style="color:#c0392b;border-color:#c0392b" data-delete-prod="${c.id}" onclick="deleteProductionCard('${c.id}')">🗑️ Delete</button>
-        </div>
-      </div>`;
-    }).join('');
-    hideStatus('productionStatus');
-  } catch(e) { showStatus('productionStatus','error','❌ ' + e.message); }
-}
-
-async function deleteProductionCard(cardId) {
-  if (!confirm('Archive this card? It will be removed from Production in Trello.')) return;
-  const key = localStorage.getItem('trelloKey'), token = localStorage.getItem('trelloToken');
-  if (!key || !token) return;
-  const btn = document.querySelector(`[data-delete-prod="${cardId}"]`);
-  if (btn) { btn.disabled = true; btn.textContent = 'Archiving…'; }
-  try {
-    await fetch(`https://api.trello.com/1/cards/${cardId}?key=${key}&token=${token}`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ closed: true })
-    });
-    const card = document.getElementById('prodCard-' + cardId);
-    if (card) card.remove();
-    showStatus('productionStatus', 'success', '🗑️ Card archived.');
-  } catch(e) {
-    if (btn) { btn.disabled = false; btn.textContent = '🗑️ Delete'; }
-    showStatus('productionStatus', 'error', '❌ ' + e.message);
-  }
-}
-
-async function moveBackToDrafts(cardId) {
-  if (!confirm('Move this card back to Working Drafts?')) return;
-  const key = localStorage.getItem('trelloKey'), token = localStorage.getItem('trelloToken');
-  if (!key || !token) return;
-  const btn = document.querySelector(`[data-move-drafts="${cardId}"]`);
-  if (btn) { btn.disabled = true; btn.textContent = 'Moving…'; }
-  try {
-    await fetchTrelloListIds();
-    const listId = trelloListIds['Working Drafts'];
-    if (!listId) { alert('Could not find "Working Drafts" list on your board.'); if (btn) { btn.disabled = false; btn.textContent = '↩ Move to Drafts'; } return; }
-    await fetch(`https://api.trello.com/1/cards/${cardId}?key=${key}&token=${token}`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idList: listId })
-    });
-    const card = document.getElementById('prodCard-' + cardId);
-    if (card) card.remove();
-    showStatus('productionStatus', 'success', '↩ Card moved back to Working Drafts.');
-  } catch(e) {
-    if (btn) { btn.disabled = false; btn.textContent = '↩ Move to Drafts'; }
-    showStatus('productionStatus', 'error', '❌ ' + e.message);
-  }
-}
-
-// ── LINKEDIN INTEGRATION ───────────────────────────────────────
-function connectLinkedIn() {
-  window.open(LI_WORKER + '/auth', 'linkedin-auth', 'width=600,height=700');
-  window.addEventListener('message', function handler(e) {
-    if (e.data && e.data.linkedinToken) {
-      localStorage.setItem('linkedinToken', e.data.linkedinToken);
-      window.removeEventListener('message', handler);
-      updateLiStatus();
-      showStatus('liSettingsStatus','success','✅ LinkedIn connected!');
-    }
-  });
-}
-
-function disconnectLinkedIn() {
-  localStorage.removeItem('linkedinToken');
-  updateLiStatus();
-  showStatus('liSettingsStatus','info','Disconnected from LinkedIn.');
-}
-
-function updateLiStatus() {
-  const el = document.getElementById('liStatusDisplay');
-  if (!el) return;
-  const token = localStorage.getItem('linkedinToken');
-  if (token) {
-    el.className = 'li-status-connected';
-    el.innerHTML = '✅ Connected — token stored in browser';
-  } else {
-    el.className = 'li-status-disconnected';
-    el.innerHTML = '⚠️ Not connected — click Connect LinkedIn below';
-  }
-}
-
-// ── DRAFT PHOTO ATTACHMENT ─────────────────────────────────────
-function draftPhotoHTML(idx) {
-  return `<div class="draft-photo-section" id="photoSection${idx}">
-    <div class="photo-label">📷 Photo <span style="font-weight:400;color:var(--muted)">(optional — attach before posting)</span></div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <input type="file" accept="image/*,.heic,.heif" style="display:none" id="photoFile${idx}" onchange="attachDraftPhoto(event,${idx})">
-      <button class="btn btn-sm" onclick="document.getElementById('photoFile${idx}').click()" style="font-size:12px;padding:4px 12px">📎 Choose photo</button>
-      <span id="photoName${idx}" style="font-size:12px;color:var(--muted)"></span>
-    </div>
-    <div class="draft-photo-thumb" id="photoThumb${idx}" style="display:none">
-      <img id="photoThumbImg${idx}" alt="photo preview">
-      <button class="btn btn-sm" onclick="removeDraftPhoto(${idx})" style="font-size:11px;padding:2px 8px;color:var(--danger);border-color:var(--danger)">✕ Remove</button>
-    </div>
-  </div>`;
-}
-
-function compressForPost(img, cb) {
-  // Same iterative compression as compressToLimit but returns via callback, doesn't touch globals
-  const MAX_B64 = 5 * 1024 * 1024;
-  const canvas  = document.createElement('canvas');
-  let quality = 0.85, scale = 1.0, dataUrl, b64;
-  for (let attempt = 0; attempt < 8; attempt++) {
-    canvas.width  = Math.round(img.naturalWidth  * scale);
-    canvas.height = Math.round(img.naturalHeight * scale);
-    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-    dataUrl = canvas.toDataURL('image/jpeg', quality);
-    b64     = dataUrl.split(',')[1];
-    if (b64.length <= MAX_B64) break;
-    if (attempt % 2 === 0) quality = Math.max(quality - 0.15, 0.3);
-    else                   scale   = Math.max(scale   - 0.2,  0.3);
-  }
-  cb({ base64: b64, mimeType: 'image/jpeg', dataUrl });
-}
-
-function attachDraftPhoto(event, idx) {
-  const file = event.target.files?.[0];
-  if (!file) return;
-  const isHEIC = /\.(heic|heif)$/i.test(file.name) || file.type === 'image/heic' || file.type === 'image/heif';
-  const nameEl  = document.getElementById('photoName'  + idx);
-  const thumbEl = document.getElementById('photoThumb' + idx);
-  const imgEl   = document.getElementById('photoThumbImg' + idx);
-  if (nameEl) nameEl.textContent = '⏳ Processing…';
-
-  const processBlob = (blob, displayName) => {
-    const url = URL.createObjectURL(blob);
-    const img = new Image();
-    img.onload = () => {
-      compressForPost(img, ({ base64, mimeType, dataUrl }) => {
-        draftPhotos[idx] = { base64, mimeType };
-        if (imgEl)   { imgEl.src = dataUrl; }
-        if (thumbEl) { thumbEl.style.display = 'flex'; }
-        if (nameEl)  { nameEl.textContent = displayName; }
-        URL.revokeObjectURL(url);
-        saveActiveDraft(); // immediate save when photo attached
-      });
-    };
-    img.src = url;
-  };
-
-  if (isHEIC) {
-    heic2any({ blob: file, toType: 'image/jpeg', quality: 0.85 })
-      .then(blob => processBlob(blob, file.name + ' (HEIC → JPEG)'))
-      .catch(err => {
-        if (nameEl) nameEl.textContent = '❌ HEIC conversion failed';
-      });
-  } else {
-    processBlob(file, file.name);
-  }
-}
-
-function removeDraftPhoto(idx) {
-  delete draftPhotos[idx];
-  const thumbEl = document.getElementById('photoThumb' + idx);
-  const nameEl  = document.getElementById('photoName'  + idx);
-  const fileEl  = document.getElementById('photoFile'  + idx);
-  if (thumbEl) thumbEl.style.display = 'none';
-  if (nameEl)  nameEl.textContent = '';
-  if (fileEl)  fileEl.value = '';
-  saveActiveDraft(); // update saved state when photo removed
-}
-
-// Photo attachment for the inline editor in Working Drafts
-function attachInlinePhoto(event, cardId) {
-  const file = event.target.files?.[0];
-  if (!file) return;
-  const isHEIC = /\.(heic|heif)$/i.test(file.name) || file.type === 'image/heic' || file.type === 'image/heif';
-  const nameEl  = document.getElementById('iePhotoName-'     + cardId);
-  const thumbEl = document.getElementById('iePhotoThumb-'    + cardId);
-  const imgEl   = document.getElementById('iePhotoThumbImg-' + cardId);
-  if (nameEl) nameEl.textContent = '⏳ Processing…';
-  const processBlob = (blob, displayName) => {
-    const url = URL.createObjectURL(blob);
-    const img = new Image();
-    img.onload = () => {
-      compressForPost(img, ({ base64, mimeType, dataUrl }) => {
-        inlineEditorPhotos[cardId] = { base64, mimeType };
-        if (imgEl)   imgEl.src = dataUrl;
-        if (thumbEl) thumbEl.style.display = 'flex';
-        if (nameEl)  nameEl.textContent = displayName;
-        URL.revokeObjectURL(url);
-      });
-    };
-    img.src = url;
-  };
-  if (isHEIC) {
-    heic2any({ blob: file, toType: 'image/jpeg', quality: 0.85 })
-      .then(blob => processBlob(blob, file.name + ' (HEIC → JPEG)'))
-      .catch(() => { if (nameEl) nameEl.textContent = '❌ HEIC conversion failed'; });
-  } else {
-    processBlob(file, file.name);
-  }
-}
-
-function removeInlinePhoto(cardId) {
-  delete inlineEditorPhotos[cardId];
-  const thumbEl = document.getElementById('iePhotoThumb-'    + cardId);
-  const nameEl  = document.getElementById('iePhotoName-'     + cardId);
-  const fileEl  = document.getElementById('iePhotoFile-'     + cardId);
-  if (thumbEl) thumbEl.style.display = 'none';
-  if (nameEl)  nameEl.textContent = '';
-  if (fileEl)  fileEl.value = '';
-}
-
-// ── AUDIENCE TAGGING ───────────────────────────────────────────
-const AUDIENCE_OPTS = [
-  { key:'owners',  label:'🏢 Owners',  cls:'aud-owners'  },
-  { key:'tenants', label:'🏪 Tenants', cls:'aud-tenants' },
-  { key:'brokers', label:'🤝 Brokers', cls:'aud-brokers' },
-  { key:'general', label:'🌐 General', cls:'aud-general' },
-];
-const AUDIENCE_LABELS = { owners:'🏢 Owners', tenants:'🏪 Tenants', brokers:'🤝 Brokers', general:'🌐 General' };
-
-function draftAudienceHTML(idx, selected) {
-  const buttons = AUDIENCE_OPTS.map(o =>
-    `<button class="audience-btn ${o.cls}${selected === o.key ? ' active' : ''}" onclick="setDraftAudience(${idx},'${o.key}',this)">${o.label}</button>`
-  ).join('');
-  return `<div class="audience-selector" id="audienceRow${idx}">
-    <span class="audience-label">Audience:</span>${buttons}
-  </div>`;
-}
-
-function setDraftAudience(idx, audience, el) {
-  draftAudiences[idx] = audience;
-  const row = document.getElementById('audienceRow' + idx);
-  if (row) row.querySelectorAll('.audience-btn').forEach(b => b.classList.remove('active'));
-  if (el) el.classList.add('active');
-  scheduleSave();
-}
-
-function getDraftAudience(idx) {
-  return draftAudiences[idx] || null;
-}
-
-async function uploadPhotoToLinkedIn(token, base64, mimeType) {
-  const res = await fetchWithTimeout(LI_WORKER + '/upload-image', {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ access_token: token, imageBase64: base64, mimeType }),
-  }, 60000); // 60s — image uploads can be slow
-  const data = await res.json();
-  if (!data.assetUrn) throw new Error(data.error || 'Image upload returned no asset URN');
-  return data.assetUrn;
-}
-
-async function postToLinkedIn(idx) {
-  const token = localStorage.getItem('linkedinToken');
-  if (!token) {
-    showPage('settings');
-    showStatus('liSettingsStatus','error','⚠️ Please connect your LinkedIn account first.');
-    return;
-  }
-  const draftEl = document.getElementById('draftBody'+idx);
-  if (!draftEl) { alert('Could not find draft text.'); return; }
-  const postText = (draftEl.innerText || draftEl.textContent || '').trim();
-  const hashEl   = document.getElementById('draftHash'+idx);
-  const hashtags = hashEl ? (hashEl.innerText || hashEl.textContent || '').trim() : '';
-  const fullText = postText + (hashtags ? '\n\n' + hashtags : '');
-  if (fullText.length < 10) { alert('Draft appears empty.'); return; }
-
-  const btn = document.getElementById('liBtn'+idx);
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Posting…'; }
-
-  try {
-    // Upload photo first if one is attached
-    let imageAssetUrn = null;
-    const photo = draftPhotos[idx];
-    if (photo) {
-      if (btn) btn.textContent = '⏳ Uploading photo…';
-      imageAssetUrn = await uploadPhotoToLinkedIn(token, photo.base64, photo.mimeType);
-      if (btn) btn.textContent = '⏳ Publishing…';
-    }
-
-    const postBody = { access_token: token, text: fullText };
-    if (imageAssetUrn) postBody.imageAssetUrn = imageAssetUrn;
-
-    const res = await fetchWithTimeout(LI_WORKER + '/post', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(postBody),
-    }, 30000);
-    const data = await res.json();
-
-    if (data.success || data.postId || data.id) {
-      if (btn) { btn.textContent = '✅ Posted!'; btn.style.background = '#16a34a'; }
-      showStatus('draftSaveStatus'+idx, 'success', '✅ Successfully posted to LinkedIn' + (imageAssetUrn ? ' with photo!' : '!'));
-      clearActiveDraft(); // post succeeded — no need to resume
-      const liPostId  = data.postId || data.id || null;
-      const draftBody = document.getElementById('draftBody'+idx)?.innerText || '';
-      const draftHash = document.getElementById('draftHash'+idx)?.innerText || '';
-      publishedPosts.unshift({
-        id:          'pub_' + Date.now(),
-        liPostId,
-        text:        draftBody,
-        hashtags:    draftHash,
-        pillar:      document.getElementById('pillarSelect')?.value || 'mixed',
-        type:        (document.querySelector('#draftCard'+idx+' .draft-label span')?.textContent || 'Post').replace(/^[^\w]+/,'').trim(),
-        audience:    getDraftAudience(idx),
-        publishedAt: new Date().toISOString(),
-        hasPhoto:    !!imageAssetUrn,
-        stats:       { likes: 0, comments: 0, shares: 0, lastFetched: null },
-      });
-      publishedPosts = publishedPosts.slice(0, 100);
-      persistPublished();
-      setTimeout(() => { if (btn) { btn.disabled = false; btn.textContent = '🔗 Post to LinkedIn'; btn.style.background = ''; } }, 4000);
-    } else if (data.error && data.error.includes('expired')) {
-      localStorage.removeItem('linkedinToken');
-      updateLiStatus();
-      if (btn) { btn.disabled = false; btn.textContent = '🔗 Post to LinkedIn'; }
-      showStatus('draftSaveStatus'+idx, 'error', '❌ LinkedIn token expired. Please reconnect in Settings.');
-    } else {
-      throw new Error(data.error || data.message || JSON.stringify(data));
-    }
-  } catch(e) {
-    if (btn) { btn.disabled = false; btn.textContent = '🔗 Post to LinkedIn'; }
-    showStatus('draftSaveStatus'+idx, 'error', '❌ Post failed: ' + e.message);
-  }
-}
-
-// ── PERFORMANCE TRACKING ───────────────────────────────────────
-function renderPerformance() {
-  // Always reload from localStorage to pick up any external changes
-  publishedPosts = JSON.parse(localStorage.getItem('publishedPosts') || '[]');
-  if (!publishedPosts.length) {
-    document.getElementById('perfPostsList').innerHTML = '<div class="perf-empty">No published posts yet. Posts you publish through this tool will appear here automatically.</div>';
-    ['perfTotalPosts','perfTotalLikes','perfTotalComments','perfTopPillar'].forEach(id => {
-      const el = document.getElementById(id); if (el) el.textContent = '0';
-    });
-    ['perfAvgLikes','perfAvgComments','perfTopPillarSub'].forEach(id => {
-      const el = document.getElementById(id); if (el) el.textContent = '';
-    });
-    ['chartPillarLikes','chartStyleLikes','chartPillarComments','chartStyleEngagement'].forEach(id => {
-      const el = document.getElementById(id); if (el) el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px 0">No data yet.</div>';
-    });
-    return;
-  }
-
-  const posts = publishedPosts;
-  const totalLikes    = posts.reduce((s,p) => s + (p.stats?.likes    || 0), 0);
-  const totalComments = posts.reduce((s,p) => s + (p.stats?.comments || 0), 0);
-  const avgLikes    = posts.length ? (totalLikes    / posts.length).toFixed(1) : 0;
-  const avgComments = posts.length ? (totalComments / posts.length).toFixed(1) : 0;
-
-  // Top pillar by avg likes
-  const pillarGroups = {};
-  posts.forEach(p => {
-    if (!pillarGroups[p.pillar]) pillarGroups[p.pillar] = { likes: 0, count: 0 };
-    pillarGroups[p.pillar].likes += (p.stats?.likes || 0);
-    pillarGroups[p.pillar].count++;
-  });
-  const pillarLabels = { cre:'🏢 CRE', ci:'🎭 Creative Ind.', fb:'🍽️ F&B', retail:'🛍️ Retail', mixed:'🔀 Mixed' };
-  const topPillar = Object.entries(pillarGroups).sort((a,b) => (b[1].likes/b[1].count) - (a[1].likes/a[1].count))[0];
-
-  // Summary
-  setText('perfTotalPosts',    posts.length);
-  setText('perfTotalLikes',    totalLikes);
-  setText('perfTotalComments', totalComments);
-  setText('perfAvgLikes',      avgLikes + ' avg per post');
-  setText('perfAvgComments',   avgComments + ' avg per post');
-  setText('perfTopPillar',     topPillar ? pillarLabels[topPillar[0]] || topPillar[0] : '—');
-  setText('perfTopPillarSub',  topPillar ? (topPillar[1].likes/topPillar[1].count).toFixed(1) + ' avg likes' : '');
-
-  // Charts
-  renderBarChart('chartPillarLikes',  Object.entries(pillarGroups).map(([k,v]) => ({ label: pillarLabels[k]||k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#818cf8');
-  const styleGroups = {}, audienceGroups = {};
-  posts.forEach(p => {
-    const t = p.type || 'Post';
-    if (!styleGroups[t]) styleGroups[t] = { likes: 0, comments: 0, count: 0 };
-    styleGroups[t].likes    += (p.stats?.likes    || 0);
-    styleGroups[t].comments += (p.stats?.comments || 0);
-    styleGroups[t].count++;
-    const a = p.audience || 'untagged';
-    if (!audienceGroups[a]) audienceGroups[a] = { likes: 0, comments: 0, count: 0 };
-    audienceGroups[a].likes    += (p.stats?.likes    || 0);
-    audienceGroups[a].comments += (p.stats?.comments || 0);
-    audienceGroups[a].count++;
-  });
-  renderBarChart('chartStyleLikes',        Object.entries(styleGroups).map(([k,v])    => ({ label: k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#f97316');
-  renderBarChart('chartPillarComments',    Object.entries(pillarGroups).map(([k,v])   => ({ label: pillarLabels[k]||k, val: v.count ? +(v.comments/v.count).toFixed(1) : 0 })), '#34d399');
-  renderBarChart('chartStyleEngagement',   Object.entries(styleGroups).map(([k,v])    => ({ label: k, val: v.count ? +((v.likes+v.comments)/v.count).toFixed(1) : 0 })), '#a78bfa');
-  renderBarChart('chartAudienceLikes',     Object.entries(audienceGroups).map(([k,v]) => ({ label: AUDIENCE_LABELS[k]||k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#14b8a6');
-  renderBarChart('chartAudienceEngagement',Object.entries(audienceGroups).map(([k,v]) => ({ label: AUDIENCE_LABELS[k]||k, val: v.count ? +((v.likes+v.comments)/v.count).toFixed(1) : 0 })), '#6366f1');
-
-  // Post list
-  const header = `<div class="perf-posts-header">
-    <div>Post</div><div style="text-align:center">👁 Impressions</div><div style="text-align:center">👍 Likes</div><div style="text-align:center">💬 Comments</div><div style="text-align:center">🔄 Shares</div><div style="text-align:center">Actions</div>
-  </div>`;
-  const rows = posts.map((p, i) => {
-    const date = new Date(p.publishedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'});
-    const fetched = p.stats?.lastFetched ? 'Updated ' + new Date(p.stats.lastFetched).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : 'No stats yet';
-    const urlLink = p.liUrl ? `<a href="${p.liUrl}" target="_blank" title="Open on LinkedIn" style="color:#0a66c2;text-decoration:none;font-size:13px">🔗</a>` : '';
-    return `<div style="border-bottom:1px solid var(--border)">
-      <div class="perf-post-row" style="border-bottom:none">
-        <div>
-          <div class="perf-post-preview">${escHtmlFull((p.text||'').substring(0,70))}… ${urlLink}</div>
-          <div class="perf-post-meta">${p.type || 'Post'} · ${date}${p.audience ? ' · <span class="audience-badge aud-'+p.audience+'">' + (AUDIENCE_LABELS[p.audience]||p.audience) + '</span>' : ''} · <span id="fetchedLabel${i}">${fetched}</span></div>
-        </div>
-        <div class="perf-num" style="color:#a78bfa" id="perfImpressions${i}">${p.stats?.impressions ?? '—'}</div>
-        <div class="perf-num likes" id="perfLikes${i}">${p.stats?.likes ?? '—'}</div>
-        <div class="perf-num comments" id="perfComments${i}">${p.stats?.comments ?? '—'}</div>
-        <div class="perf-num" style="color:#fbbf24" id="perfShares${i}">${p.stats?.shares ?? '—'}</div>
-        <div style="text-align:center;display:flex;gap:4px;justify-content:center;align-items:center">
-          ${p.liPostId ? `<button class="btn btn-sm perf-refresh-btn" title="Auto-fetch from LinkedIn" onclick="fetchPostStats(${i})">↻</button>` : ''}
-          <button class="btn btn-sm perf-refresh-btn" title="Edit stats &amp; URL" onclick="openManualStats(${i})" style="font-size:12px">✏️</button>
-        </div>
-      </div>
-      <div id="manualStats-${i}" style="display:none;padding:10px 16px 14px;background:var(--surface);flex-direction:column;gap:10px">
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <span style="font-size:12px;color:var(--muted);font-weight:600;min-width:80px">Stats:</span>
-          <label style="font-size:12px;display:flex;align-items:center;gap:4px">👁 <input type="number" id="mImpressions-${i}" min="0" placeholder="Impressions" style="width:90px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px"></label>
-          <label style="font-size:12px;display:flex;align-items:center;gap:4px">👍 <input type="number" id="mLikes-${i}" min="0" placeholder="Likes" style="width:70px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px"></label>
-          <label style="font-size:12px;display:flex;align-items:center;gap:4px">💬 <input type="number" id="mComments-${i}" min="0" placeholder="Comments" style="width:70px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px"></label>
-          <label style="font-size:12px;display:flex;align-items:center;gap:4px">🔄 <input type="number" id="mShares-${i}" min="0" placeholder="Reposts" style="width:70px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px"></label>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <span style="font-size:12px;color:var(--muted);font-weight:600;min-width:80px">Post URL:</span>
-          <input type="url" id="mUrl-${i}" placeholder="https://www.linkedin.com/feed/update/urn:li:activity:…"
-            style="flex:1;padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;min-width:200px">
-        </div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-success btn-sm" onclick="saveManualStats(${i})">✓ Save</button>
-          <button class="btn btn-sm" onclick="cancelManualStats(${i})">✕ Cancel</button>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-  document.getElementById('perfPostsList').innerHTML = header + rows;
-}
-
-function renderBarChart(containerId, data, color) {
-  const el = document.getElementById(containerId);
-  if (!el) return;
-  if (!data.length) { el.innerHTML = '<div style="color:var(--muted);font-size:12px">No data yet.</div>'; return; }
-  const max = Math.max(...data.map(d => d.val), 1);
-  el.innerHTML = data.sort((a,b) => b.val - a.val).map(d => `
-    <div class="perf-bar-row">
-      <div class="perf-bar-label" title="${d.label}">${d.label}</div>
-      <div class="perf-bar-wrap"><div class="perf-bar-fill" style="width:${(d.val/max*100).toFixed(1)}%;background:${color}"></div></div>
-      <div class="perf-bar-val" style="color:${color}">${d.val}</div>
-    </div>`).join('');
-}
-
-async function fetchPostStats(idx) {
-  const post = publishedPosts[idx];
-  if (!post || !post.liPostId) return;
-  const token = localStorage.getItem('linkedinToken');
-  if (!token) { showStatus('perfStatus','error','⚠️ LinkedIn not connected. Reconnect in Settings.'); return; }
-
-  const btn = document.querySelector(`[onclick="fetchPostStats(${idx})"]`);
-  if (btn) { btn.textContent = '…'; btn.disabled = true; }
-  const label = document.getElementById('fetchedLabel'+idx);
-  if (label) label.innerHTML = '<span class="perf-fetching">Fetching…</span>';
-
-  try {
-    const res = await fetchWithTimeout(LI_WORKER + '/analytics', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ access_token: token, postId: post.liPostId }),
-    }, 15000);
-    const data = await res.json();
-    if (data.error) throw new Error(data.error + (data.detail ? ': ' + JSON.stringify(data.detail) : ''));
-
-    publishedPosts[idx].stats = {
-      likes:       data.likes    || 0,
-      comments:    data.comments || 0,
-      shares:      data.shares   || 0,
-      lastFetched: new Date().toISOString(),
-    };
-    persistPublished();
-
-    setText('perfLikes'+idx,    data.likes    || 0);
-    setText('perfComments'+idx, data.comments || 0);
-    setText('perfShares'+idx,   data.shares   || 0);
-    if (label) label.textContent = 'Updated just now';
-    renderPerformanceSummary(); // re-render summary + charts only
-  } catch(e) {
-    const msg = e.message.includes('ACCESS_DENIED') || e.message.includes('403')
-      ? 'ℹ️ LinkedIn API restricts analytics for personal profiles. Use ✏️ to enter stats manually.'
-      : '⚠️ Could not fetch stats: ' + e.message;
-    showStatus('perfStatus', e.message.includes('ACCESS_DENIED') ? 'info' : 'error', msg);
-    if (label) label.textContent = 'Not available via API';
-  }
-  if (btn) { btn.textContent = '↻'; btn.disabled = false; }
-}
-
-async function refreshAllStats() {
-  const token = localStorage.getItem('linkedinToken');
-  if (!token) { showStatus('perfStatus','error','⚠️ LinkedIn not connected. Reconnect in Settings.'); return; }
-  const btn = document.getElementById('refreshAllBtn');
-  if (btn) { btn.disabled = true; btn.textContent = '↻ Refreshing…'; }
-
-  const withIds = publishedPosts.filter(p => p.liPostId);
-  const noIds   = publishedPosts.length - withIds.length;
-
-  if (!withIds.length) {
-    const msg = noIds > 0
-      ? `ℹ️ ${noIds} post${noIds>1?'s have':' has'} no LinkedIn ID — use the ✏️ button on each row to enter stats manually.`
-      : 'No published posts found.';
-    showStatus('perfStatus','info', msg);
-    if (btn) { btn.disabled = false; btn.textContent = '↻ Refresh All Stats'; }
-    return;
-  }
-
-  showStatus('perfStatus','info',`🔄 Refreshing stats for ${withIds.length} post${withIds.length>1?'s':''}…`);
-  let updated = 0, failed = 0, lastError = '';
-
-  for (let i = 0; i < withIds.length; i++) {
-    const idx = publishedPosts.indexOf(withIds[i]);
-    try {
-      const res = await fetchWithTimeout(LI_WORKER + '/analytics', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ access_token: token, postId: withIds[i].liPostId }),
-      }, 15000);
-      const data = await res.json();
-      if (data.error) {
-        failed++;
-        lastError = data.error + (data.detail ? ' — ' + JSON.stringify(data.detail) : '');
-      } else {
-        publishedPosts[idx].stats = { likes: data.likes||0, comments: data.comments||0, shares: data.shares||0, lastFetched: new Date().toISOString() };
-        updated++;
-      }
-    } catch(e) { failed++; lastError = e.message; }
-    await new Promise(r => setTimeout(r, 400)); // rate-limit requests
-  }
-  persistPublished();
-  renderPerformance();
-
-  const isAccessDenied = lastError.includes('ACCESS_DENIED') || lastError.includes('403');
-  if (updated > 0 && failed === 0) {
-    showStatus('perfStatus','success',`✅ Updated ${updated} post${updated>1?'s':''}.`);
-  } else if (updated > 0) {
-    showStatus('perfStatus','info',`✅ Updated ${updated}, ⚠️ ${failed} failed: ${lastError}`);
-  } else if (isAccessDenied) {
-    showStatus('perfStatus','info',`ℹ️ LinkedIn's API doesn't allow analytics for personal profiles — this is a LinkedIn restriction, not a connection issue. Use ✏️ on each row to enter your stats from LinkedIn's native analytics page.`);
-  } else {
-    showStatus('perfStatus','info',`⚠️ Could not fetch stats: ${lastError}. Use ✏️ on each row to enter stats manually.`);
-  }
-  if (btn) { btn.disabled = false; btn.textContent = '↻ Refresh All Stats'; }
-}
-
-function renderPerformanceSummary() {
-  // Re-render just the summary cards and charts without rebuilding the post list
-  const posts = publishedPosts;
-  if (!posts.length) return;
-  const totalLikes    = posts.reduce((s,p) => s + (p.stats?.likes    || 0), 0);
-  const totalComments = posts.reduce((s,p) => s + (p.stats?.comments || 0), 0);
-  const avgLikes    = (totalLikes    / posts.length).toFixed(1);
-  const avgComments = (totalComments / posts.length).toFixed(1);
-  setText('perfTotalLikes',    totalLikes);
-  setText('perfTotalComments', totalComments);
-  setText('perfAvgLikes',      avgLikes + ' avg per post');
-  setText('perfAvgComments',   avgComments + ' avg per post');
-  const pillarLabels = { cre:'🏢 CRE', ci:'🎭 Creative Ind.', fb:'🍽️ F&B', retail:'🛍️ Retail', mixed:'🔀 Mixed' };
-  const pillarGroups = {}, styleGroups = {};
-  posts.forEach(p => {
-    if (!pillarGroups[p.pillar]) pillarGroups[p.pillar] = { likes: 0, comments: 0, count: 0 };
-    pillarGroups[p.pillar].likes += (p.stats?.likes||0); pillarGroups[p.pillar].count++;
-    const t = p.type || 'Post';
-    if (!styleGroups[t]) styleGroups[t] = { likes: 0, comments: 0, count: 0 };
-    styleGroups[t].likes += (p.stats?.likes||0); styleGroups[t].comments += (p.stats?.comments||0); styleGroups[t].count++;
-  });
-  const audienceGroups2 = {};
-  posts.forEach(p => {
-    const a = p.audience || 'untagged';
-    if (!audienceGroups2[a]) audienceGroups2[a] = { likes: 0, comments: 0, count: 0 };
-    audienceGroups2[a].likes    += (p.stats?.likes    || 0);
-    audienceGroups2[a].comments += (p.stats?.comments || 0);
-    audienceGroups2[a].count++;
-  });
-  renderBarChart('chartPillarLikes',        Object.entries(pillarGroups).map(([k,v])    => ({ label: pillarLabels[k]||k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#818cf8');
-  renderBarChart('chartStyleLikes',         Object.entries(styleGroups).map(([k,v])     => ({ label: k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#f97316');
-  renderBarChart('chartPillarComments',     Object.entries(pillarGroups).map(([k,v])    => ({ label: pillarLabels[k]||k, val: v.count ? +(v.comments/v.count).toFixed(1) : 0 })), '#34d399');
-  renderBarChart('chartStyleEngagement',    Object.entries(styleGroups).map(([k,v])     => ({ label: k, val: v.count ? +((v.likes+v.comments)/v.count).toFixed(1) : 0 })), '#a78bfa');
-  renderBarChart('chartAudienceLikes',      Object.entries(audienceGroups2).map(([k,v]) => ({ label: AUDIENCE_LABELS[k]||k, val: v.count ? +(v.likes/v.count).toFixed(1) : 0 })), '#14b8a6');
-  renderBarChart('chartAudienceEngagement', Object.entries(audienceGroups2).map(([k,v]) => ({ label: AUDIENCE_LABELS[k]||k, val: v.count ? +((v.likes+v.comments)/v.count).toFixed(1) : 0 })), '#6366f1');
-}
-
-function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
-
-// ── LINKEDIN EXPORT IMPORT ─────────────────────────────────────
-function parseLinkedInExportXlsx(arrayBuffer) {
-  const wb = XLSX.read(arrayBuffer, { type: 'array' });
-  const ws = wb.Sheets['PERFORMANCE'];
-  if (!ws) throw new Error('No PERFORMANCE sheet found — is this a LinkedIn PostAnalytics export?');
-  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-  // Build a lookup: label (col 0) → value (col 1)
-  const kv = {};
-  rows.forEach(r => { if (r[0]) kv[String(r[0]).trim()] = String(r[1] ?? '').trim(); });
-  const parseNum = s => parseInt((s || '0').replace(/,/g, ''), 10) || 0;
-  return {
-    postUrl:     kv['Post URL']     || '',
-    postDate:    kv['Post Date']    || '',
-    impressions: parseNum(kv['Impressions']),
-    reached:     parseNum(kv['Members reached']),
-    reactions:   parseNum(kv['Reactions']),
-    comments:    parseNum(kv['Comments']),
-    reposts:     parseNum(kv['Reposts']),
-    saves:       parseNum(kv['Saves']),
-  };
-}
-
-async function importLinkedInExport(files) {
-  if (!files || !files.length) return;
-  showStatus('perfStatus', 'info', `⏳ Importing ${files.length} file${files.length > 1 ? 's' : ''}…`);
-  let matched = 0, unmatched = 0, errors = 0;
-  const unmatchedUrls = [];
-
-  for (const file of Array.from(files)) {
-    try {
-      const buf = await file.arrayBuffer();
-      const data = parseLinkedInExportXlsx(buf);
-      if (!data.postUrl) { errors++; continue; }
-
-      // Normalise URL for matching — strip trailing slash, query params
-      const norm = u => (u || '').replace(/[/?#].*$/, '').replace(/\/$/, '').toLowerCase();
-      const normUrl = norm(data.postUrl);
-
-      // Try to match to an existing publishedPost by liUrl or by extracting the share ID
-      const shareIdMatch = data.postUrl.match(/urn:li:(?:share|activity):(\d+)/i);
-      const shareId = shareIdMatch ? shareIdMatch[1] : null;
-
-      let idx = publishedPosts.findIndex(p =>
-        (p.liUrl && norm(p.liUrl) === normUrl) ||
-        (shareId && p.liUrl && p.liUrl.includes(shareId)) ||
-        (shareId && p.liPostId && p.liPostId.includes(shareId))
-      );
-
-      if (idx === -1) {
-        // No match — create a new entry from the export data
-        publishedPosts.unshift({
-          id:          'li_import_' + Date.now() + '_' + Math.random().toString(36).slice(2),
-          liPostId:    shareId ? 'urn:li:share:' + shareId : null,
-          liUrl:       data.postUrl,
-          text:        '(Imported from LinkedIn — ' + data.postDate + ')',
-          hashtags:    '',
-          pillar:      'mixed',
-          type:        'Imported',
-          audience:    null,
-          publishedAt: data.postDate ? new Date(data.postDate).toISOString() : new Date().toISOString(),
-          hasPhoto:    false,
-          stats:       { impressions: data.impressions, reached: data.reached, likes: data.reactions, comments: data.comments, shares: data.reposts, saves: data.saves, lastFetched: new Date().toISOString() },
-        });
-        unmatched++; // created new
-      } else {
-        publishedPosts[idx].stats = {
-          impressions: data.impressions,
-          reached:     data.reached,
-          likes:       data.reactions,
-          comments:    data.comments,
-          shares:      data.reposts,
-          saves:       data.saves,
-          lastFetched: new Date().toISOString(),
-        };
-        if (data.postUrl && !publishedPosts[idx].liUrl) publishedPosts[idx].liUrl = data.postUrl;
-        matched++;
-      }
-    } catch(e) { errors++; console.error('Import error:', file.name, e); }
-  }
-
-  // Reset file input so the same file can be re-imported
-  document.querySelectorAll('input[type=file][onchange*="importLinkedInExport"]').forEach(el => el.value = '');
-
-  persistPublished();
-  renderPerformance();
-
-  const parts = [];
-  if (matched)   parts.push(`✅ ${matched} post${matched>1?'s':''} updated`);
-  if (unmatched) parts.push(`➕ ${unmatched} new post${unmatched>1?'s':''} added`);
-  if (errors)    parts.push(`❌ ${errors} file${errors>1?'s':''} failed`);
-  showStatus('perfStatus', errors && !matched && !unmatched ? 'error' : 'success', parts.join(' · '));
-}
-
-// ── MANUAL STATS ENTRY ─────────────────────────────────────────
-function openManualStats(idx) {
-  // Close any other open forms first
-  document.querySelectorAll('[id^="manualStats-"]').forEach(el => el.style.display = 'none');
-  const post = publishedPosts[idx];
-  const form = document.getElementById('manualStats-' + idx);
-  if (!form) return;
-  const iEl   = document.getElementById('mImpressions-' + idx);
-  const lEl   = document.getElementById('mLikes-'       + idx);
-  const cEl   = document.getElementById('mComments-'    + idx);
-  const sEl   = document.getElementById('mShares-'      + idx);
-  const urlEl = document.getElementById('mUrl-'         + idx);
-  if (iEl)   iEl.value   = post.stats?.impressions ?? '';
-  if (lEl)   lEl.value   = post.stats?.likes       ?? '';
-  if (cEl)   cEl.value   = post.stats?.comments    ?? '';
-  if (sEl)   sEl.value   = post.stats?.shares      ?? '';
-  if (urlEl) urlEl.value = post.liUrl              ?? '';
-  form.style.display = 'flex';
-  if (urlEl) urlEl.focus();
-}
-
-function extractLiPostId(url) {
-  // LinkedIn URLs look like: /feed/update/urn:li:activity:1234567890123456789/
-  // or: /posts/username_urn:li:activity:123...
-  const m = url.match(/urn:li:(?:activity|share):(\d+)/i)
-         || url.match(/ugcPost[:\-](\d+)/i);
-  return m ? 'urn:li:activity:' + m[1] : null;
-}
-
-function saveManualStats(idx) {
-  const impressions = parseInt(document.getElementById('mImpressions-' + idx)?.value) || 0;
-  const likes       = parseInt(document.getElementById('mLikes-'       + idx)?.value) || 0;
-  const comments    = parseInt(document.getElementById('mComments-'    + idx)?.value) || 0;
-  const shares      = parseInt(document.getElementById('mShares-'      + idx)?.value) || 0;
-  const rawUrl      = (document.getElementById('mUrl-' + idx)?.value || '').trim();
-
-  publishedPosts[idx].stats = { impressions, likes, comments, shares, lastFetched: new Date().toISOString() };
-
-  if (rawUrl) {
-    publishedPosts[idx].liUrl = rawUrl;
-    // Auto-extract post ID from URL so auto-refresh can be attempted later
-    const extracted = extractLiPostId(rawUrl);
-    if (extracted && !publishedPosts[idx].liPostId) {
-      publishedPosts[idx].liPostId = extracted;
-    }
-  }
-
-  persistPublished();
-  setText('perfImpressions' + idx, impressions || '—');
-  setText('perfLikes'       + idx, likes);
-  setText('perfComments'    + idx, comments);
-  setText('perfShares'      + idx, shares);
-  const label = document.getElementById('fetchedLabel' + idx);
-  if (label) label.textContent = 'Updated manually just now';
-  document.getElementById('manualStats-' + idx).style.display = 'none';
-  renderPerformance(); // full re-render so 🔗 link and ↻ button appear immediately
-}
-
-function cancelManualStats(idx) {
-  const form = document.getElementById('manualStats-' + idx);
-  if (form) form.style.display = 'none';
-}
-
-// ── Utilities ──────────────────────────────────────────────────
-function showStatus(id, type, msg) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.className = 'status-bar ' + type;
-  el.textContent = msg;
-  el.style.display = 'block';
-}
-function hideStatus(id) {
-  const el = document.getElementById(id);
-  if (el) el.style.display = 'none';
-}
-function escHtml(str) { return (str||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;').substring(0,200); }
-function escHtmlFull(str) { return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function escJs(str) { return (str||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
-</script>
 </body>
 </html>
