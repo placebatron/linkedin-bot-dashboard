@@ -459,7 +459,7 @@ Mike"></textarea>
 <script>
 // ── Settings ──────────────────────────────────────────────────────
 function openSettings() {
-  const key = localStorage.getItem('anthropic_api_key') || '';
+  const key = localStorage.getItem('anthropicKey') || '';
   document.getElementById('apiKeyInput').value = key;
   document.getElementById('settingsModal').classList.add('open');
 }
@@ -468,7 +468,7 @@ function closeSettings() {
 }
 function saveSettings() {
   const key = document.getElementById('apiKeyInput').value.trim();
-  if (key) { localStorage.setItem('anthropic_api_key', key); }
+  if (key) { localStorage.setItem('anthropicKey', key); }
   closeSettings();
   showStatus('API key saved.', 'info', 2500);
 }
@@ -518,7 +518,7 @@ const TECHNIQUE_META = {
 
 // ── Main rewrite function ─────────────────────────────────────────
 async function rewriteEmail() {
-  const apiKey = localStorage.getItem('anthropic_api_key');
+  const apiKey = localStorage.getItem('anthropicKey');
   if (!apiKey) {
     showStatus('⚠️ Please add your Anthropic API key in Settings before rewriting.', 'error');
     openSettings();
@@ -740,7 +740,7 @@ function copyForOutlook() {
 
 // ── On load: prompt for key if missing ───────────────────────────
 window.addEventListener('load', () => {
-  if (!localStorage.getItem('anthropic_api_key')) {
+  if (!localStorage.getItem('anthropicKey')) {
     setTimeout(openSettings, 500);
   }
 });
