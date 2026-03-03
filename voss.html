@@ -78,21 +78,29 @@ textarea.email-input { min-height: 200px; font-size: 14px; line-height: 1.6; }
 .char-hint { font-size: 11px; color: var(--muted); margin-top: 5px; text-align: right; }
 
 /* ── Techniques Selector ── */
-.techniques-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
-.tech-chip {
-  display: flex; align-items: center; gap: 6px;
-  padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border);
-  background: var(--surface2); font-size: 12px; font-weight: 600;
-  cursor: pointer; transition: all 0.15s; user-select: none;
-  color: var(--muted);
+.tech-cards-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 8px; margin-bottom: 18px;
 }
-.tech-chip:hover { border-color: var(--accent); color: var(--text); }
-.tech-chip.selected {
-  background: rgba(79,110,247,0.15);
+.tech-card {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--surface2); cursor: pointer; transition: all 0.15s;
+  user-select: none;
+}
+.tech-card:hover { border-color: rgba(79,110,247,0.4); background: rgba(79,110,247,0.05); }
+.tech-card.selected {
+  background: rgba(79,110,247,0.12);
   border-color: rgba(79,110,247,0.5);
-  color: #818cf8;
 }
-.tech-chip .chip-icon { font-size: 13px; }
+.tech-card.selected .tech-card-name { color: #818cf8; }
+.tech-card.selected .tech-card-check { opacity: 1; color: #818cf8; }
+.tech-card-icon { font-size: 20px; flex-shrink: 0; line-height: 1; }
+.tech-card-body { flex: 1; min-width: 0; }
+.tech-card-name { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 2px; transition: color 0.15s; }
+.tech-card.selected .tech-card-name { color: #818cf8; }
+.tech-card-desc { font-size: 11px; color: var(--muted); line-height: 1.35; opacity: 0.75; }
+.tech-card-check { font-size: 13px; color: var(--border); opacity: 0.4; transition: all 0.15s; flex-shrink: 0; }
 
 /* ── Rewrite Button ── */
 .rewrite-btn {
@@ -152,13 +160,26 @@ textarea.email-input { min-height: 200px; font-size: 14px; line-height: 1.6; }
 .techniques-used { margin-bottom: 16px; }
 .techniques-used-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
 .technique-pill {
-  display: inline-flex; align-items: flex-start; gap: 8px;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
   background: rgba(79,110,247,0.08); border: 1px solid rgba(79,110,247,0.2);
-  border-radius: 10px; padding: 10px 14px; margin: 0 6px 8px 0;
-  font-size: 13px; line-height: 1.5; vertical-align: top;
+  border-radius: 10px; padding: 10px 12px; margin-bottom: 8px;
+  font-size: 13px; line-height: 1.5;
+  transition: opacity 0.2s;
 }
-.technique-pill-name { font-weight: 700; color: #818cf8; white-space: nowrap; }
-.technique-pill-desc { color: var(--muted); font-size: 12px; }
+.technique-pill.removing { opacity: 0.4; }
+.technique-pill-body { flex: 1; }
+.technique-pill-name { font-weight: 700; color: #818cf8; }
+.technique-pill-desc { color: var(--muted); font-size: 12px; margin-top: 2px; }
+.remove-tech-btn {
+  display: flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(239,68,68,0.25);
+  background: rgba(239,68,68,0.06); color: #f87171;
+  font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap;
+  transition: all 0.15s; flex-shrink: 0; align-self: flex-start; margin-top: 1px;
+}
+.remove-tech-btn:hover { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.5); }
+.remove-tech-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.remove-spinner { width: 10px; height: 10px; border: 1.5px solid rgba(248,113,113,0.3); border-top-color: #f87171; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
 
 /* ── Tone Score ── */
 .tone-score-card {
@@ -344,30 +365,70 @@ Mike"></textarea>
 
     <div class="form-row">
       <label>Voss Techniques to Apply</label>
-      <div class="techniques-grid" id="techniquesGrid">
-        <div class="tech-chip selected" data-tech="tactical_empathy">
-          <span class="chip-icon">🤝</span> Tactical Empathy
+      <div class="tech-cards-grid" id="techniquesGrid">
+        <div class="tech-card selected" data-tech="tactical_empathy">
+          <div class="tech-card-icon">🤝</div>
+          <div class="tech-card-body">
+            <div class="tech-card-name">Tactical Empathy</div>
+            <div class="tech-card-desc">See their world. Show you understand it.</div>
+          </div>
+          <div class="tech-card-check">✓</div>
         </div>
-        <div class="tech-chip selected" data-tech="labeling">
-          <span class="chip-icon">🏷️</span> Labeling
+        <div class="tech-card selected" data-tech="labeling">
+          <div class="tech-card-icon">🏷️</div>
+          <div class="tech-card-body">
+            <div class="tech-card-name">Labeling</div>
+            <div class="tech-card-desc">Name the feeling: "It seems like..."</div>
+          </div>
+          <div class="tech-card-check">✓</div>
         </div>
-        <div class="tech-chip selected" data-tech="calibrated_questions">
-          <span class="chip-icon">❓</span> Calibrated Questions
+        <div class="tech-card selected" data-tech="calibrated_questions">
+          <div class="tech-card-icon">❓</div>
+          <div class="tech-card-body">
+            <div class="tech-card-name">Calibrated Questions</div>
+            <div class="tech-card-desc">Ask How/What. Never yes/no or Why.</div>
+          </div>
+          <div class="tech-card-check">✓</div>
         </div>
-        <div class="tech-chip selected" data-tech="accusation_audit">
-          <span class="chip-icon">🛡️</span> Accusation Audit
+        <div class="tech-card selected" data-tech="accusation_audit">
+          <div class="tech-card-icon">🛡️</div>
+          <div class="tech-card-body">
+            <div class="tech-card-name">Accusation Audit</div>
+            <div class="tech-card-desc">Defuse objections by naming them first.</div>
+          </div>
+          <div class="tech-card-check">✓</div>
         </div>
-        <div class="tech-chip selected" data-tech="no_oriented">
-          <span class="chip-icon">🔄</span> No-Oriented Questions
+        <div class="tech-card selected" data-tech="no_oriented">
+          <div class="tech-card-icon">🔄</div>
+          <div class="tech-card-body">
+            <div class="tech-card-name">No-Oriented Questions</div>
+            <div class="tech-card-desc">Let them say No to lower resistance.</div>
+          </div>
+          <div class="tech-card-check">✓</div>
         </div>
-        <div class="tech-chip" data-tech="mirroring">
-          <span class="chip-icon">🪞</span> Mirroring
+        <div class="tech-card" data-tech="mirroring">
+          <div class="tech-card-icon">🪞</div>
+          <div class="tech-card-body">
+            <div class="tech-card-name">Mirroring</div>
+            <div class="tech-card-desc">Repeat their words. Invite them deeper.</div>
+          </div>
+          <div class="tech-card-check">✓</div>
         </div>
-        <div class="tech-chip" data-tech="dj_voice">
-          <span class="chip-icon">🎙️</span> Late-Night DJ Tone
+        <div class="tech-card" data-tech="dj_voice">
+          <div class="tech-card-icon">🎙️</div>
+          <div class="tech-card-body">
+            <div class="tech-card-name">Late-Night DJ Voice</div>
+            <div class="tech-card-desc">Slow. Calm. Unhurried. Confidence through tone.</div>
+          </div>
+          <div class="tech-card-check">✓</div>
         </div>
-        <div class="tech-chip" data-tech="black_swan">
-          <span class="chip-icon">🦢</span> Black Swan Discovery
+        <div class="tech-card" data-tech="black_swan">
+          <div class="tech-card-icon">🦢</div>
+          <div class="tech-card-body">
+            <div class="tech-card-name">Black Swan</div>
+            <div class="tech-card-desc">Surface the unknown that changes everything.</div>
+          </div>
+          <div class="tech-card-check">✓</div>
         </div>
       </div>
     </div>
@@ -481,15 +542,15 @@ document.getElementById('emailDraft').addEventListener('input', function() {
   document.getElementById('charHint').textContent = this.value.length + ' characters';
 });
 
-// ── Technique chips ──────────────────────────────────────────────
-document.querySelectorAll('.tech-chip').forEach(chip => {
-  chip.addEventListener('click', function() {
+// ── Technique cards ───────────────────────────────────────────────
+document.querySelectorAll('.tech-card').forEach(card => {
+  card.addEventListener('click', function() {
     this.classList.toggle('selected');
   });
 });
 
 function getSelectedTechniques() {
-  return Array.from(document.querySelectorAll('.tech-chip.selected'))
+  return Array.from(document.querySelectorAll('.tech-card.selected'))
     .map(c => c.dataset.tech);
 }
 
@@ -682,7 +743,7 @@ function renderOutput(result, requestedTechs) {
   animateScore('scoreClarity',  'scoreClarityVal',  scores.clarity    || 0);
   animateScore('scorePressure', 'scorePressureVal', scores.low_pressure || 0);
 
-  // Technique pills
+  // Technique pills with Remove buttons
   const container = document.getElementById('techniquesUsed');
   container.innerHTML = '';
   if (result.techniques_applied && result.techniques_applied.length > 0) {
@@ -691,7 +752,15 @@ function renderOutput(result, requestedTechs) {
       if (!meta) return;
       const pill = document.createElement('div');
       pill.className = 'technique-pill';
-      pill.innerHTML = `<div><div class="technique-pill-name">${meta.label}</div><div class="technique-pill-desc">${tech.description}</div></div>`;
+      pill.dataset.techId = tech.id;
+      pill.innerHTML = `
+        <div class="technique-pill-body">
+          <div class="technique-pill-name">${meta.label}</div>
+          <div class="technique-pill-desc">${tech.description}</div>
+        </div>
+        <button class="remove-tech-btn" onclick="removeTechnique('${tech.id}', this)" title="Remove this technique and re-rewrite">
+          ✕ Remove
+        </button>`;
       container.appendChild(pill);
     });
   }
@@ -736,6 +805,94 @@ function copyForOutlook() {
       btn.classList.remove('copied');
     }, 3000);
   });
+}
+
+// ── Remove a technique & surgically re-rewrite ────────────────────
+async function removeTechnique(techId, btn) {
+  const apiKey = localStorage.getItem('anthropicKey');
+  if (!apiKey) { openSettings(); return; }
+
+  const currentEmail = document.getElementById('emailOutputText').textContent.trim();
+  if (!currentEmail) return;
+
+  const meta = TECHNIQUE_META[techId];
+
+  // Visual feedback
+  btn.disabled = true;
+  btn.innerHTML = '<span class="remove-spinner"></span> Removing…';
+  const pill = btn.closest('.technique-pill');
+  pill.classList.add('removing');
+
+  // Disable all other remove buttons during processing
+  document.querySelectorAll('.remove-tech-btn').forEach(b => b.disabled = true);
+
+  const systemPrompt = `You are an expert in Chris Voss's "Never Split the Difference" negotiation techniques applied to commercial real estate email outreach. You make precise, surgical edits to emails.`;
+
+  const userPrompt = `The following email was written using multiple Chris Voss negotiation techniques. I want you to remove ONLY the "${meta.label}" technique while keeping all other Voss elements completely intact.
+
+TECHNIQUE TO REMOVE: ${meta.label}
+What this technique does: ${meta.desc}
+
+CURRENT EMAIL:
+---
+${currentEmail}
+---
+
+Instructions:
+- Find and rewrite only the parts that use "${meta.label}"
+- Keep every other Voss technique exactly as-is
+- The email should still feel natural and complete after the edit
+- Do not add any new techniques or change the overall structure
+
+Respond ONLY with valid JSON:
+{
+  "rewritten_email": "The revised email with that technique removed",
+  "techniques_applied": [
+    { "id": "technique_id", "description": "One sentence on how it appears" }
+  ],
+  "scores": { "empathy": 0, "trust": 0, "clarity": 0, "low_pressure": 0 }
+}`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5-20251101',
+        max_tokens: 2048,
+        messages: [{ role: 'user', content: userPrompt }],
+        system: systemPrompt,
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error?.message || `API error ${response.status}`);
+    }
+
+    const data = await response.json();
+    const raw = data.content[0].text.trim();
+    const jsonStr = raw.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
+    const result = JSON.parse(jsonStr);
+
+    // Update output
+    renderOutput(result, []);
+    showStatus(`"${meta.label}" removed. Email updated.`, 'info', 3000);
+
+  } catch (err) {
+    console.error(err);
+    showStatus('Error: ' + err.message, 'error');
+    // Restore pill on error
+    pill.classList.remove('removing');
+    btn.disabled = false;
+    btn.innerHTML = '✕ Remove';
+    document.querySelectorAll('.remove-tech-btn').forEach(b => b.disabled = false);
+  }
 }
 
 // ── On load: prompt for key if missing ───────────────────────────
