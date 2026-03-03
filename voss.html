@@ -349,12 +349,37 @@ textarea.email-input { min-height: 200px; font-size: 14px; line-height: 1.6; }
 .drafts-body { display: none; padding-bottom: 8px; }
 .drafts-section.open .drafts-body { display: block; }
 .drafts-empty { font-size: 13px; color: var(--muted); text-align: center; padding: 20px 0; }
+/* Draft filter tabs */
+.drafts-filters {
+  display: flex; gap: 4px; margin-bottom: 14px;
+  background: var(--surface2); border-radius: 8px; padding: 3px;
+  border: 1px solid var(--border);
+}
+.drafts-filter-tab {
+  flex: 1; padding: 5px 0; text-align: center; border-radius: 6px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--muted); cursor: pointer; transition: all 0.15s; user-select: none;
+}
+.drafts-filter-tab.active { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+.drafts-filter-tab .tab-count { opacity: 0.6; margin-left: 4px; font-weight: 500; }
+
+/* Draft cards */
 .draft-card {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: 10px; padding: 14px; margin-bottom: 10px;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s; border-left: 3px solid transparent;
 }
+.draft-card.is-outreach { border-left-color: rgba(79,110,247,0.5); }
+.draft-card.is-followup { border-left-color: rgba(245,158,11,0.5); }
 .draft-card:hover { border-color: rgba(79,110,247,0.3); }
+.draft-card.is-followup:hover { border-color: rgba(245,158,11,0.3); }
+.draft-type-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 5px; margin-bottom: 6px;
+}
+.badge-outreach { background: rgba(79,110,247,0.12); color: #818cf8; border: 1px solid rgba(79,110,247,0.25); }
+.badge-followup { background: rgba(245,158,11,0.12); color: #fbbf24; border: 1px solid rgba(245,158,11,0.25); }
 .draft-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
 .draft-card-meta { flex: 1; }
 .draft-card-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
@@ -801,6 +826,11 @@ Mike"></textarea>
         <div class="drafts-chevron">▼</div>
       </div>
       <div class="drafts-body" id="draftsBody">
+        <div class="drafts-filters" id="draftsFilters">
+          <div class="drafts-filter-tab active" data-filter="all" onclick="setDraftsFilter('all')">All<span class="tab-count" id="filterCountAll"></span></div>
+          <div class="drafts-filter-tab" data-filter="outreach" onclick="setDraftsFilter('outreach')">✦ Outreach<span class="tab-count" id="filterCountOutreach"></span></div>
+          <div class="drafts-filter-tab" data-filter="followup" onclick="setDraftsFilter('followup')">📅 Follow-Ups<span class="tab-count" id="filterCountFollowup"></span></div>
+        </div>
         <div class="drafts-empty" id="draftsEmpty">No saved drafts yet. Copy an email to Outlook to save it here.</div>
         <div id="draftsList"></div>
       </div>
@@ -1533,26 +1563,61 @@ function saveDraft() {
   if (!section.classList.contains('open')) section.classList.add('open');
 }
 
-function renderDrafts() {
-  const drafts = getDrafts();
-  const count  = document.getElementById('draftsCount');
-  const empty  = document.getElementById('draftsEmpty');
-  const list   = document.getElementById('draftsList');
+let activeDraftsFilter = 'all';
 
-  count.textContent = drafts.length;
-  count.classList.toggle('visible', drafts.length > 0);
+function setDraftsFilter(filter) {
+  activeDraftsFilter = filter;
+  document.querySelectorAll('.drafts-filter-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.filter === filter);
+  });
+  renderDrafts();
+}
+
+function renderDrafts() {
+  const allDrafts = getDrafts();
+  const outreachDrafts = allDrafts.filter(d => !d.isFollowup);
+  const followupDrafts = allDrafts.filter(d => d.isFollowup);
+
+  // Update count badge on section header
+  const count = document.getElementById('draftsCount');
+  count.textContent = allDrafts.length;
+  count.classList.toggle('visible', allDrafts.length > 0);
+
+  // Update tab counts
+  document.getElementById('filterCountAll').textContent      = allDrafts.length      ? ` ${allDrafts.length}`      : '';
+  document.getElementById('filterCountOutreach').textContent = outreachDrafts.length ? ` ${outreachDrafts.length}` : '';
+  document.getElementById('filterCountFollowup').textContent = followupDrafts.length ? ` ${followupDrafts.length}` : '';
+
+  // Filter drafts for display
+  const drafts = activeDraftsFilter === 'outreach' ? outreachDrafts
+               : activeDraftsFilter === 'followup' ? followupDrafts
+               : allDrafts;
+
+  const empty = document.getElementById('draftsEmpty');
+  const list  = document.getElementById('draftsList');
+
+  const emptyMsg = activeDraftsFilter === 'outreach' ? 'No outreach drafts saved yet.'
+                 : activeDraftsFilter === 'followup' ? 'No follow-up drafts saved yet.'
+                 : 'No saved drafts yet. Copy an email to Outlook to save it here.';
+  empty.textContent = emptyMsg;
   empty.style.display = drafts.length === 0 ? 'block' : 'none';
 
   list.innerHTML = '';
   drafts.forEach(d => {
-    const date = new Date(d.savedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const date    = new Date(d.savedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     const tagHtml = (d.techniques || []).map(t =>
-      `<span class="draft-tag">${t.replace(/^[^\s]+\s/, '')}</span>`).join('');
+      `<span class="draft-tag">${escHtml(t.replace(/^[^\s]+\s/, ''))}</span>`).join('');
     const preview = d.emailText.replace(/\n/g, ' ').slice(0, 140) + (d.emailText.length > 140 ? '…' : '');
+    const isFollowup = !!d.isFollowup;
+    const cardClass  = isFollowup ? 'draft-card is-followup' : 'draft-card is-outreach';
+    const badge      = isFollowup
+      ? `<div class="draft-type-badge badge-followup">📅 48hr Follow-Up</div>`
+      : `<div class="draft-type-badge badge-outreach">✦ Outreach</div>`;
 
     const card = document.createElement('div');
-    card.className = 'draft-card';
+    card.className = cardClass;
     card.innerHTML = `
+      ${badge}
       <div class="draft-card-header">
         <div class="draft-card-meta">
           <div class="draft-card-name">${escHtml(d.prospectName)}${d.prospectRole ? ' — ' + escHtml(d.prospectRole) : ''}</div>
@@ -1564,7 +1629,7 @@ function renderDrafts() {
       <div class="draft-preview">${escHtml(preview)}</div>
       <div class="draft-card-actions">
         <button class="draft-load-btn" onclick="loadDraft('${d.id}')">↩ Load</button>
-        ${!d.isFollowup ? `<button class="followup-draft-btn" onclick="openFollowupFromDraft('${d.id}')">📅 Follow-Up</button>` : ''}
+        ${!isFollowup ? `<button class="followup-draft-btn" onclick="openFollowupFromDraft('${d.id}')">📅 Follow-Up</button>` : ''}
         <button class="draft-del-btn" onclick="deleteDraft('${d.id}')" title="Delete">🗑</button>
       </div>`;
     list.appendChild(card);
