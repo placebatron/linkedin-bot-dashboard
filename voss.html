@@ -130,16 +130,30 @@ textarea.email-input { min-height: 200px; font-size: 14px; line-height: 1.6; }
 .email-output-card {
   background: var(--surface2); border: 1px solid var(--border);
   border-radius: 12px; padding: 20px; margin-bottom: 16px;
-  position: relative;
+  position: relative; transition: border-color 0.2s;
+}
+.email-output-card.editing-mode {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(79,110,247,0.1);
 }
 .output-label {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 14px;
 }
+.output-label-left { display: flex; align-items: center; gap: 8px; }
 .output-label-text {
   font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
   text-transform: uppercase; color: #818cf8;
 }
+.editing-badge {
+  display: none; align-items: center; gap: 4px;
+  background: rgba(79,110,247,0.15); border: 1px solid rgba(79,110,247,0.35);
+  color: #818cf8; font-size: 10px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 20px;
+}
+.editing-mode .editing-badge { display: flex; }
+.output-label-actions { display: flex; align-items: center; gap: 6px; }
 .copy-btn {
   display: flex; align-items: center; gap: 5px;
   padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border);
@@ -148,13 +162,45 @@ textarea.email-input { min-height: 200px; font-size: 14px; line-height: 1.6; }
 }
 .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
 .copy-btn.copied { border-color: var(--success); color: var(--success); }
+.edit-btn {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--muted); font-size: 12px;
+  cursor: pointer; transition: all 0.15s;
+}
+.edit-btn:hover { border-color: rgba(79,110,247,0.5); color: #818cf8; }
+.editing-mode .edit-btn {
+  background: rgba(79,110,247,0.12); border-color: rgba(79,110,247,0.4); color: #818cf8;
+}
 .email-output-text {
   font-size: 14px; line-height: 1.75; white-space: pre-wrap;
   color: var(--text); border-radius: 6px;
-  min-height: 80px;
-  outline: none;
+  min-height: 80px; outline: none;
+  caret-color: var(--accent);
 }
-.email-output-text:focus { outline: 1px solid rgba(79,110,247,0.3); border-radius: 6px; padding: 4px; }
+.email-output-text[contenteditable="true"] { cursor: text; }
+/* Edit toolbar — shown only in edit mode */
+.edit-toolbar {
+  display: none; align-items: center; justify-content: space-between;
+  margin-top: 12px; padding-top: 12px;
+  border-top: 1px solid rgba(79,110,247,0.2);
+}
+.editing-mode .edit-toolbar { display: flex; }
+.edit-hint { font-size: 11px; color: var(--muted); }
+.edit-actions { display: flex; gap: 8px; }
+.restore-btn {
+  padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border);
+  background: none; color: var(--muted); font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all 0.15s;
+}
+.restore-btn:hover { border-color: var(--warning); color: var(--warning); }
+.done-btn {
+  padding: 5px 12px; border-radius: 6px; border: none;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: white; font-size: 12px; font-weight: 700;
+  cursor: pointer; transition: opacity 0.15s;
+}
+.done-btn:hover { opacity: 0.85; }
 
 /* ── Technique Callouts ── */
 .techniques-used { margin-bottom: 16px; }
@@ -493,12 +539,25 @@ Mike"></textarea>
       </div>
 
       <!-- Rewritten Email -->
-      <div class="email-output-card">
+      <div class="email-output-card" id="emailOutputCard">
         <div class="output-label">
-          <div class="output-label-text">✦ Voss-Style Rewrite</div>
-          <button class="copy-btn" id="copyEmailBtn" onclick="copyEmail()">📋 Copy</button>
+          <div class="output-label-left">
+            <div class="output-label-text">✦ Voss-Style Rewrite</div>
+            <div class="editing-badge">✏️ Editing</div>
+          </div>
+          <div class="output-label-actions">
+            <button class="edit-btn" id="editBtn" onclick="toggleEditMode()">✏️ Edit</button>
+            <button class="copy-btn" id="copyEmailBtn" onclick="copyEmail()">📋 Copy</button>
+          </div>
         </div>
-        <div class="email-output-text" id="emailOutputText" contenteditable="true" spellcheck="true"></div>
+        <div class="email-output-text" id="emailOutputText" contenteditable="false" spellcheck="true"></div>
+        <div class="edit-toolbar">
+          <div class="edit-hint">Click anywhere in the email to edit</div>
+          <div class="edit-actions">
+            <button class="restore-btn" onclick="restoreOriginal()" title="Undo all edits">↺ Restore original</button>
+            <button class="done-btn" onclick="toggleEditMode()">✓ Done editing</button>
+          </div>
+        </div>
       </div>
 
       <!-- Outlook Button -->
@@ -733,8 +792,16 @@ Scores are integers 0-100 reflecting how well the rewritten email achieves each 
 
 // ── Render output ─────────────────────────────────────────────────
 function renderOutput(result, requestedTechs) {
+  // Reset edit mode on new render
+  const card = document.getElementById('emailOutputCard');
+  const el   = document.getElementById('emailOutputText');
+  card.classList.remove('editing-mode');
+  el.contentEditable = 'false';
+  document.getElementById('editBtn').innerHTML = '✏️ Edit';
+  originalEmailText = result.rewritten_email;
+
   // Email text
-  document.getElementById('emailOutputText').textContent = result.rewritten_email;
+  el.textContent = result.rewritten_email;
 
   // Scores (animate)
   const scores = result.scores || {};
@@ -781,6 +848,44 @@ function animateScore(barId, valId, value) {
     document.getElementById(barId).style.width = pct + '%';
     document.getElementById(valId).textContent = pct;
   }, 100);
+}
+
+// ── Inline edit mode ──────────────────────────────────────────────
+let originalEmailText = '';
+
+function toggleEditMode() {
+  const card = document.getElementById('emailOutputCard');
+  const el   = document.getElementById('emailOutputText');
+  const btn  = document.getElementById('editBtn');
+  const isEditing = card.classList.contains('editing-mode');
+
+  if (isEditing) {
+    // Exit edit mode
+    card.classList.remove('editing-mode');
+    el.contentEditable = 'false';
+    btn.innerHTML = '✏️ Edit';
+  } else {
+    // Enter edit mode — stash current text as baseline for this session
+    if (!originalEmailText) originalEmailText = el.textContent;
+    card.classList.add('editing-mode');
+    el.contentEditable = 'true';
+    el.focus();
+    // Place cursor at end
+    const range = document.createRange();
+    const sel   = window.getSelection();
+    range.selectNodeContents(el);
+    range.collapse(false);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    btn.innerHTML = '✓ Done';
+  }
+}
+
+function restoreOriginal() {
+  if (!originalEmailText) return;
+  const el = document.getElementById('emailOutputText');
+  el.textContent = originalEmailText;
+  el.focus();
 }
 
 // ── Copy functions ────────────────────────────────────────────────
