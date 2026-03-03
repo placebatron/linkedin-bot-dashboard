@@ -244,6 +244,66 @@ textarea.email-input { min-height: 200px; font-size: 14px; line-height: 1.6; }
 .score-bar.urgency  { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
 .score-val { font-size: 12px; font-weight: 700; color: var(--text); width: 28px; text-align: right; }
 
+/* ── Completed Drafts ── */
+.drafts-section {
+  border-top: 1px solid var(--border);
+  margin-top: 8px;
+}
+.drafts-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 0 10px; cursor: pointer; user-select: none;
+}
+.drafts-header-left { display: flex; align-items: center; gap: 8px; }
+.drafts-title { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.drafts-count {
+  background: rgba(79,110,247,0.15); border: 1px solid rgba(79,110,247,0.3);
+  color: #818cf8; font-size: 11px; font-weight: 700;
+  padding: 1px 7px; border-radius: 20px; display: none;
+}
+.drafts-count.visible { display: inline-block; }
+.drafts-chevron { font-size: 11px; color: var(--muted); transition: transform 0.2s; }
+.drafts-section.open .drafts-chevron { transform: rotate(180deg); }
+.drafts-body { display: none; padding-bottom: 8px; }
+.drafts-section.open .drafts-body { display: block; }
+.drafts-empty { font-size: 13px; color: var(--muted); text-align: center; padding: 20px 0; }
+.draft-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px; margin-bottom: 10px;
+  transition: border-color 0.15s;
+}
+.draft-card:hover { border-color: rgba(79,110,247,0.3); }
+.draft-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.draft-card-meta { flex: 1; }
+.draft-card-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+.draft-card-deal { font-size: 11px; color: var(--muted); }
+.draft-card-date { font-size: 11px; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+.draft-card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+.draft-tag {
+  font-size: 10px; font-weight: 600; color: #818cf8;
+  background: rgba(79,110,247,0.1); border: 1px solid rgba(79,110,247,0.2);
+  padding: 2px 6px; border-radius: 5px;
+}
+.draft-preview {
+  font-size: 12px; color: var(--muted); line-height: 1.5;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; margin-bottom: 10px;
+}
+.draft-card-actions { display: flex; gap: 8px; }
+.draft-load-btn {
+  flex: 1; padding: 6px 0; border-radius: 6px;
+  background: rgba(79,110,247,0.12); border: 1px solid rgba(79,110,247,0.3);
+  color: #818cf8; font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all 0.15s;
+}
+.draft-load-btn:hover { background: rgba(79,110,247,0.2); }
+.draft-del-btn {
+  padding: 6px 10px; border-radius: 6px;
+  background: none; border: 1px solid var(--border);
+  color: var(--muted); font-size: 12px;
+  cursor: pointer; transition: all 0.15s;
+}
+.draft-del-btn:hover { border-color: rgba(239,68,68,0.4); color: #f87171; }
+
 /* ── Outlook Copy ── */
 .outlook-btn {
   width: 100%; padding: 11px; border-radius: 9px;
@@ -573,6 +633,22 @@ Mike"></textarea>
       </div>
 
     </div>
+
+    <!-- Completed Drafts -->
+    <div class="drafts-section" id="draftsSection">
+      <div class="drafts-header" onclick="toggleDrafts()">
+        <div class="drafts-header-left">
+          <div class="drafts-title">Completed Drafts</div>
+          <div class="drafts-count" id="draftsCount"></div>
+        </div>
+        <div class="drafts-chevron">▼</div>
+      </div>
+      <div class="drafts-body" id="draftsBody">
+        <div class="drafts-empty" id="draftsEmpty">No saved drafts yet. Copy an email to Outlook to save it here.</div>
+        <div id="draftsList"></div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -903,12 +979,13 @@ function copyForOutlook() {
   const text = document.getElementById('emailOutputText').textContent;
   navigator.clipboard.writeText(text).then(() => {
     const btn = document.getElementById('outlookBtn');
-    btn.textContent = '✓ Copied to clipboard — paste into Outlook';
+    btn.textContent = '✓ Copied — saved to Completed Drafts';
     btn.classList.add('copied');
     setTimeout(() => {
       btn.textContent = '📧 Copy for Outlook';
       btn.classList.remove('copied');
     }, 3000);
+    saveDraft();
   });
 }
 
@@ -1000,11 +1077,142 @@ Respond ONLY with valid JSON:
   }
 }
 
+// ── Completed Drafts ──────────────────────────────────────────────
+const DRAFTS_KEY = 'voss_completed_drafts';
+
+function getDrafts() {
+  try { return JSON.parse(localStorage.getItem(DRAFTS_KEY) || '[]'); }
+  catch { return []; }
+}
+
+function saveDraft() {
+  const emailText = document.getElementById('emailOutputText').textContent.trim();
+  if (!emailText) return;
+
+  const prospectName = document.getElementById('prospectName').value.trim() || 'Unknown Prospect';
+  const prospectRole = document.getElementById('prospectRole').value.trim() || '';
+  const dealType     = document.getElementById('dealType').value || '';
+  const dealTypeLabels = {
+    sell_listing: 'Sell-Side Listing', buy_acquisition: 'Buy-Side Acquisition',
+    tenant_rep: 'Tenant Rep', landlord_rep: 'Landlord Rep',
+    investment_sale: 'Investment Sale', cold_owner: 'Cold Owner Outreach', cold_tenant: 'Cold Tenant Outreach',
+  };
+
+  // Collect applied technique labels from pills
+  const techEls = document.querySelectorAll('.technique-pill .technique-pill-name');
+  const techniques = Array.from(techEls).map(el => el.textContent.replace(/^[^\s]+\s/, '').trim());
+
+  const draft = {
+    id: Date.now().toString(),
+    savedAt: new Date().toISOString(),
+    prospectName,
+    prospectRole,
+    dealType: dealTypeLabels[dealType] || dealType,
+    techniques,
+    emailText,
+  };
+
+  const drafts = getDrafts();
+  drafts.unshift(draft); // newest first
+  if (drafts.length > 50) drafts.pop(); // cap at 50
+  localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
+  renderDrafts();
+
+  // Auto-open the section so Mike sees it saved
+  const section = document.getElementById('draftsSection');
+  if (!section.classList.contains('open')) section.classList.add('open');
+}
+
+function renderDrafts() {
+  const drafts = getDrafts();
+  const count  = document.getElementById('draftsCount');
+  const empty  = document.getElementById('draftsEmpty');
+  const list   = document.getElementById('draftsList');
+
+  count.textContent = drafts.length;
+  count.classList.toggle('visible', drafts.length > 0);
+  empty.style.display = drafts.length === 0 ? 'block' : 'none';
+
+  list.innerHTML = '';
+  drafts.forEach(d => {
+    const date = new Date(d.savedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const tagHtml = (d.techniques || []).map(t =>
+      `<span class="draft-tag">${t.replace(/^[^\s]+\s/, '')}</span>`).join('');
+    const preview = d.emailText.replace(/\n/g, ' ').slice(0, 140) + (d.emailText.length > 140 ? '…' : '');
+
+    const card = document.createElement('div');
+    card.className = 'draft-card';
+    card.innerHTML = `
+      <div class="draft-card-header">
+        <div class="draft-card-meta">
+          <div class="draft-card-name">${escHtml(d.prospectName)}${d.prospectRole ? ' — ' + escHtml(d.prospectRole) : ''}</div>
+          <div class="draft-card-deal">${escHtml(d.dealType) || 'Outreach'}</div>
+        </div>
+        <div class="draft-card-date">${date}</div>
+      </div>
+      ${tagHtml ? `<div class="draft-card-tags">${tagHtml}</div>` : ''}
+      <div class="draft-preview">${escHtml(preview)}</div>
+      <div class="draft-card-actions">
+        <button class="draft-load-btn" onclick="loadDraft('${d.id}')">↩ Load Draft</button>
+        <button class="draft-del-btn" onclick="deleteDraft('${d.id}')" title="Delete">🗑</button>
+      </div>`;
+    list.appendChild(card);
+  });
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function loadDraft(id) {
+  const draft = getDrafts().find(d => d.id === id);
+  if (!draft) return;
+
+  // Populate output
+  const el = document.getElementById('emailOutputText');
+  const card = document.getElementById('emailOutputCard');
+  el.textContent = draft.emailText;
+  originalEmailText = draft.emailText;
+  card.classList.remove('editing-mode');
+  el.contentEditable = 'false';
+  document.getElementById('editBtn').innerHTML = '✏️ Edit';
+
+  // Repopulate left-panel context fields
+  if (draft.prospectName) document.getElementById('prospectName').value = draft.prospectName;
+  if (draft.prospectRole) document.getElementById('prospectRole').value = draft.prospectRole;
+
+  // Show output block, hide placeholder
+  document.getElementById('outputPlaceholder').style.display = 'none';
+  document.getElementById('outputBlock').classList.add('visible');
+
+  // Clear technique pills (draft doesn't have full pill data) and show a note
+  const container = document.getElementById('techniquesUsed');
+  container.innerHTML = (draft.techniques || []).map(t =>
+    `<div class="technique-pill"><div class="technique-pill-body"><div class="technique-pill-name">${escHtml(t)}</div><div class="technique-pill-desc">Loaded from saved draft</div></div></div>`
+  ).join('');
+
+  // Scroll to output on mobile
+  if (window.innerWidth < 768) document.querySelector('.panel-right').scrollIntoView({ behavior: 'smooth' });
+
+  showStatus('Draft loaded. Edit or copy to Outlook.', 'info', 3000);
+}
+
+function deleteDraft(id) {
+  const drafts = getDrafts().filter(d => d.id !== id);
+  localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
+  renderDrafts();
+}
+
+function toggleDrafts() {
+  document.getElementById('draftsSection').classList.toggle('open');
+}
+
 // ── On load: prompt for key if missing ───────────────────────────
 window.addEventListener('load', () => {
   if (!localStorage.getItem('anthropicKey')) {
     setTimeout(openSettings, 500);
   }
+  renderDrafts();
 });
 </script>
 </body>
