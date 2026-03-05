@@ -470,23 +470,23 @@ textarea.email-input { min-height: 200px; font-size: 14px; line-height: 1.6; }
 </head>
 <body>
 
-<!-- Settings Modal -->
+<!-- Team Sign-In Modal -->
 <div class="modal-overlay" id="settingsModal">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">⚙️ API Settings</div>
+      <div class="modal-title">🔐 Team Sign-In</div>
       <button class="modal-close" onclick="closeSettings()">✕</button>
     </div>
     <div class="modal-note">
-      Your Anthropic API key is stored only in your browser's local storage and is never sent anywhere except directly to Anthropic's API. Get your key at <strong>console.anthropic.com</strong>.
+      Enter the Baum Realty team passphrase to access the Voss Email Rewriter. Ask Mike if you don't have it.
     </div>
     <div class="form-row">
-      <label>Anthropic API Key</label>
-      <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." />
+      <label>Team Passphrase</label>
+      <input type="password" id="passphraseInput" placeholder="Enter team passphrase…" onkeydown="if(event.key==='Enter')saveSettings()" />
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeSettings()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveSettings()">Save Key</button>
+      <button class="btn btn-primary" onclick="saveSettings()">Sign In</button>
     </div>
   </div>
 </div>
@@ -504,7 +504,10 @@ textarea.email-input { min-height: 200px; font-size: 14px; line-height: 1.6; }
       </div>
     </div>
   </div>
-  <button class="settings-btn" onclick="openSettings()">⚙️ API Key</button>
+  <div class="header-right" style="display:flex;align-items:center;gap:10px;">
+    <span id="authStatus" style="font-size:12px;color:var(--muted);display:none;">✓ Signed in</span>
+    <button class="settings-btn" id="authBtn" onclick="openSettings()">🔐 Sign In</button>
+  </div>
 </header>
 
 <!-- Main Layout -->
@@ -840,20 +843,46 @@ Mike"></textarea>
 </div>
 
 <script>
-// ── Settings ──────────────────────────────────────────────────────
+// ── Config ────────────────────────────────────────────────────────
+const PROXY_URL = 'https://voss-proxy.mike-3ac.workers.dev/v1/messages';
+let teamToken = sessionStorage.getItem('voss_team_token') || '';
+
+// ── Auth UI ──────────────────────────────────────────────────────
+function updateAuthUI() {
+  const btn = document.getElementById('authBtn');
+  const status = document.getElementById('authStatus');
+  if (teamToken) {
+    btn.textContent = '🔓 Sign Out';
+    btn.onclick = signOut;
+    status.style.display = 'inline';
+  } else {
+    btn.textContent = '🔐 Sign In';
+    btn.onclick = openSettings;
+    status.style.display = 'none';
+  }
+}
+function signOut() {
+  teamToken = '';
+  sessionStorage.removeItem('voss_team_token');
+  updateAuthUI();
+  showStatus('Signed out.', 'info', 2500);
+}
 function openSettings() {
-  const key = localStorage.getItem('anthropicKey') || '';
-  document.getElementById('apiKeyInput').value = key;
+  document.getElementById('passphraseInput').value = '';
   document.getElementById('settingsModal').classList.add('open');
+  setTimeout(() => document.getElementById('passphraseInput').focus(), 100);
 }
 function closeSettings() {
   document.getElementById('settingsModal').classList.remove('open');
 }
 function saveSettings() {
-  const key = document.getElementById('apiKeyInput').value.trim();
-  if (key) { localStorage.setItem('anthropicKey', key); }
+  const phrase = document.getElementById('passphraseInput').value.trim();
+  if (!phrase) { showStatus('Please enter the team passphrase.', 'error', 3000); return; }
+  teamToken = phrase;
+  sessionStorage.setItem('voss_team_token', phrase);
   closeSettings();
-  showStatus('API key saved.', 'info', 2500);
+  updateAuthUI();
+  showStatus("Signed in! You're ready to rewrite.", 'info', 2500);
 }
 document.getElementById('settingsModal').addEventListener('click', function(e) {
   if (e.target === this) closeSettings();
@@ -901,9 +930,8 @@ const TECHNIQUE_META = {
 
 // ── Main rewrite function ─────────────────────────────────────────
 async function rewriteEmail() {
-  const apiKey = localStorage.getItem('anthropicKey');
-  if (!apiKey) {
-    showStatus('⚠️ Please add your Anthropic API key in Settings before rewriting.', 'error');
+  if (!teamToken) {
+    showStatus('⚠️ Please sign in with the team passphrase first.', 'error');
     openSettings();
     return;
   }
@@ -1014,13 +1042,11 @@ Technique IDs must be from: tactical_empathy, labeling, calibrated_questions, ac
 Scores are integers 0-100 reflecting how well the rewritten email achieves each quality.`;
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch(PROXY_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
+        'Authorization': 'Bearer ' + teamToken,
       },
       body: JSON.stringify({
         model: 'claude-opus-4-5-20251101',
@@ -1032,6 +1058,7 @@ Scores are integers 0-100 reflecting how well the rewritten email achieves each 
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
+      if (response.status === 401) { teamToken = ''; sessionStorage.removeItem('voss_team_token'); updateAuthUI(); }
       throw new Error(err.error?.message || `API error ${response.status}`);
     }
 
@@ -1179,8 +1206,7 @@ function copyForOutlook() {
 
 // ── Remove a technique & surgically re-rewrite ────────────────────
 async function removeTechnique(techId, btn) {
-  const apiKey = localStorage.getItem('anthropicKey');
-  if (!apiKey) { openSettings(); return; }
+  if (!teamToken) { openSettings(); return; }
 
   const currentEmail = document.getElementById('emailOutputText').textContent.trim();
   if (!currentEmail) return;
@@ -1224,13 +1250,11 @@ Respond ONLY with valid JSON:
 }`;
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch(PROXY_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
+        'Authorization': 'Bearer ' + teamToken,
       },
       body: JSON.stringify({
         model: 'claude-opus-4-5-20251101',
@@ -1242,6 +1266,7 @@ Respond ONLY with valid JSON:
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
+      if (response.status === 401) { teamToken = ''; sessionStorage.removeItem('voss_team_token'); updateAuthUI(); }
       throw new Error(err.error?.message || `API error ${response.status}`);
     }
 
@@ -1302,8 +1327,7 @@ function getFollowupStyle() {
 }
 
 async function generateFollowUp() {
-  const apiKey = localStorage.getItem('anthropicKey');
-  if (!apiKey) { openSettings(); return; }
+  if (!teamToken) { openSettings(); return; }
 
   // Source email: override from draft card, or current output, or draft input
   const sourceEmail = followupContextEmail ||
@@ -1390,13 +1414,11 @@ Respond ONLY with valid JSON:
 }`;
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch(PROXY_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
+        'Authorization': 'Bearer ' + teamToken,
       },
       body: JSON.stringify({
         model: 'claude-opus-4-5-20251101',
@@ -1408,6 +1430,7 @@ Respond ONLY with valid JSON:
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
+      if (response.status === 401) { teamToken = ''; sessionStorage.removeItem('voss_team_token'); updateAuthUI(); }
       throw new Error(err.error?.message || `API error ${response.status}`);
     }
 
@@ -1683,9 +1706,10 @@ function toggleDrafts() {
   document.getElementById('draftsSection').classList.toggle('open');
 }
 
-// ── On load: prompt for key if missing ───────────────────────────
+// ── On load: check auth & render ─────────────────────────────────
 window.addEventListener('load', () => {
-  if (!localStorage.getItem('anthropicKey')) {
+  updateAuthUI();
+  if (!teamToken) {
     setTimeout(openSettings, 500);
   }
   renderDrafts();
