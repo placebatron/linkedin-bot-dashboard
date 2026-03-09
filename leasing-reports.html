@@ -430,6 +430,16 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
         <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
         <div class="status-bar" id="settingsStatus"></div>
       </div>
+      <div class="card" style="margin-top:16px">
+        <div style="font-size:14px;font-weight:700;margin-bottom:12px">🔒 Change Your Passphrase</div>
+        <div class="form-row-3">
+          <div class="form-group"><label>Current Passphrase</label><input id="settCurrentPass" type="password" placeholder="Enter current passphrase"></div>
+          <div class="form-group"><label>New Passphrase</label><input id="settNewPass" type="password" placeholder="Enter new passphrase"></div>
+          <div class="form-group"><label>Confirm New</label><input id="settConfirmPass" type="password" placeholder="Confirm new passphrase"></div>
+        </div>
+        <button class="btn btn-primary" onclick="changeSelfPassphrase()">Update Passphrase</button>
+        <div class="status-bar" id="selfPassStatus"></div>
+      </div>
     </div>
 
     <!-- ADMIN PAGE -->
@@ -451,9 +461,39 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
       </div>
       <div class="card" style="padding:0;overflow-x:auto">
         <table class="prospect-table" id="brokerTable">
-          <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Created</th><th style="width:80px">Actions</th></tr></thead>
+          <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Created</th><th style="width:200px">Actions</th></tr></thead>
           <tbody id="brokerTableBody"></tbody>
         </table>
+      </div>
+      <!-- Edit Broker Modal -->
+      <div class="modal-overlay" id="editBrokerModal" style="display:none" onclick="if(event.target===this)closeEditBrokerModal()">
+        <div class="modal-inner card" style="max-width:480px;margin:auto">
+          <div style="font-size:16px;font-weight:700;margin-bottom:16px">✏️ Edit Broker</div>
+          <input type="hidden" id="editBrokerId">
+          <div class="form-group"><label>Display Name</label><input id="editBrokerName" placeholder="Full name"></div>
+          <div class="form-group"><label>Username</label><input id="editBrokerUsername" placeholder="Login username"></div>
+          <div class="form-group"><label>Role</label><select id="editBrokerRole"><option value="broker">Broker</option><option value="admin">Admin</option></select></div>
+          <div class="status-bar" id="editBrokerStatus"></div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button class="btn btn-primary" onclick="saveEditBroker()">Save Changes</button>
+            <button class="btn" onclick="closeEditBrokerModal()">Cancel</button>
+          </div>
+        </div>
+      </div>
+      <!-- Reset Passphrase Modal -->
+      <div class="modal-overlay" id="resetPassModal" style="display:none" onclick="if(event.target===this)closeResetPassModal()">
+        <div class="modal-inner card" style="max-width:400px;margin:auto">
+          <div style="font-size:16px;font-weight:700;margin-bottom:16px">🔑 Reset Passphrase</div>
+          <input type="hidden" id="resetPassBrokerId">
+          <div id="resetPassBrokerLabel" style="font-size:13px;color:var(--muted);margin-bottom:12px"></div>
+          <div class="form-group"><label>New Passphrase</label><input id="resetPassNew" type="password" placeholder="Enter new passphrase"></div>
+          <div class="form-group"><label>Confirm</label><input id="resetPassConfirm" type="password" placeholder="Confirm new passphrase"></div>
+          <div class="status-bar" id="resetPassStatus"></div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button class="btn btn-primary" onclick="saveResetPass()">Reset Passphrase</button>
+            <button class="btn" onclick="closeResetPassModal()">Cancel</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1162,6 +1202,27 @@ function saveSettings() {
   showStatus('settingsStatus', 'success', '✅ Settings saved.');
 }
 
+// ── Self-Service: Change Own Passphrase ──────────────────────
+function changeSelfPassphrase() {
+  const curr = document.getElementById('settCurrentPass').value;
+  const newP = document.getElementById('settNewPass').value.trim();
+  const conf = document.getElementById('settConfirmPass').value.trim();
+  if (!curr || !newP || !conf) { showStatus('selfPassStatus', 'error', 'All fields are required.'); return; }
+  const currHash = btoa(currentBroker.username + '|' + curr);
+  if (currHash !== currentBroker.passphraseHash) { showStatus('selfPassStatus', 'error', 'Current passphrase is incorrect.'); return; }
+  if (newP.length < 4) { showStatus('selfPassStatus', 'error', 'New passphrase must be at least 4 characters.'); return; }
+  if (newP !== conf) { showStatus('selfPassStatus', 'error', 'New passphrase and confirmation do not match.'); return; }
+  const newHash = btoa(currentBroker.username + '|' + newP);
+  currentBroker.passphraseHash = newHash;
+  const idx = allBrokers.findIndex(b => b.id === currentBroker.id);
+  if (idx >= 0) allBrokers[idx].passphraseHash = newHash;
+  saveBrokers();
+  document.getElementById('settCurrentPass').value = '';
+  document.getElementById('settNewPass').value = '';
+  document.getElementById('settConfirmPass').value = '';
+  showStatus('selfPassStatus', 'success', '✅ Passphrase updated successfully.');
+}
+
 // ── Admin: Broker Management ──────────────────────────────────
 function createBroker() {
   const name = document.getElementById('adminName').value.trim();
@@ -1188,7 +1249,12 @@ function renderBrokerTable() {
   tbody.innerHTML = allBrokers.map(b => {
     const created = new Date(b.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     const isMe = b.id === brokerId;
-    return '<tr><td><strong>' + escHtml(b.displayName) + '</strong>' + (isMe ? ' <span style="font-size:11px;color:var(--accent)">(you)</span>' : '') + '</td><td>' + escHtml(b.username) + '</td><td><span class="stage-badge ' + (b.role === 'admin' ? 'loi' : 'inquiry') + '">' + b.role + '</span></td><td style="color:var(--muted)">' + created + '</td><td>' + (isMe ? '—' : '<button class="btn btn-sm" style="color:var(--danger)" onclick="deleteBroker(\'' + b.id + '\')">Delete</button>') + '</td></tr>';
+    let actions = '<div style="display:flex;gap:4px;flex-wrap:wrap">';
+    actions += '<button class="btn btn-sm" onclick="openEditBrokerModal(\'' + b.id + '\')" title="Edit">✏️</button>';
+    actions += '<button class="btn btn-sm" onclick="openResetPassModal(\'' + b.id + '\')" title="Reset Passphrase">🔑</button>';
+    if (!isMe) actions += '<button class="btn btn-sm" style="color:var(--danger)" onclick="deleteBroker(\'' + b.id + '\')" title="Delete">🗑️</button>';
+    actions += '</div>';
+    return '<tr><td><strong>' + escHtml(b.displayName) + '</strong>' + (isMe ? ' <span style="font-size:11px;color:var(--accent)">(you)</span>' : '') + '</td><td>' + escHtml(b.username) + '</td><td><span class="stage-badge ' + (b.role === 'admin' ? 'loi' : 'inquiry') + '">' + b.role + '</span></td><td style="color:var(--muted)">' + created + '</td><td>' + actions + '</td></tr>';
   }).join('');
 }
 
@@ -1199,6 +1265,79 @@ function deleteBroker(id) {
   allBrokers = allBrokers.filter(b => b.id !== id);
   saveBrokers(); renderBrokerTable();
   showStatus('adminStatus', 'success', '✅ Broker deleted.');
+}
+
+// ── Admin: Edit Broker ───────────────────────────────────────
+function openEditBrokerModal(id) {
+  const b = allBrokers.find(x => x.id === id);
+  if (!b) return;
+  document.getElementById('editBrokerId').value = id;
+  document.getElementById('editBrokerName').value = b.displayName;
+  document.getElementById('editBrokerUsername').value = b.username;
+  document.getElementById('editBrokerRole').value = b.role;
+  document.getElementById('editBrokerStatus').style.display = 'none';
+  document.getElementById('editBrokerModal').style.display = 'flex';
+}
+function closeEditBrokerModal() { document.getElementById('editBrokerModal').style.display = 'none'; }
+
+function saveEditBroker() {
+  const id = document.getElementById('editBrokerId').value;
+  const name = document.getElementById('editBrokerName').value.trim();
+  const username = document.getElementById('editBrokerUsername').value.trim().toLowerCase();
+  const role = document.getElementById('editBrokerRole').value;
+  if (!name || !username) { showStatus('editBrokerStatus', 'error', 'Name and username are required.'); return; }
+  const idx = allBrokers.findIndex(b => b.id === id);
+  if (idx < 0) return;
+  const existing = allBrokers.find(b => b.username.toLowerCase() === username && b.id !== id);
+  if (existing) { showStatus('editBrokerStatus', 'error', 'Username "' + username + '" is already taken.'); return; }
+  const oldUsername = allBrokers[idx].username;
+  allBrokers[idx].displayName = name;
+  allBrokers[idx].role = role;
+  if (username !== oldUsername) {
+    allBrokers[idx].username = username;
+    // Rehash with new username — passphrase stays the same but hash changes since username is part of hash
+    // Since we can't recover the passphrase from the hash, admin must reset passphrase if username changes
+    showStatus('editBrokerStatus', 'warning', '⚠️ Username changed — broker will need a passphrase reset.');
+  }
+  saveBrokers();
+  if (id === brokerId) {
+    currentBroker = allBrokers[idx];
+    sessionStorage.setItem('leasing_broker_name', name);
+    const nameEl = document.getElementById('brokerNameDisplay');
+    if (nameEl) nameEl.textContent = name;
+  }
+  renderBrokerTable();
+  closeEditBrokerModal();
+  showStatus('adminStatus', 'success', '✅ Broker "' + name + '" updated.');
+}
+
+// ── Admin: Reset Passphrase ──────────────────────────────────
+function openResetPassModal(id) {
+  const b = allBrokers.find(x => x.id === id);
+  if (!b) return;
+  document.getElementById('resetPassBrokerId').value = id;
+  document.getElementById('resetPassBrokerLabel').textContent = 'Resetting passphrase for: ' + b.displayName + ' (' + b.username + ')';
+  document.getElementById('resetPassNew').value = '';
+  document.getElementById('resetPassConfirm').value = '';
+  document.getElementById('resetPassStatus').style.display = 'none';
+  document.getElementById('resetPassModal').style.display = 'flex';
+}
+function closeResetPassModal() { document.getElementById('resetPassModal').style.display = 'none'; }
+
+function saveResetPass() {
+  const id = document.getElementById('resetPassBrokerId').value;
+  const newP = document.getElementById('resetPassNew').value.trim();
+  const conf = document.getElementById('resetPassConfirm').value.trim();
+  if (!newP || !conf) { showStatus('resetPassStatus', 'error', 'Both fields are required.'); return; }
+  if (newP.length < 4) { showStatus('resetPassStatus', 'error', 'Passphrase must be at least 4 characters.'); return; }
+  if (newP !== conf) { showStatus('resetPassStatus', 'error', 'Passphrases do not match.'); return; }
+  const idx = allBrokers.findIndex(b => b.id === id);
+  if (idx < 0) return;
+  allBrokers[idx].passphraseHash = btoa(allBrokers[idx].username + '|' + newP);
+  saveBrokers();
+  if (id === brokerId) currentBroker.passphraseHash = allBrokers[idx].passphraseHash;
+  closeResetPassModal();
+  showStatus('adminStatus', 'success', '✅ Passphrase reset for "' + allBrokers[idx].displayName + '".');
 }
 
 // ── Init ──────────────────────────────────────────────────────
