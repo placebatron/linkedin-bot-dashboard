@@ -17,7 +17,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
-.sidebar { background: var(--surface); border-right: 1px solid var(--border); padding: 24px 16px; display: flex; flex-direction: column; gap: 24px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.sidebar { background: var(--surface); border-right: 1px solid var(--border); padding: 24px 16px; display: flex; flex-direction: column; gap: 20px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
 .main { padding: 24px; overflow-y: auto; }
 .logo { display: flex; align-items: center; gap: 10px; padding: 0 8px; }
 .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
@@ -70,7 +70,6 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
 .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; text-align: center; }
 .stat-num { font-size: 28px; font-weight: 800; margin-bottom: 2px; }
 .stat-label { font-size: 12px; color: var(--muted); font-weight: 500; }
-.stat-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
 
 /* Pipeline funnel */
 .funnel { margin-bottom: 24px; }
@@ -99,8 +98,6 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
 /* Upload zone */
 .upload-zone { border: 2px dashed var(--border); border-radius: 10px; padding: 24px; text-align: center; cursor: pointer; transition: border 0.15s; }
 .upload-zone:hover { border-color: var(--accent); }
-.upload-zone.dragover { border-color: var(--accent); background: rgba(79,110,247,0.06); }
-.upload-text { font-size: 13px; color: var(--muted); margin-top: 8px; }
 
 /* Activity log */
 .activity-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
@@ -123,6 +120,20 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
 .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; width: 520px; max-width: 95vw; max-height: 80vh; overflow-y: auto; }
 .modal-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
 
+/* Login gate */
+.login-gate { position: fixed; inset: 0; z-index: 900; background: var(--bg); display: flex; align-items: center; justify-content: center; }
+.login-gate.hidden { display: none; }
+.login-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 36px 32px; width: 400px; max-width: 92vw; text-align: center; }
+.login-box input { text-align: center; margin-bottom: 12px; }
+.login-box input::placeholder { text-align: center; }
+.login-box .login-btn { background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; color: white; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; width: 100%; transition: opacity 0.15s; }
+.login-box .login-btn:hover { opacity: 0.9; }
+
+/* Archive tree */
+.archive-prop-header { display: flex; align-items: center; cursor: pointer; padding: 14px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; transition: all 0.15s; }
+.archive-prop-header:hover { border-color: var(--accent); }
+.snap-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; }
+
 /* Responsive */
 @media (max-width: 768px) { .app { grid-template-columns: 1fr; } .sidebar { height: auto; position: static; } .stat-grid { grid-template-columns: 1fr 1fr; } .form-row, .form-row-3 { grid-template-columns: 1fr; } }
 
@@ -132,7 +143,7 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
   :root { --bg: #fff; --surface: #fff; --surface2: #f5f5f5; --border: #ddd; --text: #1a1a1a; --muted: #666; }
   body { background: #fff; color: #1a1a1a; font-size: 11pt; }
   .app { display: block; }
-  .sidebar, .no-print { display: none !important; }
+  .sidebar, .no-print, .login-gate { display: none !important; }
   .main { padding: 0; }
   .page { display: none !important; }
   #page-report { display: block !important; }
@@ -148,7 +159,23 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
 </style>
 </head>
 <body>
-<div class="app">
+
+<!-- Broker Login Gate -->
+<div class="login-gate" id="loginGate">
+  <div class="login-box">
+    <div style="font-size:32px;margin-bottom:12px">📋</div>
+    <div style="font-size:20px;font-weight:700;margin-bottom:4px">Leasing Reports</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:24px">Sign in with your broker credentials</div>
+    <input type="text" id="loginUsername" placeholder="Username" autocomplete="off" onkeydown="if(event.key==='Enter')document.getElementById('loginPassphrase').focus()">
+    <input type="password" id="loginPassphrase" placeholder="Passphrase" autocomplete="off" onkeydown="if(event.key==='Enter')loginBroker()">
+    <button class="login-btn" onclick="loginBroker()">Sign In</button>
+    <div class="status-bar" id="loginStatus" style="text-align:left"></div>
+    <div style="font-size:11px;color:var(--muted);margin-top:16px">Contact your team lead for credentials.</div>
+  </div>
+</div>
+
+<!-- Main App (hidden until broker login) -->
+<div class="app" id="appMain" style="display:none">
   <div class="sidebar">
     <div class="logo">
       <div class="logo-icon">📋</div>
@@ -164,18 +191,32 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
       <div class="nav-item" onclick="showPage('prospects',this)"><span class="nav-icon">👥</span> Prospects</div>
     </div>
     <div>
-      <div class="nav-label" style="margin-bottom:8px">Output</div>
-      <div class="nav-item" onclick="showPage('report',this)"><span class="nav-icon">📈</span> Report</div>
+      <div class="nav-label" style="margin-bottom:8px">Reports</div>
+      <div class="nav-item" onclick="showPage('generate',this)"><span class="nav-icon">⚡</span> Generate</div>
+      <div class="nav-item" onclick="showPage('archive',this)"><span class="nav-icon">📁</span> Archive</div>
     </div>
     <div>
       <div class="nav-label" style="margin-bottom:8px">Config</div>
       <div class="nav-item" onclick="showPage('settings',this)"><span class="nav-icon">⚙️</span> Settings</div>
     </div>
+    <div id="adminNavSection" style="display:none">
+      <div class="nav-label" style="margin-bottom:8px">Admin</div>
+      <div class="nav-item" onclick="showPage('admin',this)"><span class="nav-icon">🔑</span> Brokers</div>
+    </div>
 
-    <!-- Active property indicator -->
-    <div style="margin-top:auto;padding:12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)">
-      <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">Active Property</div>
-      <div id="sidebarActiveProp" style="font-size:13px;font-weight:600">None selected</div>
+    <!-- Broker + active property indicator -->
+    <div style="margin-top:auto">
+      <div style="padding:10px 12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);margin-bottom:8px">
+        <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">Active Property</div>
+        <div id="sidebarActiveProp" style="font-size:13px;font-weight:600">None selected</div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)">
+        <div>
+          <div style="font-size:11px;color:var(--muted)">Signed in as</div>
+          <div id="sidebarBrokerName" style="font-size:13px;font-weight:600"></div>
+        </div>
+        <button class="btn btn-sm" onclick="logoutBroker()" style="font-size:11px;padding:4px 8px">Sign Out</button>
+      </div>
     </div>
   </div>
 
@@ -185,18 +226,15 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
       <div class="section-title">🏢 Properties</div>
       <div class="section-sub">Add and manage properties you're leasing on behalf of clients.</div>
       <div class="status-bar" id="propStatus"></div>
-
       <div style="display:flex;gap:12px;margin-bottom:20px">
         <button class="btn btn-primary" onclick="openPropertyForm()">+ Add Manually</button>
         <button class="btn" onclick="openImportWizard()">🌐 Import from Listing</button>
       </div>
-
       <div id="propertyList"></div>
 
       <!-- Import Wizard Modal -->
       <div class="modal-overlay" id="importWizardModal">
         <div class="modal" style="width:640px">
-          <!-- Step 1: Paste -->
           <div id="importStep1">
             <div class="modal-title">Import from baumrealty.com</div>
             <div style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">
@@ -211,7 +249,6 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
             </div>
             <div class="status-bar" id="importStatus"></div>
           </div>
-          <!-- Step 2: Preview & Confirm -->
           <div id="importStep2" style="display:none">
             <div class="modal-title">Confirm Imported Property</div>
             <div style="font-size:13px;color:var(--muted);margin-bottom:16px">Review the parsed data. Edit any fields before saving.</div>
@@ -225,7 +262,7 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
         </div>
       </div>
 
-      <!-- Property Form (hidden by default) -->
+      <!-- Property Form -->
       <div id="propertyFormWrap" style="display:none">
         <div class="card">
           <div style="font-size:16px;font-weight:700;margin-bottom:16px" id="propFormTitle">Add Property</div>
@@ -240,31 +277,15 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
           </div>
           <div class="form-row-3">
             <div class="form-group"><label>Submarket</label><input id="propSubmarket" placeholder="West Town / River West"></div>
-            <div class="form-group">
-              <label>Property Type</label>
-              <select id="propType">
-                <option value="retail">Retail</option>
-                <option value="office">Office</option>
-                <option value="industrial">Industrial</option>
-                <option value="restaurant">Restaurant</option>
-                <option value="mixed">Mixed Use</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Lease Type</label>
-              <select id="propLeaseType">
-                <option value="NNN">NNN</option>
-                <option value="Gross">Gross</option>
-                <option value="Modified Gross">Modified Gross</option>
-              </select>
-            </div>
+            <div class="form-group"><label>Property Type</label><select id="propType"><option value="retail">Retail</option><option value="office">Office</option><option value="industrial">Industrial</option><option value="restaurant">Restaurant</option><option value="mixed">Mixed Use</option></select></div>
+            <div class="form-group"><label>Lease Type</label><select id="propLeaseType"><option value="NNN">NNN</option><option value="Gross">Gross</option><option value="Modified Gross">Modified Gross</option></select></div>
           </div>
           <div class="form-row-3">
             <div class="form-group"><label>Available SF</label><input id="propSF" type="number" placeholder="900"></div>
             <div class="form-group"><label>Asking Rent (PSF)</label><input id="propRent" type="number" step="0.01" placeholder="53"></div>
             <div class="form-group"><label>CAM/TAX (PSF)</label><input id="propCAM" type="number" step="0.01" placeholder="8"></div>
           </div>
-          <div class="form-group"><label>Property Highlights (one per line)</label><textarea id="propHighlights" rows="3" placeholder="CTA Blue Line adjacent&#10;18,700 VPD on Chicago Ave&#10;Area retail: Big Shoulders Coffee, CVS, Dunkin'"></textarea></div>
+          <div class="form-group"><label>Property Highlights (one per line)</label><textarea id="propHighlights" rows="3" placeholder="CTA Blue Line adjacent&#10;18,700 VPD on Chicago Ave"></textarea></div>
           <div style="font-size:14px;font-weight:700;margin:20px 0 12px;color:var(--muted)">Landlord / Owner</div>
           <div class="form-row">
             <div class="form-group"><label>Owner / Client Name</label><input id="propOwner" placeholder="Property owner name"></div>
@@ -292,13 +313,10 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
           <div class="section-sub">Track prospective tenants through the leasing pipeline.</div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <select id="prospectPropSelect" onchange="onProspectPropChange()" style="width:240px">
-            <option value="">Select a property...</option>
-          </select>
+          <select id="prospectPropSelect" onchange="onProspectPropChange()" style="width:240px"><option value="">Select a property...</option></select>
         </div>
       </div>
       <div class="status-bar" id="prospectStatus"></div>
-
       <div id="prospectContent" style="display:none">
         <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
           <button class="btn btn-primary" onclick="openProspectForm()">+ Add Prospect</button>
@@ -306,25 +324,13 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
           <input type="file" id="xlsxUpload" accept=".xlsx,.xls,.csv" style="display:none" onchange="importExcel(this.files)">
           <div style="flex:1"></div>
           <select id="stageFilter" onchange="renderProspects()" style="width:160px">
-            <option value="all">All Stages</option>
-            <option value="inquiry">Inquiry</option>
-            <option value="tour">Tour</option>
-            <option value="proposal">Proposal</option>
-            <option value="loi">LOI</option>
-            <option value="lease">Lease</option>
-            <option value="dead">Inactive</option>
+            <option value="all">All Stages</option><option value="inquiry">Inquiry</option><option value="tour">Tour</option><option value="proposal">Proposal</option><option value="loi">LOI</option><option value="lease">Lease</option><option value="dead">Inactive</option>
           </select>
         </div>
-
-        <!-- Pipeline summary -->
         <div class="stat-grid" id="prospectStats"></div>
-
-        <!-- Prospect table -->
         <div class="card" style="padding:0;overflow-x:auto">
           <table class="prospect-table" id="prospectTable">
-            <thead>
-              <tr><th>Business</th><th>Prospect</th><th>Type</th><th>Stage</th><th>Notes</th><th style="width:100px">Actions</th></tr>
-            </thead>
+            <thead><tr><th>Business</th><th>Prospect</th><th>Type</th><th>Stage</th><th>Notes</th><th style="width:100px">Actions</th></tr></thead>
             <tbody id="prospectTableBody"></tbody>
           </table>
         </div>
@@ -341,26 +347,16 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
           </div>
           <div class="form-row">
             <div class="form-group"><label>Business Type</label><input id="leadType" placeholder="Restaurant / Pizza"></div>
-            <div class="form-group">
-              <label>Pipeline Stage</label>
-              <select id="leadStage">
-                <option value="inquiry">Inquiry</option>
-                <option value="tour">Tour Scheduled/Completed</option>
-                <option value="proposal">Proposal Sent</option>
-                <option value="loi">LOI</option>
-                <option value="lease">Lease Executed</option>
-                <option value="dead">Inactive</option>
-              </select>
-            </div>
+            <div class="form-group"><label>Pipeline Stage</label><select id="leadStage"><option value="inquiry">Inquiry</option><option value="tour">Tour Scheduled/Completed</option><option value="proposal">Proposal Sent</option><option value="loi">LOI</option><option value="lease">Lease Executed</option><option value="dead">Inactive</option></select></div>
           </div>
           <div class="form-row-3">
-            <div class="form-group"><label>Desired SF</label><input id="leadSF" type="number" placeholder=""></div>
+            <div class="form-group"><label>Desired SF</label><input id="leadSF" type="number"></div>
             <div class="form-group"><label>Max Rent Budget</label><input id="leadMaxRent" placeholder="e.g. $7,000/mo"></div>
             <div class="form-group"><label>Lease Term (yrs)</label><input id="leadTerm" placeholder="e.g. 5-10"></div>
           </div>
           <div class="form-row">
-            <div class="form-group"><label>Phone</label><input id="leadPhone" placeholder=""></div>
-            <div class="form-group"><label>Email</label><input id="leadEmail" placeholder=""></div>
+            <div class="form-group"><label>Phone</label><input id="leadPhone"></div>
+            <div class="form-group"><label>Email</label><input id="leadEmail"></div>
           </div>
           <div class="form-row">
             <div class="form-group"><label>Tour Date</label><input id="leadTourDate" type="date"></div>
@@ -376,34 +372,44 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
       </div>
     </div>
 
-    <!-- REPORT PAGE -->
+    <!-- GENERATE PAGE -->
+    <div class="page" id="page-generate">
+      <div class="section-title">⚡ Generate Report</div>
+      <div class="section-sub">Create a dated snapshot of the current leasing activity for a property.</div>
+      <div class="status-bar" id="genStatus"></div>
+      <div class="card">
+        <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+          <div style="flex:1;min-width:200px">
+            <label>Property</label>
+            <select id="genPropSelect" style="width:100%"><option value="">Select a property...</option></select>
+          </div>
+          <button class="btn btn-primary" onclick="generateSnapshot()">⚡ Generate & Save Snapshot</button>
+        </div>
+      </div>
+      <div id="genPreview"></div>
+    </div>
+
+    <!-- ARCHIVE PAGE -->
+    <div class="page" id="page-archive">
+      <div class="section-title">📁 Report Archive</div>
+      <div class="section-sub">Browse saved report snapshots by property and date.</div>
+      <div class="status-bar" id="archiveStatus"></div>
+      <div id="archiveTree"></div>
+    </div>
+
+    <!-- REPORT VIEW PAGE (for viewing snapshots) -->
     <div class="page" id="page-report">
-      <!-- Print header -->
       <div class="print-header">
         <div class="print-logo">BAUM REALTY GROUP</div>
         <div class="print-sub" id="reportPrintSub">Leasing Activity Report</div>
       </div>
-
-      <div class="no-print" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:20px">
-        <div>
-          <div class="section-title">📈 Leasing Activity Report</div>
-          <div class="section-sub" style="margin-bottom:0">Client-facing report for property owners.</div>
-        </div>
-        <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
-          <div>
-            <label>Property</label>
-            <select id="reportPropSelect" onchange="renderReport()" style="width:220px">
-              <option value="">Select a property...</option>
-            </select>
-          </div>
-          <button class="btn btn-sm" onclick="exportReportPDF()">🖨️ PDF</button>
-          <button class="btn btn-sm" onclick="exportReportXLSX()">📥 XLSX</button>
-        </div>
+      <div class="no-print" style="display:flex;gap:8px;margin-bottom:20px;align-items:center">
+        <button class="btn btn-sm" onclick="showPage('archive',document.querySelector('[onclick*=archive]'))">← Back to Archive</button>
+        <div style="flex:1"></div>
+        <button class="btn btn-sm" onclick="exportSnapshotPDF()">🖨️ PDF</button>
+        <button class="btn btn-sm" onclick="exportSnapshotXLSX()">📥 XLSX</button>
       </div>
-
       <div id="reportContent"></div>
-
-      <!-- Print footer -->
       <div class="print-footer">
         Prepared by Baum Realty Group, LLC · 1030 W. Chicago Avenue, Suite 200, Chicago, IL 60642 · (312) 666-3000 · baumrealty.com<br>
         This report is confidential and intended solely for the use of the client. All information is from sources deemed reliable but is not guaranteed.
@@ -425,6 +431,31 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
         <div class="status-bar" id="settingsStatus"></div>
       </div>
     </div>
+
+    <!-- ADMIN PAGE -->
+    <div class="page" id="page-admin">
+      <div class="section-title">🔑 Broker Management</div>
+      <div class="section-sub">Create and manage broker accounts for the leasing reports module.</div>
+      <div class="status-bar" id="adminStatus"></div>
+      <div class="card">
+        <div style="font-size:14px;font-weight:700;margin-bottom:12px">Create New Broker</div>
+        <div class="form-row">
+          <div class="form-group"><label>Display Name</label><input id="adminName" placeholder="Sarah Aiyash"></div>
+          <div class="form-group"><label>Username</label><input id="adminUsername" placeholder="sarah"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Passphrase</label><input id="adminPass" type="password" placeholder="Set a passphrase"></div>
+          <div class="form-group"><label>Role</label><select id="adminRole"><option value="broker">Broker</option><option value="admin">Admin</option></select></div>
+        </div>
+        <button class="btn btn-primary" onclick="createBroker()">Create Broker</button>
+      </div>
+      <div class="card" style="padding:0;overflow-x:auto">
+        <table class="prospect-table" id="brokerTable">
+          <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Created</th><th style="width:80px">Actions</th></tr></thead>
+          <tbody id="brokerTableBody"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -432,9 +463,14 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
 // ── State ─────────────────────────────────────────────────────
 let properties = [];
 let prospects  = [];
+let snapshots  = [];
 let settings   = {};
+let allBrokers = [];
+let currentBroker = null;
+let brokerId = '';
 let editingPropertyId = null;
 let selectedPropertyId = '';
+let viewingSnapshotId = '';
 
 const STAGES = [
   { key: 'inquiry',  label: 'Inquiry',  color: '#4f6ef7' },
@@ -453,15 +489,97 @@ function escHtml(s) { const d = document.createElement('div'); d.textContent = s
 function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
 function showStatus(id, type, msg) { const el = document.getElementById(id); if (!el) return; el.className = 'status-bar ' + type; el.textContent = msg; el.style.display = 'block'; setTimeout(() => el.style.display = 'none', 5000); }
 
-// ── Persistence ───────────────────────────────────────────────
-function loadData() {
-  try { properties = JSON.parse(localStorage.getItem('leasingProperties') || '[]'); } catch(e) { properties = []; }
-  try { prospects  = JSON.parse(localStorage.getItem('leasingProspects')  || '[]'); } catch(e) { prospects  = []; }
-  try { settings   = JSON.parse(localStorage.getItem('leasingSettings')  || '{}'); } catch(e) { settings   = {}; }
+// ── Broker Auth ──────────────────────────────────────────────
+function initBrokers() {
+  try { allBrokers = JSON.parse(localStorage.getItem('leasingBrokers') || '[]'); } catch(e) { allBrokers = []; }
+  if (!allBrokers.length) {
+    allBrokers = [{
+      id: 'broker_admin', username: 'mike',
+      passphraseHash: btoa('mike|baum2026'),
+      displayName: 'Mike Demetriou', role: 'admin',
+      createdAt: new Date().toISOString()
+    }];
+    saveBrokers();
+  }
 }
-function saveProperties() { localStorage.setItem('leasingProperties', JSON.stringify(properties)); }
-function saveProspects()  { localStorage.setItem('leasingProspects',  JSON.stringify(prospects)); }
-function saveSettingsData() { localStorage.setItem('leasingSettings',  JSON.stringify(settings)); }
+function saveBrokers() { localStorage.setItem('leasingBrokers', JSON.stringify(allBrokers)); }
+
+function loginBroker() {
+  const u = document.getElementById('loginUsername').value.trim().toLowerCase();
+  const p = document.getElementById('loginPassphrase').value.trim();
+  if (!u || !p) { showStatus('loginStatus', 'error', 'Enter username and passphrase.'); return; }
+  const hash = btoa(u + '|' + p);
+  const broker = allBrokers.find(b => b.username.toLowerCase() === u && b.passphraseHash === hash);
+  if (!broker) { showStatus('loginStatus', 'error', 'Invalid credentials.'); return; }
+  sessionStorage.setItem('leasing_broker_id', broker.id);
+  sessionStorage.setItem('leasing_broker_name', broker.displayName);
+  currentBroker = broker;
+  brokerId = broker.id;
+  enterApp();
+}
+
+function logoutBroker() {
+  sessionStorage.removeItem('leasing_broker_id');
+  sessionStorage.removeItem('leasing_broker_name');
+  currentBroker = null;
+  brokerId = '';
+  document.getElementById('appMain').style.display = 'none';
+  document.getElementById('loginGate').classList.remove('hidden');
+  document.getElementById('loginUsername').value = '';
+  document.getElementById('loginPassphrase').value = '';
+  setTimeout(() => document.getElementById('loginUsername').focus(), 100);
+}
+
+function checkBrokerSession() {
+  const id = sessionStorage.getItem('leasing_broker_id');
+  if (!id) return false;
+  currentBroker = allBrokers.find(b => b.id === id);
+  if (!currentBroker) return false;
+  brokerId = id;
+  return true;
+}
+
+function enterApp() {
+  document.getElementById('loginGate').classList.add('hidden');
+  document.getElementById('appMain').style.display = 'grid';
+  setText('sidebarBrokerName', currentBroker.displayName);
+  // Show admin nav if admin
+  document.getElementById('adminNavSection').style.display = currentBroker.role === 'admin' ? 'block' : 'none';
+  // Migrate old data if needed
+  migrateOldData();
+  loadData();
+  if (properties.length) selectedPropertyId = properties[0].id;
+  renderPropertyList();
+}
+
+// ── Data Migration ────────────────────────────────────────────
+function migrateOldData() {
+  const oldProps = localStorage.getItem('leasingProperties');
+  if (!oldProps) return;
+  // Migrate to current broker's namespace
+  localStorage.setItem('leasing_' + brokerId + '_properties', oldProps);
+  const oldProspects = localStorage.getItem('leasingProspects');
+  if (oldProspects) localStorage.setItem('leasing_' + brokerId + '_prospects', oldProspects);
+  const oldSettings = localStorage.getItem('leasingSettings');
+  if (oldSettings) localStorage.setItem('leasing_' + brokerId + '_settings', oldSettings);
+  // Remove old keys
+  localStorage.removeItem('leasingProperties');
+  localStorage.removeItem('leasingProspects');
+  localStorage.removeItem('leasingSettings');
+}
+
+// ── Persistence (per-broker) ──────────────────────────────────
+function loadData() {
+  const k = 'leasing_' + brokerId + '_';
+  try { properties = JSON.parse(localStorage.getItem(k + 'properties') || '[]'); } catch(e) { properties = []; }
+  try { prospects  = JSON.parse(localStorage.getItem(k + 'prospects')  || '[]'); } catch(e) { prospects  = []; }
+  try { snapshots  = JSON.parse(localStorage.getItem(k + 'snapshots')  || '[]'); } catch(e) { snapshots  = []; }
+  try { settings   = JSON.parse(localStorage.getItem(k + 'settings')   || '{}'); } catch(e) { settings   = {}; }
+}
+function saveProperties() { localStorage.setItem('leasing_' + brokerId + '_properties', JSON.stringify(properties)); }
+function saveProspects()  { localStorage.setItem('leasing_' + brokerId + '_prospects',  JSON.stringify(prospects)); }
+function saveSnapshots()  { localStorage.setItem('leasing_' + brokerId + '_snapshots',  JSON.stringify(snapshots)); }
+function saveSettingsData() { localStorage.setItem('leasing_' + brokerId + '_settings', JSON.stringify(settings)); }
 
 // ── Navigation ────────────────────────────────────────────────
 function showPage(name, el) {
@@ -471,118 +589,87 @@ function showPage(name, el) {
   if (el) el.classList.add('active');
   if (name === 'properties') renderPropertyList();
   if (name === 'prospects')  { populateProspectPropSelect(); renderProspects(); }
-  if (name === 'report')     { populateReportPropSelect(); renderReport(); }
+  if (name === 'generate')   populateGenPropSelect();
+  if (name === 'archive')    renderArchive();
   if (name === 'settings')   loadSettingsForm();
+  if (name === 'admin')      renderBrokerTable();
 }
 
 // ── Properties ────────────────────────────────────────────────
 function renderPropertyList() {
   const el = document.getElementById('propertyList');
-  if (!properties.length) {
-    el.innerHTML = '<div class="card" style="text-align:center;color:var(--muted)">No properties yet. Click "+ Add Property" to get started.</div>';
-    return;
-  }
+  if (!properties.length) { el.innerHTML = '<div class="card" style="text-align:center;color:var(--muted)">No properties yet. Click "+ Add Manually" to get started.</div>'; return; }
   el.innerHTML = properties.map(p => {
     const sel = p.id === selectedPropertyId ? ' selected' : '';
     const typeLabel = { retail:'Retail', office:'Office', industrial:'Industrial', restaurant:'Restaurant', mixed:'Mixed Use' }[p.propertyType] || p.propertyType;
-    return `<div class="prop-item${sel}" onclick="selectProperty('${p.id}')">
-      <div>
-        <div class="prop-name">${escHtml(p.address)}</div>
-        <div class="prop-meta">${escHtml(p.city)}, ${escHtml(p.state)} ${escHtml(p.zip)} · ${typeLabel} · ${(p.availableSF||0).toLocaleString()} SF · $${p.askingRent || '—'}/SF</div>
-      </div>
-      <div style="display:flex;gap:6px">
-        <button class="btn btn-sm" onclick="event.stopPropagation();editProperty('${p.id}')">Edit</button>
-        <button class="btn btn-sm" style="color:var(--danger)" onclick="event.stopPropagation();deleteProperty('${p.id}')">Delete</button>
-      </div>
-    </div>`;
+    return '<div class="prop-item' + sel + '" onclick="selectProperty(\'' + p.id + '\')"><div><div class="prop-name">' + escHtml(p.address) + '</div><div class="prop-meta">' + escHtml(p.city) + ', ' + escHtml(p.state) + ' ' + escHtml(p.zip) + ' · ' + typeLabel + ' · ' + (p.availableSF||0).toLocaleString() + ' SF · $' + (p.askingRent || '—') + '/SF</div></div><div style="display:flex;gap:6px"><button class="btn btn-sm" onclick="event.stopPropagation();editProperty(\'' + p.id + '\')">Edit</button><button class="btn btn-sm" style="color:var(--danger)" onclick="event.stopPropagation();deleteProperty(\'' + p.id + '\')">Delete</button></div></div>';
   }).join('');
   updateSidebarProp();
 }
 
-function selectProperty(id) {
-  selectedPropertyId = id;
-  renderPropertyList();
-  updateSidebarProp();
-}
-
-function updateSidebarProp() {
-  const prop = properties.find(p => p.id === selectedPropertyId);
-  setText('sidebarActiveProp', prop ? prop.address : 'None selected');
-}
+function selectProperty(id) { selectedPropertyId = id; renderPropertyList(); updateSidebarProp(); }
+function updateSidebarProp() { const prop = properties.find(p => p.id === selectedPropertyId); setText('sidebarActiveProp', prop ? prop.address : 'None selected'); }
 
 function openPropertyForm(id) {
   editingPropertyId = id || null;
   document.getElementById('propFormTitle').textContent = id ? 'Edit Property' : 'Add Property';
   const p = id ? properties.find(x => x.id === id) : {};
-  document.getElementById('propAddress').value     = p.address || '';
-  document.getElementById('propSuite').value       = p.suiteFloor || '';
-  document.getElementById('propCity').value         = p.city || '';
-  document.getElementById('propState').value        = p.state || '';
-  document.getElementById('propZip').value          = p.zip || '';
-  document.getElementById('propSubmarket').value    = p.submarket || '';
-  document.getElementById('propType').value         = p.propertyType || 'retail';
-  document.getElementById('propLeaseType').value    = p.leaseType || 'NNN';
-  document.getElementById('propSF').value           = p.availableSF || '';
-  document.getElementById('propRent').value         = p.askingRent || '';
-  document.getElementById('propCAM').value          = p.camTax || '';
-  document.getElementById('propHighlights').value   = (p.highlights || []).join('\n');
-  document.getElementById('propOwner').value        = p.ownerName || '';
-  document.getElementById('propOwnerCo').value      = p.ownerCompany || '';
-  document.getElementById('propBrokerName').value   = p.brokerName || settings.brokerName || '';
-  document.getElementById('propBrokerPhone').value  = p.brokerPhone || settings.brokerPhone || '';
-  document.getElementById('propBrokerEmail').value  = p.brokerEmail || settings.brokerEmail || '';
+  document.getElementById('propAddress').value = p.address || '';
+  document.getElementById('propSuite').value = p.suiteFloor || '';
+  document.getElementById('propCity').value = p.city || '';
+  document.getElementById('propState').value = p.state || '';
+  document.getElementById('propZip').value = p.zip || '';
+  document.getElementById('propSubmarket').value = p.submarket || '';
+  document.getElementById('propType').value = p.propertyType || 'retail';
+  document.getElementById('propLeaseType').value = p.leaseType || 'NNN';
+  document.getElementById('propSF').value = p.availableSF || '';
+  document.getElementById('propRent').value = p.askingRent || '';
+  document.getElementById('propCAM').value = p.camTax || '';
+  document.getElementById('propHighlights').value = (p.highlights || []).join('\n');
+  document.getElementById('propOwner').value = p.ownerName || '';
+  document.getElementById('propOwnerCo').value = p.ownerCompany || '';
+  document.getElementById('propBrokerName').value = p.brokerName || settings.brokerName || '';
+  document.getElementById('propBrokerPhone').value = p.brokerPhone || settings.brokerPhone || '';
+  document.getElementById('propBrokerEmail').value = p.brokerEmail || settings.brokerEmail || '';
   document.getElementById('propertyFormWrap').style.display = 'block';
 }
-
 function editProperty(id) { openPropertyForm(id); }
-
-function cancelPropertyForm() {
-  document.getElementById('propertyFormWrap').style.display = 'none';
-  editingPropertyId = null;
-}
+function cancelPropertyForm() { document.getElementById('propertyFormWrap').style.display = 'none'; editingPropertyId = null; }
 
 function saveProperty() {
   const addr = document.getElementById('propAddress').value.trim();
   if (!addr) { showStatus('propStatus', 'error', 'Address is required.'); return; }
   const now = new Date().toISOString();
   const data = {
-    id:            editingPropertyId || 'prop_' + uid(),
-    address:       addr,
-    suiteFloor:    document.getElementById('propSuite').value.trim(),
-    city:          document.getElementById('propCity').value.trim(),
-    state:         document.getElementById('propState').value.trim().toUpperCase(),
-    zip:           document.getElementById('propZip').value.trim(),
-    submarket:     document.getElementById('propSubmarket').value.trim(),
-    propertyType:  document.getElementById('propType').value,
-    leaseType:     document.getElementById('propLeaseType').value,
-    availableSF:   parseInt(document.getElementById('propSF').value) || 0,
-    askingRent:    parseFloat(document.getElementById('propRent').value) || 0,
-    camTax:        parseFloat(document.getElementById('propCAM').value) || 0,
-    highlights:    document.getElementById('propHighlights').value.split('\n').map(s => s.trim()).filter(Boolean),
-    ownerName:     document.getElementById('propOwner').value.trim(),
-    ownerCompany:  document.getElementById('propOwnerCo').value.trim(),
-    brokerName:    document.getElementById('propBrokerName').value.trim(),
-    brokerPhone:   document.getElementById('propBrokerPhone').value.trim(),
-    brokerEmail:   document.getElementById('propBrokerEmail').value.trim(),
-    updatedAt:     now,
+    id: editingPropertyId || 'prop_' + uid(), address: addr,
+    suiteFloor: document.getElementById('propSuite').value.trim(),
+    city: document.getElementById('propCity').value.trim(),
+    state: document.getElementById('propState').value.trim().toUpperCase(),
+    zip: document.getElementById('propZip').value.trim(),
+    submarket: document.getElementById('propSubmarket').value.trim(),
+    propertyType: document.getElementById('propType').value,
+    leaseType: document.getElementById('propLeaseType').value,
+    availableSF: parseInt(document.getElementById('propSF').value) || 0,
+    askingRent: parseFloat(document.getElementById('propRent').value) || 0,
+    camTax: parseFloat(document.getElementById('propCAM').value) || 0,
+    highlights: document.getElementById('propHighlights').value.split('\n').map(s => s.trim()).filter(Boolean),
+    ownerName: document.getElementById('propOwner').value.trim(),
+    ownerCompany: document.getElementById('propOwnerCo').value.trim(),
+    brokerName: document.getElementById('propBrokerName').value.trim(),
+    brokerPhone: document.getElementById('propBrokerPhone').value.trim(),
+    brokerEmail: document.getElementById('propBrokerEmail').value.trim(),
+    updatedAt: now,
   };
   if (editingPropertyId) {
     const idx = properties.findIndex(p => p.id === editingPropertyId);
     if (idx >= 0) { data.createdAt = properties[idx].createdAt; properties[idx] = data; }
-  } else {
-    data.createdAt = now;
-    properties.push(data);
-    selectedPropertyId = data.id;
-  }
-  saveProperties();
-  cancelPropertyForm();
-  renderPropertyList();
+  } else { data.createdAt = now; properties.push(data); selectedPropertyId = data.id; }
+  saveProperties(); cancelPropertyForm(); renderPropertyList();
   showStatus('propStatus', 'success', '✅ Property saved.');
 }
 
 // ── Import Wizard ─────────────────────────────────────────────
 let importedPropertyData = null;
-
 function openImportWizard() {
   document.getElementById('importPasteArea').value = '';
   document.getElementById('importStep1').style.display = 'block';
@@ -592,101 +679,46 @@ function openImportWizard() {
   document.getElementById('importWizardModal').classList.add('open');
 }
 function closeImportWizard() { document.getElementById('importWizardModal').classList.remove('open'); }
-function backToStep1() {
-  document.getElementById('importStep1').style.display = 'block';
-  document.getElementById('importStep2').style.display = 'none';
-}
+function backToStep1() { document.getElementById('importStep1').style.display = 'block'; document.getElementById('importStep2').style.display = 'none'; }
 
 function parseImportedListing() {
   const raw = document.getElementById('importPasteArea').value.trim();
   if (!raw || raw.length < 50) { showStatus('importStatus', 'error', 'Paste the full listing page content.'); return; }
-
   const text = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   const data = {};
-
-  // Extract address: look for pattern before "City, ST ZIP"
   const cityStateZipMatch = text.match(/([A-Za-z\s.'-]+),\s*([A-Z]{2})\s+(\d{5}(?:-\d{4})?)/);
-  if (cityStateZipMatch) {
-    data.city  = cityStateZipMatch[1].trim();
-    data.state = cityStateZipMatch[2].trim();
-    data.zip   = cityStateZipMatch[3].trim();
-  }
-
-  // Address: appears before the city/state/zip line — look for street pattern
+  if (cityStateZipMatch) { data.city = cityStateZipMatch[1].trim(); data.state = cityStateZipMatch[2].trim(); data.zip = cityStateZipMatch[3].trim(); }
   const addrPatterns = text.match(/(\d+[\d\-]*\s+[NSEW]\.?\s+[\w\s.'-]+(?:Ave|St|Blvd|Rd|Dr|Ln|Way|Ct|Pl|Pkwy|Hwy|Street|Avenue|Boulevard|Road|Drive|Lane|Court|Place|Parkway|Highway)\.?)/i);
-  if (addrPatterns) {
-    data.address = addrPatterns[1].trim();
-  }
-
-  // Key-value fields from listing detail table
-  const kvParse = (label) => {
-    const re = new RegExp(label + '\\s*[:：]\\s*([^\\n]+)', 'i');
-    const m = text.match(re);
-    return m ? m[1].trim() : '';
-  };
-
+  if (addrPatterns) { data.address = addrPatterns[1].trim(); }
+  const kvParse = (label) => { const re = new RegExp(label + '\\s*[:：]\\s*([^\\n]+)', 'i'); const m = text.match(re); return m ? m[1].trim() : ''; };
   const rentalRateRaw = kvParse('Rental Rate') || kvParse('Asking Price') || kvParse('Sale Price');
   const rentMatch = rentalRateRaw.match(/\$?([\d,.]+)/);
   data.askingRent = rentMatch ? parseFloat(rentMatch[1].replace(/,/g, '')) : 0;
-
   const sfRaw = kvParse('Available SF') || kvParse('Building SF') || kvParse('Total SF');
   const sfMatch = sfRaw.match(/([\d,]+)/);
   data.availableSF = sfMatch ? parseInt(sfMatch[1].replace(/,/g, '')) : 0;
-
   const spaceType = kvParse('Space Type') || kvParse('Property Type');
-  data.propertyType = spaceType.toLowerCase().includes('office') ? 'office'
-    : spaceType.toLowerCase().includes('industrial') ? 'industrial'
-    : spaceType.toLowerCase().includes('restaurant') ? 'restaurant'
-    : 'retail';
-
+  data.propertyType = spaceType.toLowerCase().includes('office') ? 'office' : spaceType.toLowerCase().includes('industrial') ? 'industrial' : spaceType.toLowerCase().includes('restaurant') ? 'restaurant' : 'retail';
   data.suiteFloor = kvParse('Suite/Floor') || kvParse('Suite') || kvParse('Floor') || '';
-
-  // CAM/TAX from property details text
   const camMatch = text.match(/\+\s*\$?([\d,.]+)\s*(?:PSF\s*)?(?:for\s*)?CAM/i) || text.match(/CAM[\/&]?TAX[:\s]*\$?([\d,.]+)/i);
   data.camTax = camMatch ? parseFloat(camMatch[1].replace(/,/g, '')) : 0;
-
-  // Lease type inference
   if (text.match(/NNN|triple\s*net/i)) data.leaseType = 'NNN';
   else if (text.match(/gross\s*lease/i)) data.leaseType = 'Gross';
   else if (text.match(/modified\s*gross/i)) data.leaseType = 'Modified Gross';
   else data.leaseType = 'NNN';
-
-  // Property highlights: everything between PROPERTY DETAILS: and PRESENTED BY:
   const detailsMatch = text.match(/PROPERTY\s*DETAILS\s*:?\s*([\s\S]*?)(?:PRESENTED\s*BY|Join our mailing|$)/i);
   if (detailsMatch) {
-    const detailsText = detailsMatch[1].trim();
-    // Split on sentence boundaries (these are often run together without newlines)
-    const highlights = detailsText
-      .replace(/([.!])([A-Z])/g, '$1\n$2')  // Split at sentence boundaries
-      .split('\n')
-      .map(s => s.trim())
-      .filter(s => s.length > 10 && !s.match(/^Asking\s*base\s*rent/i) && !s.match(/^Broker\s*Owned/i));
-    data.highlights = highlights;
-  } else {
-    data.highlights = [];
-  }
-
-  // Broker info
+    data.highlights = detailsMatch[1].trim().replace(/([.!])([A-Z])/g, '$1\n$2').split('\n').map(s => s.trim()).filter(s => s.length > 10 && !s.match(/^Asking\s*base\s*rent/i) && !s.match(/^Broker\s*Owned/i));
+  } else { data.highlights = []; }
   const brokerMatch = text.match(/PRESENTED\s*BY\s*:?\s*([\s\S]*?)(?:Join our|$)/i);
   if (brokerMatch) {
     const bText = brokerMatch[1].trim();
     const phoneMatch = bText.match(/\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/);
     data.brokerPhone = phoneMatch ? phoneMatch[0].trim() : '';
-    // Name is usually before the phone number
-    if (phoneMatch) {
-      const namePart = bText.substring(0, bText.indexOf(phoneMatch[0])).trim();
-      data.brokerName = namePart.replace(/\n/g, ' ').trim();
-    } else {
-      data.brokerName = bText.split('\n')[0].trim();
-    }
+    if (phoneMatch) { data.brokerName = bText.substring(0, bText.indexOf(phoneMatch[0])).replace(/\n/g, ' ').trim(); }
+    else { data.brokerName = bText.split('\n')[0].trim(); }
   }
-
-  // Validate minimum required data
-  if (!data.address && !data.city) {
-    showStatus('importStatus', 'error', 'Could not parse a property address. Make sure you pasted the full listing page.');
-    return;
-  }
-
+  if (!data.address && !data.city) { showStatus('importStatus', 'error', 'Could not parse a property address.'); return; }
   importedPropertyData = data;
   renderImportPreview(data);
   document.getElementById('importStep1').style.display = 'none';
@@ -694,29 +726,15 @@ function parseImportedListing() {
 }
 
 function renderImportPreview(d) {
-  const field = (label, id, val, width) =>
-    `<div class="form-group" ${width ? 'style="flex:' + width + '"' : ''}>
-      <label>${escHtml(label)}</label>
-      <input id="imp_${id}" value="${escHtml(val || '')}">
-    </div>`;
-  const sel = (label, id, options, selected) =>
-    `<div class="form-group">
-      <label>${escHtml(label)}</label>
-      <select id="imp_${id}">${options.map(o => `<option value="${o[0]}"${o[0] === selected ? ' selected' : ''}>${o[1]}</option>`).join('')}</select>
-    </div>`;
-
-  document.getElementById('importPreview').innerHTML = `
-    <div class="form-row">${field('Street Address', 'address', d.address)}${field('Suite / Floor', 'suite', d.suiteFloor)}</div>
-    <div class="form-row-3">${field('City', 'city', d.city)}${field('State', 'state', d.state)}${field('ZIP', 'zip', d.zip)}</div>
-    <div class="form-row-3">
-      ${sel('Property Type', 'type', [['retail','Retail'],['office','Office'],['industrial','Industrial'],['restaurant','Restaurant'],['mixed','Mixed Use']], d.propertyType)}
-      ${sel('Lease Type', 'leaseType', [['NNN','NNN'],['Gross','Gross'],['Modified Gross','Modified Gross']], d.leaseType)}
-      ${field('Available SF', 'sf', d.availableSF)}
-    </div>
-    <div class="form-row-3">${field('Asking Rent (PSF)', 'rent', d.askingRent)}${field('CAM/TAX (PSF)', 'cam', d.camTax)}${field('Submarket', 'submarket', '')}</div>
-    <div class="form-group"><label>Property Highlights</label><textarea id="imp_highlights" rows="4" style="font-size:12px">${escHtml((d.highlights || []).join('\n'))}</textarea></div>
-    <div class="form-row">${field('Broker Name', 'broker', d.brokerName)}${field('Broker Phone', 'brokerPhone', d.brokerPhone)}</div>
-  `;
+  const field = (label, id, val) => '<div class="form-group"><label>' + escHtml(label) + '</label><input id="imp_' + id + '" value="' + escHtml(val || '') + '"></div>';
+  const sel = (label, id, options, selected) => '<div class="form-group"><label>' + escHtml(label) + '</label><select id="imp_' + id + '">' + options.map(o => '<option value="' + o[0] + '"' + (o[0] === selected ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select></div>';
+  document.getElementById('importPreview').innerHTML =
+    '<div class="form-row">' + field('Street Address', 'address', d.address) + field('Suite / Floor', 'suite', d.suiteFloor) + '</div>' +
+    '<div class="form-row-3">' + field('City', 'city', d.city) + field('State', 'state', d.state) + field('ZIP', 'zip', d.zip) + '</div>' +
+    '<div class="form-row-3">' + sel('Property Type', 'type', [['retail','Retail'],['office','Office'],['industrial','Industrial'],['restaurant','Restaurant'],['mixed','Mixed Use']], d.propertyType) + sel('Lease Type', 'leaseType', [['NNN','NNN'],['Gross','Gross'],['Modified Gross','Modified Gross']], d.leaseType) + field('Available SF', 'sf', d.availableSF) + '</div>' +
+    '<div class="form-row-3">' + field('Asking Rent (PSF)', 'rent', d.askingRent) + field('CAM/TAX (PSF)', 'cam', d.camTax) + field('Submarket', 'submarket', '') + '</div>' +
+    '<div class="form-group"><label>Property Highlights</label><textarea id="imp_highlights" rows="4" style="font-size:12px">' + escHtml((d.highlights || []).join('\n')) + '</textarea></div>' +
+    '<div class="form-row">' + field('Broker Name', 'broker', d.brokerName) + field('Broker Phone', 'brokerPhone', d.brokerPhone) + '</div>';
 }
 
 function confirmImport() {
@@ -724,32 +742,25 @@ function confirmImport() {
   if (!addr) { alert('Address is required.'); return; }
   const now = new Date().toISOString();
   const prop = {
-    id:           'prop_' + uid(),
-    address:      addr,
-    suiteFloor:   document.getElementById('imp_suite').value.trim(),
-    city:         document.getElementById('imp_city').value.trim(),
-    state:        document.getElementById('imp_state').value.trim().toUpperCase(),
-    zip:          document.getElementById('imp_zip').value.trim(),
-    submarket:    document.getElementById('imp_submarket').value.trim(),
+    id: 'prop_' + uid(), address: addr,
+    suiteFloor: document.getElementById('imp_suite').value.trim(),
+    city: document.getElementById('imp_city').value.trim(),
+    state: document.getElementById('imp_state').value.trim().toUpperCase(),
+    zip: document.getElementById('imp_zip').value.trim(),
+    submarket: document.getElementById('imp_submarket').value.trim(),
     propertyType: document.getElementById('imp_type').value,
-    leaseType:    document.getElementById('imp_leaseType').value,
-    availableSF:  parseInt(document.getElementById('imp_sf').value) || 0,
-    askingRent:   parseFloat(document.getElementById('imp_rent').value) || 0,
-    camTax:       parseFloat(document.getElementById('imp_cam').value) || 0,
-    highlights:   document.getElementById('imp_highlights').value.split('\n').map(s => s.trim()).filter(Boolean),
-    ownerName:    '',
-    ownerCompany: '',
-    brokerName:   document.getElementById('imp_broker').value.trim(),
-    brokerPhone:  document.getElementById('imp_brokerPhone').value.trim(),
-    brokerEmail:  '',
-    createdAt:    now,
-    updatedAt:    now,
+    leaseType: document.getElementById('imp_leaseType').value,
+    availableSF: parseInt(document.getElementById('imp_sf').value) || 0,
+    askingRent: parseFloat(document.getElementById('imp_rent').value) || 0,
+    camTax: parseFloat(document.getElementById('imp_cam').value) || 0,
+    highlights: document.getElementById('imp_highlights').value.split('\n').map(s => s.trim()).filter(Boolean),
+    ownerName: '', ownerCompany: '',
+    brokerName: document.getElementById('imp_broker').value.trim(),
+    brokerPhone: document.getElementById('imp_brokerPhone').value.trim(),
+    brokerEmail: '', createdAt: now, updatedAt: now,
   };
-  properties.push(prop);
-  selectedPropertyId = prop.id;
-  saveProperties();
-  closeImportWizard();
-  renderPropertyList();
+  properties.push(prop); selectedPropertyId = prop.id;
+  saveProperties(); closeImportWizard(); renderPropertyList();
   showStatus('propStatus', 'success', '✅ Property imported: ' + addr);
 }
 
@@ -757,10 +768,9 @@ function deleteProperty(id) {
   if (!confirm('Delete this property and all its prospects?')) return;
   properties = properties.filter(p => p.id !== id);
   prospects = prospects.filter(l => l.propertyId !== id);
+  snapshots = snapshots.filter(s => s.propertyId !== id);
   if (selectedPropertyId === id) selectedPropertyId = properties[0]?.id || '';
-  saveProperties();
-  saveProspects();
-  renderPropertyList();
+  saveProperties(); saveProspects(); saveSnapshots(); renderPropertyList();
 }
 
 // ── Prospects ─────────────────────────────────────────────────
@@ -768,156 +778,97 @@ function populateProspectPropSelect() {
   const sel = document.getElementById('prospectPropSelect');
   const cur = sel.value || selectedPropertyId;
   sel.innerHTML = '<option value="">Select a property...</option>' + properties.map(p =>
-    `<option value="${p.id}"${p.id === cur ? ' selected' : ''}>${escHtml(p.address)}</option>`
+    '<option value="' + p.id + '"' + (p.id === cur ? ' selected' : '') + '>' + escHtml(p.address) + '</option>'
   ).join('');
   if (cur && properties.find(p => p.id === cur)) sel.value = cur;
 }
 
-function onProspectPropChange() {
-  selectedPropertyId = document.getElementById('prospectPropSelect').value;
-  updateSidebarProp();
-  renderProspects();
-}
-
-function getPropertyProspects() {
-  return prospects.filter(l => l.propertyId === selectedPropertyId);
-}
+function onProspectPropChange() { selectedPropertyId = document.getElementById('prospectPropSelect').value; updateSidebarProp(); renderProspects(); }
+function getPropertyProspects() { return prospects.filter(l => l.propertyId === selectedPropertyId); }
 
 function renderProspects() {
   const content = document.getElementById('prospectContent');
   if (!selectedPropertyId) { content.style.display = 'none'; return; }
   content.style.display = 'block';
-
   const all = getPropertyProspects();
   const filter = document.getElementById('stageFilter').value;
   const filtered = filter === 'all' ? all : all.filter(l => l.stage === filter);
-
-  // Stats
   const active = all.filter(l => l.stage !== 'dead');
   const tours = all.filter(l => ['tour','proposal','loi','lease'].includes(l.stage));
   const deals = all.filter(l => ['proposal','loi','lease'].includes(l.stage));
   const leased = all.filter(l => l.stage === 'lease');
-
-  document.getElementById('prospectStats').innerHTML = `
-    <div class="stat-card"><div class="stat-num" style="color:#4f6ef7">${active.length}</div><div class="stat-label">Active Prospects</div></div>
-    <div class="stat-card"><div class="stat-num" style="color:#7c3aed">${tours.length}</div><div class="stat-label">Tours+</div></div>
-    <div class="stat-card"><div class="stat-num" style="color:#f59e0b">${deals.length}</div><div class="stat-label">Active Deals</div></div>
-    <div class="stat-card"><div class="stat-num" style="color:#10b981">${leased.length}</div><div class="stat-label">Leased</div></div>`;
-
-  // Table
+  document.getElementById('prospectStats').innerHTML =
+    '<div class="stat-card"><div class="stat-num" style="color:#4f6ef7">' + active.length + '</div><div class="stat-label">Active Prospects</div></div>' +
+    '<div class="stat-card"><div class="stat-num" style="color:#7c3aed">' + tours.length + '</div><div class="stat-label">Tours+</div></div>' +
+    '<div class="stat-card"><div class="stat-num" style="color:#f59e0b">' + deals.length + '</div><div class="stat-label">Active Deals</div></div>' +
+    '<div class="stat-card"><div class="stat-num" style="color:#10b981">' + leased.length + '</div><div class="stat-label">Leased</div></div>';
   const tbody = document.getElementById('prospectTableBody');
-  if (!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:30px">No prospects yet. Add one or import from Excel.</td></tr>';
-    return;
-  }
-  tbody.innerHTML = filtered.map(l => `<tr>
-    <td><strong>${escHtml(l.businessName || l.prospectName)}</strong></td>
-    <td>${escHtml(l.prospectName)}</td>
-    <td>${escHtml(l.businessType || '')}</td>
-    <td>
-      <select class="btn btn-sm stage-badge ${l.stage}" style="width:auto;padding:4px 8px;font-size:11px" onchange="changeStage('${l.id}',this.value)">
-        ${STAGES.map(s => `<option value="${s.key}"${s.key === l.stage ? ' selected' : ''}>${s.label}</option>`).join('')}
-      </select>
-    </td>
-    <td style="max-width:250px;font-size:12px;color:var(--muted)">${escHtml((l.notes||'').substring(0,120))}${(l.notes||'').length > 120 ? '…' : ''}</td>
-    <td>
-      <div class="prospect-actions">
-        <button class="btn btn-sm" onclick="editProspect('${l.id}')" title="Edit">✏️</button>
-        <button class="btn btn-sm" onclick="deleteProspect('${l.id}')" title="Delete" style="color:var(--danger)">🗑️</button>
-      </div>
-    </td>
-  </tr>`).join('');
+  if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:30px">No prospects yet.</td></tr>'; return; }
+  tbody.innerHTML = filtered.map(l => '<tr><td><strong>' + escHtml(l.businessName || l.prospectName) + '</strong></td><td>' + escHtml(l.prospectName) + '</td><td>' + escHtml(l.businessType || '') + '</td><td><select class="btn btn-sm stage-badge ' + l.stage + '" style="width:auto;padding:4px 8px;font-size:11px" onchange="changeStage(\'' + l.id + '\',this.value)">' + STAGES.map(s => '<option value="' + s.key + '"' + (s.key === l.stage ? ' selected' : '') + '>' + s.label + '</option>').join('') + '</select></td><td style="max-width:250px;font-size:12px;color:var(--muted)">' + escHtml((l.notes||'').substring(0,120)) + ((l.notes||'').length > 120 ? '…' : '') + '</td><td><div class="prospect-actions"><button class="btn btn-sm" onclick="editProspect(\'' + l.id + '\')" title="Edit">✏️</button><button class="btn btn-sm" onclick="deleteProspect(\'' + l.id + '\')" title="Delete" style="color:var(--danger)">🗑️</button></div></td></tr>').join('');
 }
 
 function changeStage(id, newStage) {
   const l = prospects.find(x => x.id === id);
   if (!l || l.stage === newStage) return;
   l.stageHistory = l.stageHistory || [];
-  l.stageHistory.push({ stage: newStage, date: new Date().toISOString(), note: `Changed from ${stageLabel(l.stage)} to ${stageLabel(newStage)}` });
-  l.stage = newStage;
-  l.updatedAt = new Date().toISOString();
-  saveProspects();
-  renderProspects();
+  l.stageHistory.push({ stage: newStage, date: new Date().toISOString(), note: 'Changed from ' + stageLabel(l.stage) + ' to ' + stageLabel(newStage) });
+  l.stage = newStage; l.updatedAt = new Date().toISOString();
+  saveProspects(); renderProspects();
 }
 
 function openProspectForm(id) {
   document.getElementById('prospectFormTitle').textContent = id ? 'Edit Prospect' : 'Add Prospect';
   document.getElementById('editProspectId').value = id || '';
   const l = id ? prospects.find(x => x.id === id) : {};
-  document.getElementById('leadName').value      = l.prospectName || '';
-  document.getElementById('leadBusiness').value   = l.businessName || '';
-  document.getElementById('leadType').value       = l.businessType || '';
-  document.getElementById('leadStage').value      = l.stage || 'inquiry';
-  document.getElementById('leadSF').value         = l.desiredSF || '';
-  document.getElementById('leadMaxRent').value    = l.maxRent || '';
-  document.getElementById('leadTerm').value       = l.leaseTermYears || '';
-  document.getElementById('leadPhone').value      = l.contactPhone || '';
-  document.getElementById('leadEmail').value      = l.contactEmail || '';
-  document.getElementById('leadTourDate').value   = l.tourDate || '';
-  document.getElementById('leadFollowUp').value   = l.nextFollowUp || '';
-  document.getElementById('leadSource').value     = l.source || '';
-  document.getElementById('leadNotes').value      = l.notes || '';
+  document.getElementById('leadName').value = l.prospectName || '';
+  document.getElementById('leadBusiness').value = l.businessName || '';
+  document.getElementById('leadType').value = l.businessType || '';
+  document.getElementById('leadStage').value = l.stage || 'inquiry';
+  document.getElementById('leadSF').value = l.desiredSF || '';
+  document.getElementById('leadMaxRent').value = l.maxRent || '';
+  document.getElementById('leadTerm').value = l.leaseTermYears || '';
+  document.getElementById('leadPhone').value = l.contactPhone || '';
+  document.getElementById('leadEmail').value = l.contactEmail || '';
+  document.getElementById('leadTourDate').value = l.tourDate || '';
+  document.getElementById('leadFollowUp').value = l.nextFollowUp || '';
+  document.getElementById('leadSource').value = l.source || '';
+  document.getElementById('leadNotes').value = l.notes || '';
   document.getElementById('prospectModal').classList.add('open');
 }
-
 function closeProspectModal() { document.getElementById('prospectModal').classList.remove('open'); }
-
 function editProspect(id) { openProspectForm(id); }
 
 function saveProspect() {
   const name = document.getElementById('leadName').value.trim();
   const biz = document.getElementById('leadBusiness').value.trim();
   if (!name && !biz) { alert('Enter a prospect name or business name.'); return; }
-
   const editId = document.getElementById('editProspectId').value;
   const now = new Date().toISOString();
   const newStage = document.getElementById('leadStage').value;
-
   const data = {
-    id:            editId || 'lead_' + uid(),
-    propertyId:    selectedPropertyId,
-    prospectName:  name,
-    businessName:  biz,
-    businessType:  document.getElementById('leadType').value.trim(),
-    stage:         newStage,
-    desiredSF:     parseInt(document.getElementById('leadSF').value) || null,
-    maxRent:       document.getElementById('leadMaxRent').value.trim() || null,
-    leaseTermYears:document.getElementById('leadTerm').value.trim() || null,
-    contactPhone:  document.getElementById('leadPhone').value.trim(),
-    contactEmail:  document.getElementById('leadEmail').value.trim(),
-    tourDate:      document.getElementById('leadTourDate').value || null,
-    nextFollowUp:  document.getElementById('leadFollowUp').value || null,
-    source:        document.getElementById('leadSource').value.trim(),
-    notes:         document.getElementById('leadNotes').value.trim(),
-    updatedAt:     now,
+    id: editId || 'lead_' + uid(), propertyId: selectedPropertyId,
+    prospectName: name, businessName: biz,
+    businessType: document.getElementById('leadType').value.trim(),
+    stage: newStage,
+    desiredSF: parseInt(document.getElementById('leadSF').value) || null,
+    maxRent: document.getElementById('leadMaxRent').value.trim() || null,
+    leaseTermYears: document.getElementById('leadTerm').value.trim() || null,
+    contactPhone: document.getElementById('leadPhone').value.trim(),
+    contactEmail: document.getElementById('leadEmail').value.trim(),
+    tourDate: document.getElementById('leadTourDate').value || null,
+    nextFollowUp: document.getElementById('leadFollowUp').value || null,
+    source: document.getElementById('leadSource').value.trim(),
+    notes: document.getElementById('leadNotes').value.trim(),
+    updatedAt: now,
   };
-
   if (editId) {
     const idx = prospects.findIndex(l => l.id === editId);
-    if (idx >= 0) {
-      data.createdAt = prospects[idx].createdAt;
-      data.stageHistory = prospects[idx].stageHistory || [];
-      if (prospects[idx].stage !== newStage) {
-        data.stageHistory.push({ stage: newStage, date: now, note: `Changed to ${stageLabel(newStage)}` });
-      }
-      prospects[idx] = data;
-    }
-  } else {
-    data.createdAt = now;
-    data.stageHistory = [{ stage: newStage, date: now, note: 'Created' }];
-    prospects.push(data);
-  }
-  saveProspects();
-  closeProspectModal();
-  renderProspects();
+    if (idx >= 0) { data.createdAt = prospects[idx].createdAt; data.stageHistory = prospects[idx].stageHistory || []; if (prospects[idx].stage !== newStage) { data.stageHistory.push({ stage: newStage, date: now, note: 'Changed to ' + stageLabel(newStage) }); } prospects[idx] = data; }
+  } else { data.createdAt = now; data.stageHistory = [{ stage: newStage, date: now, note: 'Created' }]; prospects.push(data); }
+  saveProspects(); closeProspectModal(); renderProspects();
 }
 
-function deleteProspect(id) {
-  if (!confirm('Delete this prospect?')) return;
-  prospects = prospects.filter(l => l.id !== id);
-  saveProspects();
-  renderProspects();
-}
+function deleteProspect(id) { if (!confirm('Delete this prospect?')) return; prospects = prospects.filter(l => l.id !== id); saveProspects(); renderProspects(); }
 
 // ── Excel Import ──────────────────────────────────────────────
 function importExcel(files) {
@@ -930,8 +881,6 @@ function importExcel(files) {
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
       if (rows.length < 2) { showStatus('prospectStatus', 'error', 'No data rows found.'); return; }
-
-      // Auto-detect columns by fuzzy header match
       const headers = rows[0].map(h => (h || '').toString().toLowerCase().trim());
       let nameCol = -1, typeCol = -1, notesCol = -1, extraCol = -1;
       headers.forEach((h, i) => {
@@ -939,282 +888,237 @@ function importExcel(files) {
         if (typeCol < 0 && (h.includes('type') || h.includes('business') || h.includes('concept'))) typeCol = i;
         if (notesCol < 0 && (h.includes('comment') || h.includes('note') || h.includes('status') || h.includes('detail'))) notesCol = i;
       });
-      // If no headers detected, use positional (A=name, B=type, C=notes)
       if (nameCol < 0) nameCol = 0;
       if (typeCol < 0 && rows[0].length > 1) typeCol = 1;
       if (notesCol < 0 && rows[0].length > 2) notesCol = 2;
       if (rows[0].length > 3) extraCol = 3;
-
-      // Determine if row 0 is header or data
       const firstRowIsHeader = headers.some(h => h.includes('prospect') || h.includes('broker') || h.includes('type') || h.includes('comment') || h.includes('name'));
       const startRow = firstRowIsHeader ? 1 : 0;
-
-      // Also skip any rows that look like property name headers (no data in name col but have data in other cols only)
       const existing = getPropertyProspects();
       const existingNames = new Set(existing.map(l => (l.prospectName || '').toLowerCase().trim()));
-      let imported = 0;
-      const now = new Date().toISOString();
-
+      let imported = 0; const now = new Date().toISOString();
       for (let i = startRow; i < rows.length; i++) {
-        const row = rows[i];
-        const name = (row[nameCol] || '').toString().trim();
+        const row = rows[i]; const name = (row[nameCol] || '').toString().trim();
         if (!name) continue;
-        // Skip if header-like row
         if (name.toLowerCase().includes('lease') && !row[typeCol]) continue;
-
-        // Skip duplicates
         if (existingNames.has(name.toLowerCase())) continue;
-
         const notes = (row[notesCol] || '').toString().trim();
         const extra = extraCol >= 0 ? (row[extraCol] || '').toString().trim() : '';
         const fullNotes = [notes, extra].filter(Boolean).join(' | ');
-
-        // Try to detect stage from notes
-        let stage = 'inquiry';
-        const nl = fullNotes.toLowerCase();
+        let stage = 'inquiry'; const nl = fullNotes.toLowerCase();
         if (nl.includes('tour scheduled') || nl.includes('tour completed') || nl.includes('went on tour') || nl.includes('showing')) stage = 'tour';
         else if (nl.includes('loi') || nl.includes('letter of intent')) stage = 'loi';
         else if (nl.includes('proposal') || nl.includes('term sheet')) stage = 'proposal';
         else if (nl.includes('lease signed') || nl.includes('lease executed')) stage = 'lease';
-
-        prospects.push({
-          id: 'lead_' + uid(),
-          propertyId: selectedPropertyId,
-          prospectName: name,
-          businessName: (row[typeCol] || '').toString().trim(),
-          businessType: (row[typeCol] || '').toString().trim(),
-          stage: stage,
-          stageHistory: [{ stage, date: now, note: 'Imported from Excel' }],
-          notes: fullNotes,
-          contactPhone: '', contactEmail: '', desiredSF: null, maxRent: null,
-          leaseTermYears: null, tourDate: null, nextFollowUp: null, source: 'Excel import',
-          createdAt: now, updatedAt: now,
-        });
+        prospects.push({ id: 'lead_' + uid(), propertyId: selectedPropertyId, prospectName: name, businessName: (row[typeCol] || '').toString().trim(), businessType: (row[typeCol] || '').toString().trim(), stage: stage, stageHistory: [{ stage, date: now, note: 'Imported from Excel' }], notes: fullNotes, contactPhone: '', contactEmail: '', desiredSF: null, maxRent: null, leaseTermYears: null, tourDate: null, nextFollowUp: null, source: 'Excel import', createdAt: now, updatedAt: now });
         imported++;
       }
-      saveProspects();
-      renderProspects();
-      showStatus('prospectStatus', 'success', `✅ Imported ${imported} prospect${imported !== 1 ? 's' : ''}.`);
-    } catch(err) {
-      showStatus('prospectStatus', 'error', 'Import error: ' + err.message);
-    }
+      saveProspects(); renderProspects();
+      showStatus('prospectStatus', 'success', '✅ Imported ' + imported + ' prospect' + (imported !== 1 ? 's' : '') + '.');
+    } catch(err) { showStatus('prospectStatus', 'error', 'Import error: ' + err.message); }
   };
   reader.readAsArrayBuffer(files[0]);
   document.getElementById('xlsxUpload').value = '';
 }
 
-// ── Report ────────────────────────────────────────────────────
-function populateReportPropSelect() {
-  const sel = document.getElementById('reportPropSelect');
+// ── Snapshots ─────────────────────────────────────────────────
+function populateGenPropSelect() {
+  const sel = document.getElementById('genPropSelect');
   const cur = sel.value || selectedPropertyId;
   sel.innerHTML = '<option value="">Select a property...</option>' + properties.map(p =>
-    `<option value="${p.id}"${p.id === cur ? ' selected' : ''}>${escHtml(p.address)}</option>`
+    '<option value="' + p.id + '"' + (p.id === cur ? ' selected' : '') + '>' + escHtml(p.address) + '</option>'
   ).join('');
   if (cur && properties.find(p => p.id === cur)) sel.value = cur;
 }
 
-function renderReport() {
-  const propId = document.getElementById('reportPropSelect').value;
-  const el = document.getElementById('reportContent');
-  if (!propId) { el.innerHTML = '<div class="card" style="text-align:center;color:var(--muted);padding:40px">Select a property to generate a report.</div>'; return; }
+function createSnapshot(propertyId) {
+  const prop = properties.find(p => p.id === propertyId);
+  if (!prop) return null;
+  const propProspects = prospects.filter(l => l.propertyId === propertyId);
+  const active = propProspects.filter(l => l.stage !== 'dead');
+  const tours = propProspects.filter(l => ['tour','proposal','loi','lease'].includes(l.stage));
+  const deals = propProspects.filter(l => ['proposal','loi','lease'].includes(l.stage));
+  const leased = propProspects.filter(l => l.stage === 'lease');
+  const now = Date.now();
+  const avgDays = active.length ? Math.round(active.reduce((s, l) => s + (now - new Date(l.createdAt).getTime()) / 86400000, 0) / active.length) : 0;
+  const generatedAt = new Date();
+  const snap = {
+    id: 'snap_' + uid(), brokerId: brokerId, propertyId: propertyId,
+    propertyAddress: prop.address + (prop.suiteFloor ? ', ' + prop.suiteFloor : ''),
+    generatedAt: generatedAt.toISOString(),
+    generatedDate: generatedAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    generatedTime: generatedAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+    propertySnapshot: JSON.parse(JSON.stringify(prop)),
+    prospectsSnapshot: propProspects.map(l => JSON.parse(JSON.stringify(l))),
+    stats: { totalProspects: propProspects.length, activeCount: active.length, tourCount: tours.length, dealCount: deals.length, leaseCount: leased.length, avgDaysInPipeline: avgDays }
+  };
+  snapshots.push(snap); saveSnapshots();
+  return snap;
+}
 
-  const prop = properties.find(p => p.id === propId);
-  if (!prop) return;
-  const all = prospects.filter(l => l.propertyId === propId);
+function generateSnapshot() {
+  const propId = document.getElementById('genPropSelect').value;
+  if (!propId) { showStatus('genStatus', 'error', 'Select a property.'); return; }
+  const snap = createSnapshot(propId);
+  if (!snap) { showStatus('genStatus', 'error', 'Failed to create snapshot.'); return; }
+  showStatus('genStatus', 'success', '✅ Snapshot saved: ' + snap.generatedDate + ' at ' + snap.generatedTime);
+  // Show quick summary
+  document.getElementById('genPreview').innerHTML = '<div class="card" style="margin-top:16px"><div style="font-size:14px;font-weight:700;margin-bottom:12px">Snapshot Created</div><div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted)"><div><strong>' + escHtml(snap.propertyAddress) + '</strong></div><div>' + snap.stats.activeCount + ' active prospects</div><div>' + snap.stats.tourCount + ' tours</div><div>' + snap.stats.dealCount + ' deals</div></div><div style="margin-top:12px;display:flex;gap:8px"><button class="btn btn-sm" onclick="viewSnapshot(\'' + snap.id + '\')">View Report</button><button class="btn btn-sm" onclick="showPage(\'archive\',document.querySelector(\'[onclick*=archive]\'))">Go to Archive</button></div></div>';
+}
+
+// ── Archive ────────────────────────────────────────────────────
+function renderArchive() {
+  const el = document.getElementById('archiveTree');
+  if (!snapshots.length) { el.innerHTML = '<div class="card" style="text-align:center;color:var(--muted);padding:40px">No snapshots yet. Generate one in the "Generate" tab.</div>'; return; }
+  // Group by property
+  const tree = {};
+  snapshots.forEach(snap => { if (!tree[snap.propertyId]) tree[snap.propertyId] = []; tree[snap.propertyId].push(snap); });
+  let html = '';
+  Object.keys(tree).forEach(propId => {
+    const prop = properties.find(p => p.id === propId);
+    const propName = prop ? prop.address : (tree[propId][0].propertyAddress || 'Unknown Property');
+    const snaps = tree[propId].sort((a, b) => new Date(b.generatedAt) - new Date(a.generatedAt));
+    html += '<div style="margin-bottom:24px"><div class="archive-prop-header" onclick="toggleArchiveProp(\'' + propId + '\')"><span id="toggle_' + propId + '" style="margin-right:10px">▶</span><div style="flex:1"><div style="font-weight:600;font-size:14px">' + escHtml(propName) + '</div><div style="font-size:12px;color:var(--muted);margin-top:2px">' + snaps.length + ' snapshot' + (snaps.length !== 1 ? 's' : '') + '</div></div></div>';
+    html += '<div id="snaps_' + propId + '" style="display:none;padding-left:16px;margin-top:8px">';
+    snaps.forEach(snap => {
+      html += '<div class="snap-card"><div><div style="font-weight:600;font-size:14px">' + snap.generatedDate + '</div><div style="font-size:12px;color:var(--muted);margin-top:2px">' + snap.generatedTime + '</div><div style="font-size:12px;color:var(--muted);margin-top:6px">' + snap.stats.activeCount + ' active · ' + snap.stats.tourCount + ' tours · ' + snap.stats.dealCount + ' deals · ' + snap.stats.leaseCount + ' leased</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-sm" onclick="viewSnapshot(\'' + snap.id + '\')">👁️ View</button><button class="btn btn-sm" onclick="viewingSnapshotId=\'' + snap.id + '\';exportSnapshotPDF()">🖨️ PDF</button><button class="btn btn-sm" onclick="viewingSnapshotId=\'' + snap.id + '\';exportSnapshotXLSX()">📥 XLSX</button><button class="btn btn-sm" style="color:var(--danger)" onclick="deleteSnapshot(\'' + snap.id + '\')">🗑️</button></div></div>';
+    });
+    html += '</div></div>';
+  });
+  el.innerHTML = html;
+}
+
+function toggleArchiveProp(propId) {
+  const el = document.getElementById('snaps_' + propId);
+  const toggle = document.getElementById('toggle_' + propId);
+  if (el.style.display === 'none') { el.style.display = 'block'; toggle.textContent = '▼'; }
+  else { el.style.display = 'none'; toggle.textContent = '▶'; }
+}
+
+function viewSnapshot(snapId) {
+  viewingSnapshotId = snapId;
+  const snap = snapshots.find(s => s.id === snapId);
+  if (!snap) return;
+  showPage('report', null);
+  renderSnapshotReport(snap);
+}
+
+function deleteSnapshot(snapId) {
+  if (!confirm('Delete this snapshot? This cannot be undone.')) return;
+  snapshots = snapshots.filter(s => s.id !== snapId);
+  saveSnapshots(); renderArchive();
+  showStatus('archiveStatus', 'success', '✅ Snapshot deleted.');
+}
+
+// ── Snapshot Report Renderer ──────────────────────────────────
+function renderSnapshotReport(snap) {
+  const prop = snap.propertySnapshot;
+  const all = snap.prospectsSnapshot;
   const active = all.filter(l => l.stage !== 'dead');
-  const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   const typeLabels = { retail:'Retail', office:'Office', industrial:'Industrial', restaurant:'Restaurant', mixed:'Mixed Use' };
+  setText('reportPrintSub', 'Leasing Activity Report · ' + prop.address + ' · ' + snap.generatedDate);
 
-  // Update print subtitle
-  setText('reportPrintSub', `Leasing Activity Report · ${prop.address} · ${today}`);
-
-  // Pipeline counts
   const stageCounts = {};
   STAGES.forEach(s => stageCounts[s.key] = 0);
   active.forEach(l => { stageCounts[l.stage] = (stageCounts[l.stage] || 0) + 1; });
   const maxCount = Math.max(...Object.values(stageCounts), 1);
 
-  // Stage history for activity log
   const allHistory = [];
-  all.forEach(l => {
-    (l.stageHistory || []).forEach(h => {
-      allHistory.push({ prospect: l.businessName || l.prospectName, ...h });
-    });
-  });
+  all.forEach(l => { (l.stageHistory || []).forEach(h => { allHistory.push({ prospect: l.businessName || l.prospectName, stage: h.stage, date: h.date, note: h.note }); }); });
   allHistory.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-  // Avg days in pipeline
-  const now = Date.now();
-  const avgDays = active.length ? Math.round(active.reduce((s, l) => s + (now - new Date(l.createdAt).getTime()) / 86400000, 0) / active.length) : 0;
-
-  const tours = all.filter(l => ['tour','proposal','loi','lease'].includes(l.stage)).length;
-  const deals = all.filter(l => ['proposal','loi','lease'].includes(l.stage)).length;
 
   let html = '';
 
+  // Snapshot date banner
+  html += '<div class="card" style="text-align:center;background:rgba(79,110,247,0.08);border-color:rgba(79,110,247,0.3);margin-bottom:24px"><div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Report Snapshot</div><div style="font-size:18px;font-weight:700;margin-top:4px">' + snap.generatedDate + ' at ' + snap.generatedTime + '</div></div>';
+
   // Property Overview
-  html += `<div class="report-section">
-    <div class="report-section-title">Property Overview</div>
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px">
-        <div>
-          <div style="font-size:18px;font-weight:700">${escHtml(prop.address)}${prop.suiteFloor ? ', ' + escHtml(prop.suiteFloor) : ''}</div>
-          <div style="color:var(--muted);margin-top:4px">${escHtml(prop.city)}, ${escHtml(prop.state)} ${escHtml(prop.zip)}${prop.submarket ? ' · ' + escHtml(prop.submarket) : ''}</div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:14px;font-weight:700">${typeLabels[prop.propertyType] || prop.propertyType}</div>
-          <div style="color:var(--muted);font-size:13px">${(prop.availableSF||0).toLocaleString()} SF Available</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:24px;margin-top:16px;flex-wrap:wrap">
-        <div><span style="color:var(--muted);font-size:12px">ASKING RENT</span><div style="font-size:16px;font-weight:700">$${prop.askingRent || '—'} PSF</div></div>
-        <div><span style="color:var(--muted);font-size:12px">CAM/TAX</span><div style="font-size:16px;font-weight:700">$${prop.camTax || '—'} PSF</div></div>
-        <div><span style="color:var(--muted);font-size:12px">LEASE TYPE</span><div style="font-size:16px;font-weight:700">${escHtml(prop.leaseType || '—')}</div></div>
-      </div>
-      ${prop.highlights && prop.highlights.length ? '<div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)"><div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em">Highlights</div>' + prop.highlights.map(h => '<div style="font-size:13px;padding:3px 0;color:var(--text)">▸ ' + escHtml(h) + '</div>').join('') + '</div>' : ''}
-    </div>
-  </div>`;
+  html += '<div class="report-section"><div class="report-section-title">Property Overview</div><div class="card"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px"><div><div style="font-size:18px;font-weight:700">' + escHtml(prop.address) + (prop.suiteFloor ? ', ' + escHtml(prop.suiteFloor) : '') + '</div><div style="color:var(--muted);margin-top:4px">' + escHtml(prop.city) + ', ' + escHtml(prop.state) + ' ' + escHtml(prop.zip) + (prop.submarket ? ' · ' + escHtml(prop.submarket) : '') + '</div></div><div style="text-align:right"><div style="font-size:14px;font-weight:700">' + (typeLabels[prop.propertyType] || prop.propertyType) + '</div><div style="color:var(--muted);font-size:13px">' + (prop.availableSF||0).toLocaleString() + ' SF Available</div></div></div>';
+  html += '<div style="display:flex;gap:24px;margin-top:16px;flex-wrap:wrap"><div><span style="color:var(--muted);font-size:12px">ASKING RENT</span><div style="font-size:16px;font-weight:700">$' + (prop.askingRent || '—') + ' PSF</div></div><div><span style="color:var(--muted);font-size:12px">CAM/TAX</span><div style="font-size:16px;font-weight:700">$' + (prop.camTax || '—') + ' PSF</div></div><div><span style="color:var(--muted);font-size:12px">LEASE TYPE</span><div style="font-size:16px;font-weight:700">' + escHtml(prop.leaseType || '—') + '</div></div></div>';
+  if (prop.highlights && prop.highlights.length) {
+    html += '<div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)"><div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em">Highlights</div>' + prop.highlights.map(h => '<div style="font-size:13px;padding:3px 0;color:var(--text)">▸ ' + escHtml(h) + '</div>').join('') + '</div>';
+  }
+  html += '</div></div>';
 
   // Activity Summary
-  html += `<div class="report-section">
-    <div class="report-section-title">Leasing Activity Summary</div>
-    <div class="stat-grid">
-      <div class="stat-card"><div class="stat-num" style="color:#4f6ef7">${active.length}</div><div class="stat-label">Active Prospects</div></div>
-      <div class="stat-card"><div class="stat-num" style="color:#7c3aed">${tours}</div><div class="stat-label">Tours Conducted</div></div>
-      <div class="stat-card"><div class="stat-num" style="color:#f59e0b">${deals}</div><div class="stat-label">Active Deals</div></div>
-      <div class="stat-card"><div class="stat-num" style="color:#10b981">${avgDays}</div><div class="stat-label">Avg Days in Pipeline</div></div>
-    </div>
-  </div>`;
+  html += '<div class="report-section"><div class="report-section-title">Leasing Activity Summary</div><div class="stat-grid"><div class="stat-card"><div class="stat-num" style="color:#4f6ef7">' + snap.stats.activeCount + '</div><div class="stat-label">Active Prospects</div></div><div class="stat-card"><div class="stat-num" style="color:#7c3aed">' + snap.stats.tourCount + '</div><div class="stat-label">Tours Conducted</div></div><div class="stat-card"><div class="stat-num" style="color:#f59e0b">' + snap.stats.dealCount + '</div><div class="stat-label">Active Deals</div></div><div class="stat-card"><div class="stat-num" style="color:#10b981">' + snap.stats.avgDaysInPipeline + '</div><div class="stat-label">Avg Days in Pipeline</div></div></div></div>';
 
   // Pipeline Funnel
   const funnelStages = STAGES.filter(s => s.key !== 'dead');
-  html += `<div class="report-section">
-    <div class="report-section-title">Pipeline Overview</div>
-    <div class="funnel">
-      ${funnelStages.map(s => {
-        const count = stageCounts[s.key] || 0;
-        const pct = maxCount ? (count / maxCount * 100) : 0;
-        return `<div class="funnel-row">
-          <div class="funnel-label" style="color:${s.color}">${s.label}</div>
-          <div class="funnel-bar-wrap">
-            <div class="funnel-bar${count === 0 ? ' funnel-bar-empty' : ''}" style="width:${Math.max(pct, count > 0 ? 8 : 0)}%;background:${s.color}">
-              <span class="funnel-count">${count}</span>
-            </div>
-          </div>
-        </div>`;
-      }).join('')}
-    </div>
-  </div>`;
+  html += '<div class="report-section"><div class="report-section-title">Pipeline Overview</div><div class="funnel">';
+  funnelStages.forEach(s => {
+    const count = stageCounts[s.key] || 0;
+    const pct = maxCount ? (count / maxCount * 100) : 0;
+    html += '<div class="funnel-row"><div class="funnel-label" style="color:' + s.color + '">' + s.label + '</div><div class="funnel-bar-wrap"><div class="funnel-bar' + (count === 0 ? ' funnel-bar-empty' : '') + '" style="width:' + Math.max(pct, count > 0 ? 8 : 0) + '%;background:' + s.color + '"><span class="funnel-count">' + count + '</span></div></div></div>';
+  });
+  html += '</div></div>';
 
-  // Prospect Detail Table (client-safe: no dead, no internal notes)
+  // Prospect Detail Table
   const clientProspects = active.filter(l => l.stage !== 'dead');
   if (clientProspects.length) {
-    html += `<div class="report-section">
-      <div class="report-section-title">Prospect Details</div>
-      <div class="card" style="padding:0;overflow-x:auto">
-        <table class="prospect-table">
-          <thead><tr><th>Business</th><th>Type</th><th>Space Req.</th><th>Stage</th><th>Date Added</th></tr></thead>
-          <tbody>
-            ${clientProspects.map(l => {
-              const date = new Date(l.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-              return `<tr>
-                <td><strong>${escHtml(l.businessName || l.prospectName)}</strong></td>
-                <td>${escHtml(l.businessType || '—')}</td>
-                <td>${l.desiredSF ? l.desiredSF.toLocaleString() + ' SF' : '—'}</td>
-                <td><span class="stage-badge ${l.stage}">${stageLabel(l.stage)}</span></td>
-                <td style="color:var(--muted)">${date}</td>
-              </tr>`;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>`;
+    html += '<div class="report-section"><div class="report-section-title">Prospect Details</div><div class="card" style="padding:0;overflow-x:auto"><table class="prospect-table"><thead><tr><th>Business</th><th>Type</th><th>Space Req.</th><th>Stage</th><th>Date Added</th></tr></thead><tbody>';
+    clientProspects.forEach(l => {
+      const date = new Date(l.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      html += '<tr><td><strong>' + escHtml(l.businessName || l.prospectName) + '</strong></td><td>' + escHtml(l.businessType || '—') + '</td><td>' + (l.desiredSF ? l.desiredSF.toLocaleString() + ' SF' : '—') + '</td><td><span class="stage-badge ' + l.stage + '">' + stageLabel(l.stage) + '</span></td><td style="color:var(--muted)">' + date + '</td></tr>';
+    });
+    html += '</tbody></table></div></div>';
   }
 
-  // Recent Activity Log
-  const recentHistory = allHistory.filter(h => {
-    // Find prospect — skip dead
-    const l = all.find(x => (x.businessName || x.prospectName) === h.prospect);
-    return l && l.stage !== 'dead';
-  }).slice(0, 15);
+  // Recent Activity
+  const recentHistory = allHistory.filter(h => { const l = all.find(x => (x.businessName || x.prospectName) === h.prospect); return l && l.stage !== 'dead'; }).slice(0, 15);
   if (recentHistory.length) {
-    html += `<div class="report-section">
-      <div class="report-section-title">Recent Activity</div>
-      <div class="card">
-        ${recentHistory.map(h => {
-          const d = new Date(h.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-          return `<div class="activity-item">
-            <div class="activity-dot" style="background:${stageColor(h.stage)}"></div>
-            <div>
-              <div class="activity-text"><strong>${escHtml(h.prospect)}</strong> — ${escHtml(h.note || stageLabel(h.stage))}</div>
-              <div class="activity-date">${d}</div>
-            </div>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>`;
+    html += '<div class="report-section"><div class="report-section-title">Recent Activity</div><div class="card">';
+    recentHistory.forEach(h => {
+      const d = new Date(h.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      html += '<div class="activity-item"><div class="activity-dot" style="background:' + stageColor(h.stage) + '"></div><div><div class="activity-text"><strong>' + escHtml(h.prospect) + '</strong> — ' + escHtml(h.note || stageLabel(h.stage)) + '</div><div class="activity-date">' + d + '</div></div></div>';
+    });
+    html += '</div></div>';
   }
 
   // Broker contact
-  html += `<div class="report-section" style="border-bottom:none">
-    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px;padding:16px 0">
-      <div>
-        <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">Presented By</div>
-        <div style="font-size:15px;font-weight:700">${escHtml(prop.brokerName || '')}</div>
-        <div style="font-size:13px;color:var(--muted)">${escHtml(prop.brokerPhone || '')}${prop.brokerEmail ? ' · ' + escHtml(prop.brokerEmail) : ''}</div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-size:15px;font-weight:700">Baum Realty Group</div>
-        <div style="font-size:13px;color:var(--muted)">1030 W. Chicago Ave, Suite 200</div>
-        <div style="font-size:13px;color:var(--muted)">Chicago, IL 60642 · (312) 666-3000</div>
-      </div>
-    </div>
-  </div>`;
+  html += '<div class="report-section" style="border-bottom:none"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px;padding:16px 0"><div><div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">Presented By</div><div style="font-size:15px;font-weight:700">' + escHtml(prop.brokerName || '') + '</div><div style="font-size:13px;color:var(--muted)">' + escHtml(prop.brokerPhone || '') + (prop.brokerEmail ? ' · ' + escHtml(prop.brokerEmail) : '') + '</div></div><div style="text-align:right"><div style="font-size:15px;font-weight:700">Baum Realty Group</div><div style="font-size:13px;color:var(--muted)">1030 W. Chicago Ave, Suite 200</div><div style="font-size:13px;color:var(--muted)">Chicago, IL 60642 · (312) 666-3000</div></div></div></div>';
 
-  el.innerHTML = html;
+  document.getElementById('reportContent').innerHTML = html;
 }
 
-// ── Export: PDF ────────────────────────────────────────────────
-function exportReportPDF() {
-  const propId = document.getElementById('reportPropSelect').value;
-  if (!propId) { alert('Select a property first.'); return; }
-  renderReport();
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-report').classList.add('active');
+// ── Export: PDF (from snapshot) ────────────────────────────────
+function exportSnapshotPDF() {
+  const snap = snapshots.find(s => s.id === viewingSnapshotId);
+  if (!snap) { alert('No snapshot selected.'); return; }
+  showPage('report', null);
+  renderSnapshotReport(snap);
   setTimeout(() => window.print(), 200);
 }
 
-// ── Export: XLSX ──────────────────────────────────────────────
-function exportReportXLSX() {
+// ── Export: XLSX (from snapshot) ──────────────────────────────
+function exportSnapshotXLSX() {
   if (typeof XLSX === 'undefined') { alert('SheetJS not loaded.'); return; }
-  const propId = document.getElementById('reportPropSelect').value;
-  if (!propId) { alert('Select a property first.'); return; }
-  const prop = properties.find(p => p.id === propId);
-  if (!prop) return;
-  const all = prospects.filter(l => l.propertyId === propId);
+  const snap = snapshots.find(s => s.id === viewingSnapshotId);
+  if (!snap) { alert('No snapshot selected.'); return; }
+  const prop = snap.propertySnapshot;
+  const all = snap.prospectsSnapshot;
   const active = all.filter(l => l.stage !== 'dead');
   const typeLabels = { retail:'Retail', office:'Office', industrial:'Industrial', restaurant:'Restaurant', mixed:'Mixed Use' };
 
   const wb = XLSX.utils.book_new();
-  const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
   // Sheet 1: Summary
   const s1 = [
     ['LEASING ACTIVITY REPORT — BAUM REALTY GROUP'],
     ['Property:', prop.address + (prop.suiteFloor ? ', ' + prop.suiteFloor : '')],
-    ['Location:', `${prop.city}, ${prop.state} ${prop.zip}`],
+    ['Location:', prop.city + ', ' + prop.state + ' ' + prop.zip],
     ['Type:', typeLabels[prop.propertyType] || prop.propertyType],
     ['Available SF:', prop.availableSF],
     ['Asking Rent:', '$' + prop.askingRent + ' PSF'],
     ['CAM/TAX:', '$' + prop.camTax + ' PSF'],
     ['Lease Type:', prop.leaseType],
-    ['Report Date:', today],
+    ['Report Date:', snap.generatedDate + ' ' + snap.generatedTime],
     [],
     ['ACTIVITY SUMMARY'],
-    ['Total Active Prospects', active.length],
-    ['Tours Conducted', all.filter(l => ['tour','proposal','loi','lease'].includes(l.stage)).length],
-    ['Active Deals', all.filter(l => ['proposal','loi','lease'].includes(l.stage)).length],
-    ['Leases Executed', all.filter(l => l.stage === 'lease').length],
+    ['Total Active Prospects', snap.stats.activeCount],
+    ['Tours Conducted', snap.stats.tourCount],
+    ['Active Deals', snap.stats.dealCount],
+    ['Leases Executed', snap.stats.leaseCount],
     [],
     ['PIPELINE BREAKDOWN'],
     ...STAGES.filter(s => s.key !== 'dead').map(s => [s.label, all.filter(l => l.stage === s.key).length]),
@@ -1225,52 +1129,85 @@ function exportReportXLSX() {
 
   // Sheet 2: Prospects
   const s2 = [['Business Name', 'Prospect Name', 'Type', 'Stage', 'Desired SF', 'Max Rent', 'Lease Term', 'Tour Date', 'Source', 'Notes', 'Date Added']];
-  active.forEach(l => {
-    s2.push([
-      l.businessName || '', l.prospectName || '', l.businessType || '',
-      stageLabel(l.stage), l.desiredSF || '', l.maxRent || '', l.leaseTermYears || '',
-      l.tourDate || '', l.source || '', l.notes || '',
-      new Date(l.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-    ]);
-  });
+  active.forEach(l => { s2.push([l.businessName || '', l.prospectName || '', l.businessType || '', stageLabel(l.stage), l.desiredSF || '', l.maxRent || '', l.leaseTermYears || '', l.tourDate || '', l.source || '', l.notes || '', new Date(l.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })]); });
   const ws2 = XLSX.utils.aoa_to_sheet(s2);
   ws2['!cols'] = [{ wch: 24 }, { wch: 20 }, { wch: 20 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 16 }, { wch: 40 }, { wch: 14 }];
   XLSX.utils.book_append_sheet(wb, ws2, 'Prospects');
 
   // Sheet 3: Activity Log
   const allH = [];
-  all.forEach(l => { (l.stageHistory || []).forEach(h => { allH.push({ prospect: l.businessName || l.prospectName, ...h }); }); });
+  all.forEach(l => { (l.stageHistory || []).forEach(h => { allH.push({ prospect: l.businessName || l.prospectName, stage: h.stage, date: h.date, note: h.note }); }); });
   allH.sort((a, b) => new Date(b.date) - new Date(a.date));
   const s3 = [['Date', 'Prospect', 'Stage', 'Note']];
-  allH.forEach(h => {
-    s3.push([new Date(h.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), h.prospect, stageLabel(h.stage), h.note || '']);
-  });
+  allH.forEach(h => { s3.push([new Date(h.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), h.prospect, stageLabel(h.stage), h.note || '']); });
   const ws3 = XLSX.utils.aoa_to_sheet(s3);
   ws3['!cols'] = [{ wch: 14 }, { wch: 24 }, { wch: 16 }, { wch: 40 }];
   XLSX.utils.book_append_sheet(wb, ws3, 'Activity Log');
 
-  const fn = `Leasing_Report_${prop.address.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`;
+  const fn = 'Leasing_Report_' + prop.address.replace(/[^a-zA-Z0-9]/g, '_') + '_' + snap.generatedDate.replace(/[\s,]/g, '_') + '.xlsx';
   XLSX.writeFile(wb, fn);
 }
 
 // ── Settings ──────────────────────────────────────────────────
 function loadSettingsForm() {
-  document.getElementById('settBrokerName').value  = settings.brokerName || '';
+  document.getElementById('settBrokerName').value = settings.brokerName || '';
   document.getElementById('settBrokerPhone').value = settings.brokerPhone || '';
   document.getElementById('settBrokerEmail').value = settings.brokerEmail || '';
 }
 function saveSettings() {
-  settings.brokerName  = document.getElementById('settBrokerName').value.trim();
+  settings.brokerName = document.getElementById('settBrokerName').value.trim();
   settings.brokerPhone = document.getElementById('settBrokerPhone').value.trim();
   settings.brokerEmail = document.getElementById('settBrokerEmail').value.trim();
   saveSettingsData();
   showStatus('settingsStatus', 'success', '✅ Settings saved.');
 }
 
+// ── Admin: Broker Management ──────────────────────────────────
+function createBroker() {
+  const name = document.getElementById('adminName').value.trim();
+  const username = document.getElementById('adminUsername').value.trim().toLowerCase();
+  const pass = document.getElementById('adminPass').value.trim();
+  const role = document.getElementById('adminRole').value;
+  if (!name || !username || !pass) { showStatus('adminStatus', 'error', 'All fields are required.'); return; }
+  if (allBrokers.find(b => b.username.toLowerCase() === username)) { showStatus('adminStatus', 'error', 'Username already exists.'); return; }
+  allBrokers.push({
+    id: 'broker_' + uid(), username: username,
+    passphraseHash: btoa(username + '|' + pass),
+    displayName: name, role: role,
+    createdAt: new Date().toISOString()
+  });
+  saveBrokers(); renderBrokerTable();
+  document.getElementById('adminName').value = '';
+  document.getElementById('adminUsername').value = '';
+  document.getElementById('adminPass').value = '';
+  showStatus('adminStatus', 'success', '✅ Broker "' + name + '" created.');
+}
+
+function renderBrokerTable() {
+  const tbody = document.getElementById('brokerTableBody');
+  tbody.innerHTML = allBrokers.map(b => {
+    const created = new Date(b.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const isMe = b.id === brokerId;
+    return '<tr><td><strong>' + escHtml(b.displayName) + '</strong>' + (isMe ? ' <span style="font-size:11px;color:var(--accent)">(you)</span>' : '') + '</td><td>' + escHtml(b.username) + '</td><td><span class="stage-badge ' + (b.role === 'admin' ? 'loi' : 'inquiry') + '">' + b.role + '</span></td><td style="color:var(--muted)">' + created + '</td><td>' + (isMe ? '—' : '<button class="btn btn-sm" style="color:var(--danger)" onclick="deleteBroker(\'' + b.id + '\')">Delete</button>') + '</td></tr>';
+  }).join('');
+}
+
+function deleteBroker(id) {
+  if (id === brokerId) return;
+  const broker = allBrokers.find(b => b.id === id);
+  if (!confirm('Delete broker "' + (broker ? broker.displayName : '') + '"? Their data will remain in localStorage.')) return;
+  allBrokers = allBrokers.filter(b => b.id !== id);
+  saveBrokers(); renderBrokerTable();
+  showStatus('adminStatus', 'success', '✅ Broker deleted.');
+}
+
 // ── Init ──────────────────────────────────────────────────────
-loadData();
-if (properties.length) selectedPropertyId = properties[0].id;
-renderPropertyList();
+initBrokers();
+if (checkBrokerSession()) {
+  enterApp();
+} else {
+  setTimeout(() => document.getElementById('loginUsername').focus(), 100);
+}
 </script>
 </body>
 </html>
