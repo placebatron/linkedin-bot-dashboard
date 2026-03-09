@@ -169,6 +169,9 @@ textarea.email-input { min-height: 200px; font-size: 14px; line-height: 1.6; }
   cursor: pointer; transition: all 0.15s;
 }
 .edit-btn:hover { border-color: rgba(79,110,247,0.5); color: #818cf8; }
+.diff-btn { display: flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); font-size: 12px; cursor: pointer; transition: all 0.15s; }
+.diff-btn:hover { border-color: rgba(16,185,129,0.5); color: var(--success); }
+.diff-btn.active { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.4); color: var(--success); }
 .editing-mode .edit-btn {
   background: rgba(79,110,247,0.12); border-color: rgba(79,110,247,0.4); color: #818cf8;
 }
@@ -201,6 +204,30 @@ textarea.email-input { min-height: 200px; font-size: 14px; line-height: 1.6; }
   cursor: pointer; transition: opacity 0.15s;
 }
 .done-btn:hover { opacity: 0.85; }
+
+/* ── Diff View ── */
+.diff-view { font-size: 14px; line-height: 1.75; white-space: pre-wrap; color: var(--text); }
+.diff-view .diff-add { background: rgba(16,185,129,0.15); color: #6ee7b7; border-radius: 3px; padding: 0 2px; }
+.diff-view .diff-del { background: rgba(239,68,68,0.12); color: #fca5a5; text-decoration: line-through; border-radius: 3px; padding: 0 2px; opacity: 0.7; }
+.diff-legend { display: flex; gap: 14px; margin-bottom: 10px; font-size: 11px; font-weight: 600; }
+.diff-legend span { display: flex; align-items: center; gap: 4px; }
+.diff-legend .legend-add { color: #6ee7b7; }
+.diff-legend .legend-del { color: #fca5a5; }
+
+/* ── Prospect Research ── */
+.research-section { margin-bottom: 18px; }
+.research-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px 12px; border-radius: 8px; border: 1px dashed var(--border); background: none; color: var(--muted); font-size: 12px; font-weight: 600; width: 100%; transition: all 0.15s; }
+.research-toggle:hover { border-color: var(--accent); color: var(--accent); }
+.research-toggle.active { border-style: solid; border-color: rgba(79,110,247,0.3); background: rgba(79,110,247,0.05); color: var(--accent); }
+.research-body { display: none; margin-top: 10px; }
+.research-section.open .research-body { display: block; }
+.research-textarea { width: 100%; min-height: 90px; max-height: 200px; resize: vertical; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-size: 13px; line-height: 1.5; font-family: inherit; box-sizing: border-box; }
+.research-textarea::placeholder { color: var(--muted); }
+.research-textarea:focus { border-color: var(--accent); outline: none; }
+.research-hint { font-size: 11px; color: var(--muted); margin-top: 6px; margin-bottom: 10px; }
+.research-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 6px; border: none; background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; font-size: 12px; font-weight: 700; cursor: pointer; transition: opacity 0.15s; }
+.research-btn:hover { opacity: 0.85; }
+.research-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ── Technique Callouts ── */
 .techniques-used { margin-bottom: 16px; }
@@ -525,6 +552,22 @@ if (!sessionStorage.getItem('ba_team_token')) { window.location.href = 'index.ht
       </div>
     </div>
 
+    <!-- Prospect Research -->
+    <div class="research-section" id="researchSection">
+      <button class="research-toggle" onclick="toggleResearch()">
+        <span>🔍</span> <span id="researchToggleText">Paste prospect intel to auto-fill context</span>
+      </button>
+      <div class="research-body">
+        <textarea class="research-textarea" id="researchInput" placeholder="Paste anything about the prospect here — LinkedIn profile text, CoStar listing, company website bio, email signature, CRM notes, or even a URL you visited.
+
+The AI will extract their name, role, company details, and key talking points."></textarea>
+        <div class="research-hint">Tip: The more you paste, the better the context. Even raw copy-paste from a webpage works.</div>
+        <button class="research-btn" id="researchBtn" onclick="runProspectResearch()">
+          <span id="researchBtnText">🧠 Auto-Fill Context</span>
+        </button>
+      </div>
+    </div>
+
     <div class="form-row">
       <label>Additional Context (optional)</label>
       <input type="text" id="extraContext" placeholder="e.g. They own a strip mall on Halsted, haven't sold in 20 years" />
@@ -681,6 +724,7 @@ Mike"></textarea>
             <div class="editing-badge">✏️ Editing</div>
           </div>
           <div class="output-label-actions">
+            <button class="diff-btn" id="diffBtn" onclick="toggleDiffView()">⇄ Changes</button>
             <button class="edit-btn" id="editBtn" onclick="toggleEditMode()">✏️ Edit</button>
             <button class="copy-btn" id="copyEmailBtn" onclick="copyEmail()">📋 Copy</button>
           </div>
@@ -876,6 +920,9 @@ async function rewriteEmail() {
     return;
   }
 
+  // Save original draft for diff view
+  lastOriginalDraft = draft;
+
   // Loading state
   const btn = document.getElementById('rewriteBtn');
   btn.disabled = true;
@@ -1004,12 +1051,18 @@ Scores are integers 0-100 reflecting how well the rewritten email achieves each 
 
 // ── Render output ─────────────────────────────────────────────────
 function renderOutput(result, requestedTechs) {
-  // Reset edit mode on new render
+  // Reset edit & diff mode on new render
   const card = document.getElementById('emailOutputCard');
   const el   = document.getElementById('emailOutputText');
   card.classList.remove('editing-mode');
   el.contentEditable = 'false';
   document.getElementById('editBtn').innerHTML = '✏️ Edit';
+  document.getElementById('editBtn').disabled = false;
+  isDiffView = false;
+  const diffBtn = document.getElementById('diffBtn');
+  diffBtn.classList.remove('active');
+  diffBtn.innerHTML = '⇄ Changes';
+  diffBtn.style.display = lastOriginalDraft ? '' : 'none';
   originalEmailText = result.rewritten_email;
   followupContextEmail = ''; // clear draft override so follow-up uses fresh output
 
@@ -1626,6 +1679,204 @@ function deleteDraft(id) {
 
 function toggleDrafts() {
   document.getElementById('draftsSection').classList.toggle('open');
+}
+
+// ── Before/After Diff View ────────────────────────────────────────
+let lastOriginalDraft = '';
+let isDiffView = false;
+
+function computeDiff(oldText, newText) {
+  // Word-level diff using LCS approach
+  const oldWords = oldText.split(/(\s+)/);
+  const newWords = newText.split(/(\s+)/);
+
+  // Build LCS table
+  const m = oldWords.length, n = newWords.length;
+  // For very long texts, fall back to paragraph-level diff
+  if (m * n > 500000) return computeParagraphDiff(oldText, newText);
+
+  const dp = Array.from({ length: m + 1 }, () => new Uint16Array(n + 1));
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = oldWords[i-1] === newWords[j-1]
+        ? dp[i-1][j-1] + 1
+        : Math.max(dp[i-1][j], dp[i][j-1]);
+
+  // Backtrack
+  const result = [];
+  let i = m, j = n;
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && oldWords[i-1] === newWords[j-1]) {
+      result.unshift({ type: 'same', text: oldWords[i-1] });
+      i--; j--;
+    } else if (j > 0 && (i === 0 || dp[i][j-1] >= dp[i-1][j])) {
+      result.unshift({ type: 'add', text: newWords[j-1] });
+      j--;
+    } else {
+      result.unshift({ type: 'del', text: oldWords[i-1] });
+      i--;
+    }
+  }
+  return result;
+}
+
+function computeParagraphDiff(oldText, newText) {
+  // Simple paragraph-level fallback for very long texts
+  const result = [];
+  result.push({ type: 'del', text: oldText });
+  result.push({ type: 'add', text: newText });
+  return result;
+}
+
+function renderDiffHTML(diffParts) {
+  let html = '<div class="diff-legend"><span class="legend-add"><span class="diff-add">&nbsp;new&nbsp;</span> Added</span><span class="legend-del"><span class="diff-del">&nbsp;old&nbsp;</span> Removed</span></div><div class="diff-view">';
+
+  // Merge consecutive same-type parts
+  const merged = [];
+  for (const part of diffParts) {
+    if (merged.length > 0 && merged[merged.length - 1].type === part.type) {
+      merged[merged.length - 1].text += part.text;
+    } else {
+      merged.push({ ...part });
+    }
+  }
+
+  for (const part of merged) {
+    const escaped = part.text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    if (part.type === 'add') html += `<span class="diff-add">${escaped}</span>`;
+    else if (part.type === 'del') html += `<span class="diff-del">${escaped}</span>`;
+    else html += escaped;
+  }
+  html += '</div>';
+  return html;
+}
+
+function toggleDiffView() {
+  const btn = document.getElementById('diffBtn');
+  const el = document.getElementById('emailOutputText');
+  const card = document.getElementById('emailOutputCard');
+
+  // Don't allow diff in edit mode
+  if (card.classList.contains('editing-mode')) {
+    showStatus('Exit edit mode first to view changes.', 'error', 2000);
+    return;
+  }
+
+  isDiffView = !isDiffView;
+
+  if (isDiffView) {
+    const currentEmail = originalEmailText || el.textContent;
+    const diff = computeDiff(lastOriginalDraft, currentEmail);
+    el.innerHTML = renderDiffHTML(diff);
+    el.contentEditable = 'false';
+    btn.classList.add('active');
+    btn.innerHTML = '⇄ Clean';
+    // Disable edit while in diff view
+    document.getElementById('editBtn').disabled = true;
+  } else {
+    el.textContent = originalEmailText || el.textContent;
+    btn.classList.remove('active');
+    btn.innerHTML = '⇄ Changes';
+    document.getElementById('editBtn').disabled = false;
+  }
+}
+
+// ── Prospect Intelligence Pre-Fill ────────────────────────────────
+function toggleResearch() {
+  const section = document.getElementById('researchSection');
+  section.classList.toggle('open');
+  const btn = section.querySelector('.research-toggle');
+  btn.classList.toggle('active', section.classList.contains('open'));
+}
+
+async function runProspectResearch() {
+  if (!teamToken) {
+    showStatus('Please sign in first.', 'error');
+    openSettings();
+    return;
+  }
+
+  const rawInput = document.getElementById('researchInput').value.trim();
+  if (!rawInput) {
+    showStatus('Paste some prospect information first.', 'error', 3000);
+    return;
+  }
+
+  const btn = document.getElementById('researchBtn');
+  btn.disabled = true;
+  document.getElementById('researchBtnText').innerHTML = '<span class="spinner"></span> Researching...';
+
+  const systemPrompt = `You are a commercial real estate research assistant for Baum Realty Group. Extract prospect intelligence from raw pasted text (LinkedIn profiles, company bios, CoStar data, CRM notes, email signatures, website copy, etc.).
+
+Return ONLY valid JSON — no markdown, no explanation:
+{
+  "prospect_name": "Full name or empty string if not found",
+  "prospect_role": "Title/role or empty string",
+  "suggested_deal_type": "One of: sell_listing, buy_acquisition, tenant_rep, landlord_rep, investment_sale, cold_owner, cold_tenant, or empty string if unclear",
+  "additional_context": "2-3 sentence summary of the most relevant facts for a broker email: company name, portfolio size, recent activity, property types, geography, pain points, opportunities. Be specific and actionable."
+}
+
+Focus on details that would make an outreach email more targeted and personal. Omit generic filler.`;
+
+  try {
+    const response = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + teamToken,
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 512,
+        messages: [{ role: 'user', content: `Extract prospect intelligence from this raw text:\n\n${rawInput}` }],
+        system: systemPrompt,
+      }),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) { teamToken = ''; sessionStorage.removeItem('voss_team_token'); updateAuthUI(); }
+      throw new Error(`API error ${response.status}`);
+    }
+
+    const data = await response.json();
+    const raw = data.content[0].text.trim();
+    const jsonStr = raw.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
+    const result = JSON.parse(jsonStr);
+
+    // Auto-fill fields (only if we got data and field is currently empty)
+    if (result.prospect_name) {
+      const nameEl = document.getElementById('prospectName');
+      if (!nameEl.value.trim()) nameEl.value = result.prospect_name;
+    }
+    if (result.prospect_role) {
+      const roleEl = document.getElementById('prospectRole');
+      if (!roleEl.value.trim()) roleEl.value = result.prospect_role;
+    }
+    if (result.suggested_deal_type) {
+      const dealEl = document.getElementById('dealType');
+      if (!dealEl.value) dealEl.value = result.suggested_deal_type;
+    }
+    if (result.additional_context) {
+      const ctxEl = document.getElementById('extraContext');
+      // Append to existing context rather than overwrite
+      ctxEl.value = ctxEl.value.trim()
+        ? ctxEl.value.trim() + ' | ' + result.additional_context
+        : result.additional_context;
+    }
+
+    showStatus('Prospect intel extracted and fields updated.', 'success', 3000);
+
+    // Collapse the research section
+    document.getElementById('researchSection').classList.remove('open');
+    document.querySelector('.research-toggle').classList.remove('active');
+
+  } catch (err) {
+    console.error(err);
+    showStatus('Research error: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    document.getElementById('researchBtnText').innerHTML = '🧠 Auto-Fill Context';
+  }
 }
 
 // ── On load: render drafts ───────────────────────────────────────
