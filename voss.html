@@ -1834,7 +1834,7 @@ Focus on details that would make an outreach email more targeted and personal. O
     });
 
     if (!response.ok) {
-      if (response.status === 401) { teamToken = ''; sessionStorage.removeItem('voss_team_token'); updateAuthUI(); }
+      if (response.status === 401) { teamToken = ''; sessionStorage.removeItem('ba_team_token'); window.location.href = 'index.html'; }
       throw new Error(`API error ${response.status}`);
     }
 
