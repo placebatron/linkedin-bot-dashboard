@@ -424,26 +424,7 @@ textarea.email-input { min-height: 200px; font-size: 14px; line-height: 1.6; }
 .outlook-btn.copied { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.4); color: #34d399; }
 
 /* ── Settings Modal ── */
-.modal-overlay {
-  display: none; position: fixed; inset: 0;
-  background: rgba(0,0,0,0.7); z-index: 200;
-  align-items: center; justify-content: center; backdrop-filter: blur(4px);
-}
-.modal-overlay.open { display: flex; }
-.modal {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 16px; padding: 28px; width: 480px; max-width: 95vw;
-}
-.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-.modal-title { font-size: 17px; font-weight: 700; }
-.modal-close { background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; padding: 2px 6px; border-radius: 4px; }
-.modal-close:hover { color: var(--text); }
-.modal-note {
-  background: rgba(79,110,247,0.08); border: 1px solid rgba(79,110,247,0.2);
-  border-radius: 8px; padding: 12px 14px; font-size: 12px; color: #818cf8;
-  margin-bottom: 20px; line-height: 1.6;
-}
-.modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+/* modal classes kept for any future use */
 .btn { padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
 .btn-ghost { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
 .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
@@ -470,26 +451,10 @@ textarea.email-input { min-height: 200px; font-size: 14px; line-height: 1.6; }
 </head>
 <body>
 
-<!-- Team Sign-In Modal -->
-<div class="modal-overlay" id="settingsModal">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title">🔐 Team Sign-In</div>
-      <button class="modal-close" onclick="closeSettings()">✕</button>
-    </div>
-    <div class="modal-note">
-      Enter the Baum Realty team passphrase to access the Voss Email Rewriter. Ask Mike if you don't have it.
-    </div>
-    <div class="form-row">
-      <label>Team Passphrase</label>
-      <input type="password" id="passphraseInput" placeholder="Enter team passphrase…" onkeydown="if(event.key==='Enter')saveSettings()" />
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeSettings()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveSettings()">Sign In</button>
-    </div>
-  </div>
-</div>
+<!-- Auth guard: redirect to index if not signed in -->
+<script>
+if (!sessionStorage.getItem('ba_team_token')) { window.location.href = 'index.html'; }
+</script>
 
 <!-- Header -->
 <header>
@@ -505,8 +470,7 @@ textarea.email-input { min-height: 200px; font-size: 14px; line-height: 1.6; }
     </div>
   </div>
   <div class="header-right" style="display:flex;align-items:center;gap:10px;">
-    <span id="authStatus" style="font-size:12px;color:var(--muted);display:none;">✓ Signed in</span>
-    <button class="settings-btn" id="authBtn" onclick="openSettings()">🔐 Sign In</button>
+    <span style="font-size:12px;color:var(--muted);">✓ Signed in</span>
   </div>
 </header>
 
@@ -845,48 +809,7 @@ Mike"></textarea>
 <script>
 // ── Config ────────────────────────────────────────────────────────
 const PROXY_URL = 'https://voss-proxy.mike-3ac.workers.dev/v1/messages';
-let teamToken = sessionStorage.getItem('voss_team_token') || '';
-
-// ── Auth UI ──────────────────────────────────────────────────────
-function updateAuthUI() {
-  const btn = document.getElementById('authBtn');
-  const status = document.getElementById('authStatus');
-  if (teamToken) {
-    btn.textContent = '🔓 Sign Out';
-    btn.onclick = signOut;
-    status.style.display = 'inline';
-  } else {
-    btn.textContent = '🔐 Sign In';
-    btn.onclick = openSettings;
-    status.style.display = 'none';
-  }
-}
-function signOut() {
-  teamToken = '';
-  sessionStorage.removeItem('voss_team_token');
-  updateAuthUI();
-  showStatus('Signed out.', 'info', 2500);
-}
-function openSettings() {
-  document.getElementById('passphraseInput').value = '';
-  document.getElementById('settingsModal').classList.add('open');
-  setTimeout(() => document.getElementById('passphraseInput').focus(), 100);
-}
-function closeSettings() {
-  document.getElementById('settingsModal').classList.remove('open');
-}
-function saveSettings() {
-  const phrase = document.getElementById('passphraseInput').value.trim();
-  if (!phrase) { showStatus('Please enter the team passphrase.', 'error', 3000); return; }
-  teamToken = phrase;
-  sessionStorage.setItem('voss_team_token', phrase);
-  closeSettings();
-  updateAuthUI();
-  showStatus("Signed in! You're ready to rewrite.", 'info', 2500);
-}
-document.getElementById('settingsModal').addEventListener('click', function(e) {
-  if (e.target === this) closeSettings();
-});
+let teamToken = sessionStorage.getItem('ba_team_token') || '';
 
 // ── Char counter ──────────────────────────────────────────────────
 document.getElementById('emailDraft').addEventListener('input', function() {
@@ -931,8 +854,7 @@ const TECHNIQUE_META = {
 // ── Main rewrite function ─────────────────────────────────────────
 async function rewriteEmail() {
   if (!teamToken) {
-    showStatus('⚠️ Please sign in with the team passphrase first.', 'error');
-    openSettings();
+    window.location.href = 'index.html';
     return;
   }
 
@@ -1058,7 +980,7 @@ Scores are integers 0-100 reflecting how well the rewritten email achieves each 
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      if (response.status === 401) { teamToken = ''; sessionStorage.removeItem('voss_team_token'); updateAuthUI(); }
+      if (response.status === 401) { teamToken = ''; sessionStorage.removeItem('ba_team_token'); window.location.href = 'index.html'; }
       throw new Error(err.error?.message || `API error ${response.status}`);
     }
 
@@ -1206,7 +1128,7 @@ function copyForOutlook() {
 
 // ── Remove a technique & surgically re-rewrite ────────────────────
 async function removeTechnique(techId, btn) {
-  if (!teamToken) { openSettings(); return; }
+  if (!teamToken) { window.location.href = 'index.html'; return; }
 
   const currentEmail = document.getElementById('emailOutputText').textContent.trim();
   if (!currentEmail) return;
@@ -1266,7 +1188,7 @@ Respond ONLY with valid JSON:
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      if (response.status === 401) { teamToken = ''; sessionStorage.removeItem('voss_team_token'); updateAuthUI(); }
+      if (response.status === 401) { teamToken = ''; sessionStorage.removeItem('ba_team_token'); window.location.href = 'index.html'; }
       throw new Error(err.error?.message || `API error ${response.status}`);
     }
 
@@ -1327,7 +1249,7 @@ function getFollowupStyle() {
 }
 
 async function generateFollowUp() {
-  if (!teamToken) { openSettings(); return; }
+  if (!teamToken) { window.location.href = 'index.html'; return; }
 
   // Source email: override from draft card, or current output, or draft input
   const sourceEmail = followupContextEmail ||
@@ -1430,7 +1352,7 @@ Respond ONLY with valid JSON:
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      if (response.status === 401) { teamToken = ''; sessionStorage.removeItem('voss_team_token'); updateAuthUI(); }
+      if (response.status === 401) { teamToken = ''; sessionStorage.removeItem('ba_team_token'); window.location.href = 'index.html'; }
       throw new Error(err.error?.message || `API error ${response.status}`);
     }
 
@@ -1706,12 +1628,8 @@ function toggleDrafts() {
   document.getElementById('draftsSection').classList.toggle('open');
 }
 
-// ── On load: check auth & render ─────────────────────────────────
+// ── On load: render drafts ───────────────────────────────────────
 window.addEventListener('load', () => {
-  updateAuthUI();
-  if (!teamToken) {
-    setTimeout(openSettings, 500);
-  }
   renderDrafts();
 });
 </script>

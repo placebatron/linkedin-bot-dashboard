@@ -178,10 +178,12 @@ header {
 }
 .app-card.linkedin::before  { background: linear-gradient(135deg, rgba(0,119,181,0.1), rgba(0,96,149,0.05)); }
 .app-card.voss::before      { background: linear-gradient(135deg, rgba(79,110,247,0.1), rgba(124,58,237,0.05)); }
+.app-card.reports::before   { background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(217,119,6,0.05)); }
 .app-card.coming::before    { background: linear-gradient(135deg, rgba(139,144,176,0.05), transparent); }
 .app-card:hover::before     { opacity: 1; }
 .app-card.linkedin:hover { border-color: rgba(0,119,181,0.4); }
 .app-card.voss:hover     { border-color: rgba(79,110,247,0.4); }
+.app-card.reports:hover  { border-color: rgba(245,158,11,0.4); }
 .app-card.coming         { opacity: 0.55; cursor: default; pointer-events: none; }
 
 .card-header {
@@ -204,6 +206,7 @@ header {
 .app-icon.voss-icon     { background: linear-gradient(135deg, #4f6ef7, #7c3aed); }
 .app-icon.core-icon     { background: linear-gradient(135deg, #10b981, #059669); }
 .app-icon.research-icon { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.app-icon.reports-icon  { background: linear-gradient(135deg, #f59e0b, #d97706); }
 
 .card-status {
   font-size: 11px;
@@ -294,6 +297,71 @@ footer {
   50% { opacity: 0.6; transform: scale(0.85); }
 }
 
+/* ── Auth Gate ── */
+.auth-gate {
+  position: fixed; inset: 0; z-index: 999;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+}
+.auth-gate.hidden { display: none; }
+.auth-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 36px 32px;
+  width: 420px;
+  max-width: 92vw;
+  text-align: center;
+}
+.auth-box .logo-mark {
+  width: 56px; height: 56px; font-size: 24px;
+  margin: 0 auto 16px;
+}
+.auth-box h2 {
+  font-size: 22px; font-weight: 700; margin-bottom: 4px;
+}
+.auth-box .auth-sub {
+  font-size: 13px; color: var(--muted); margin-bottom: 24px;
+}
+.auth-box input {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); font-size: 14px;
+  padding: 11px 14px; width: 100%; font-family: inherit;
+  transition: border 0.15s; margin-bottom: 14px; text-align: center;
+}
+.auth-box input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,110,247,0.1); }
+.auth-box input::placeholder { color: rgba(139,144,176,0.5); font-style: italic; }
+.auth-box .auth-btn {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none; color: white; padding: 10px 24px; border-radius: 8px;
+  font-size: 14px; font-weight: 600; cursor: pointer; width: 100%;
+  transition: opacity 0.15s;
+}
+.auth-box .auth-btn:hover { opacity: 0.9; }
+.auth-box .auth-error {
+  font-size: 12px; color: var(--danger); margin-top: 10px; display: none;
+}
+.auth-box .auth-hint {
+  font-size: 11px; color: var(--muted); margin-top: 16px;
+}
+.main-content { display: none; }
+.main-content.visible { display: contents; }
+
+/* ── Header auth status ── */
+.header-auth {
+  display: flex; align-items: center; gap: 10px;
+}
+.header-auth .auth-status {
+  font-size: 12px; color: var(--muted);
+}
+.header-auth .signout-btn {
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--muted); padding: 5px 10px; border-radius: 6px;
+  font-size: 12px; cursor: pointer; transition: all 0.15s;
+}
+.header-auth .signout-btn:hover { border-color: var(--accent); color: var(--text); }
+
 @media (max-width: 600px) {
   header { padding: 0 20px; }
   .hero { padding: 48px 20px 40px; }
@@ -305,6 +373,22 @@ footer {
 </head>
 <body>
 
+<!-- Auth Gate -->
+<div class="auth-gate" id="authGate">
+  <div class="auth-box">
+    <div class="logo-mark">BA</div>
+    <h2>BaumAgents</h2>
+    <div class="auth-sub">Internal tools for Baum Realty Group</div>
+    <input type="password" id="passphraseInput" placeholder="Enter team passphrase…" onkeydown="if(event.key==='Enter')signIn()" autofocus />
+    <button class="auth-btn" onclick="signIn()">Sign In</button>
+    <div class="auth-error" id="authError">Please enter the team passphrase.</div>
+    <div class="auth-hint">Ask Mike if you don't have the passphrase.</div>
+  </div>
+</div>
+
+<!-- Main Content (hidden until auth) -->
+<div class="main-content" id="mainContent">
+
 <header>
   <a class="logo" href="/">
     <div class="logo-mark">BA</div>
@@ -313,7 +397,10 @@ footer {
       <div class="logo-org">Baum Realty Group</div>
     </div>
   </a>
-  <div class="header-badge">Internal Tools</div>
+  <div class="header-auth">
+    <span class="auth-status" id="authStatusText">✓ Signed in</span>
+    <button class="signout-btn" onclick="signOut()">Sign Out</button>
+  </div>
 </header>
 
 <div class="hero">
@@ -368,6 +455,26 @@ footer {
       </div>
     </a>
 
+    <!-- Client Reports: Leasing -->
+    <a class="app-card reports" href="leasing-reports.html">
+      <div class="card-header">
+        <div class="app-icon reports-icon">📋</div>
+        <span class="card-status status-new">New</span>
+      </div>
+      <div>
+        <div class="app-name">Leasing Activity Reports</div>
+        <div class="app-tagline">Generate client-facing leasing activity reports for landlord representation. Track prospect pipelines, import broker data, and export professional PDF and Excel reports.</div>
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">Leasing</span>
+          <span class="tag">Reports</span>
+          <span class="tag">Landlord Rep</span>
+        </div>
+        <div class="card-arrow">→</div>
+      </div>
+    </a>
+
     <!-- Coming Soon: CORE Research -->
     <div class="app-card coming">
       <div class="card-header">
@@ -416,6 +523,41 @@ footer {
     All systems operational
   </div>
 </footer>
+
+</div><!-- /main-content -->
+
+<script>
+const AUTH_KEY = 'ba_team_token';
+
+function signIn() {
+  const phrase = document.getElementById('passphraseInput').value.trim();
+  const err = document.getElementById('authError');
+  if (!phrase) { err.style.display = 'block'; return; }
+  err.style.display = 'none';
+  sessionStorage.setItem(AUTH_KEY, phrase);
+  showApp();
+}
+
+function signOut() {
+  sessionStorage.removeItem(AUTH_KEY);
+  document.getElementById('mainContent').classList.remove('visible');
+  document.getElementById('authGate').classList.remove('hidden');
+  document.getElementById('passphraseInput').value = '';
+  setTimeout(() => document.getElementById('passphraseInput').focus(), 100);
+}
+
+function showApp() {
+  document.getElementById('authGate').classList.add('hidden');
+  document.getElementById('mainContent').classList.add('visible');
+}
+
+// On load: check if already signed in this session
+if (sessionStorage.getItem(AUTH_KEY)) {
+  showApp();
+} else {
+  setTimeout(() => document.getElementById('passphraseInput').focus(), 100);
+}
+</script>
 
 </body>
 </html>
