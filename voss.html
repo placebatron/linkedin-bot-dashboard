@@ -263,13 +263,22 @@ textarea.email-input { min-height: 200px; font-size: 14px; line-height: 1.6; }
 .score-bars { display: flex; flex-direction: column; gap: 10px; }
 .score-row { display: flex; align-items: center; gap: 10px; }
 .score-name { font-size: 12px; font-weight: 600; color: var(--muted); width: 110px; flex-shrink: 0; }
-.score-bar-wrap { flex: 1; background: var(--surface2); border-radius: 4px; height: 5px; overflow: hidden; }
-.score-bar { height: 5px; border-radius: 4px; transition: width 1.2s cubic-bezier(0.22,1,0.36,1); }
+.score-bar-wrap { flex: 1; background: var(--surface2); border-radius: 4px; height: 5px; overflow: hidden; position: relative; }
+.score-bar { height: 5px; border-radius: 4px; transition: width 1.2s cubic-bezier(0.22,1,0.36,1); position: relative; z-index: 2; }
+.score-target-zone { position: absolute; top: 0; height: 100%; background: rgba(255,255,255,0.08); border-radius: 4px; z-index: 1; transition: left 0.5s, width 0.5s; }
+.score-status { width: 18px; flex-shrink: 0; font-size: 11px; text-align: center; }
+.score-status.in-zone { color: var(--success); }
+.score-status.out-zone { color: var(--warning); }
 .score-bar.empathy  { background: linear-gradient(90deg, #4f6ef7, #818cf8); }
 .score-bar.trust    { background: linear-gradient(90deg, #7c3aed, #a78bfa); }
 .score-bar.clarity  { background: linear-gradient(90deg, #10b981, #34d399); }
 .score-bar.urgency  { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+.score-bar.stagefit { background: linear-gradient(90deg, #ec4899, #f472b6); }
 .score-val { font-size: 12px; font-weight: 700; color: var(--text); width: 28px; text-align: right; }
+.score-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+.stage-label { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 12px; background: rgba(236,72,153,0.12); color: #f472b6; margin-left: 8px; vertical-align: middle; }
+.tone-score-label-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.tone-score-label-row .tone-score-label { margin-bottom: 0; }
 
 /* ── 48-Hour Follow-Up ── */
 .followup-section {
@@ -685,27 +694,41 @@ Mike"></textarea>
 
       <!-- Tone Scores -->
       <div class="tone-score-card">
-        <div class="tone-score-label">Voss Tone Analysis</div>
+        <div class="tone-score-label-row">
+          <div class="tone-score-label">Voss Tone Analysis</div>
+          <span class="stage-label" id="stageLabel" style="display:none"></span>
+        </div>
         <div class="score-bars">
           <div class="score-row">
             <div class="score-name">Empathy</div>
-            <div class="score-bar-wrap"><div class="score-bar empathy" id="scoreEmpathy" style="width:0%"></div></div>
+            <div class="score-bar-wrap"><div class="score-target-zone" id="zoneEmpathy"></div><div class="score-bar empathy" id="scoreEmpathy" style="width:0%"></div></div>
             <div class="score-val" id="scoreEmpathyVal">—</div>
+            <div class="score-status" id="statusEmpathy"></div>
           </div>
           <div class="score-row">
             <div class="score-name">Trust-Building</div>
-            <div class="score-bar-wrap"><div class="score-bar trust" id="scoreTrust" style="width:0%"></div></div>
+            <div class="score-bar-wrap"><div class="score-target-zone" id="zoneTrust"></div><div class="score-bar trust" id="scoreTrust" style="width:0%"></div></div>
             <div class="score-val" id="scoreTrustVal">—</div>
+            <div class="score-status" id="statusTrust"></div>
           </div>
           <div class="score-row">
             <div class="score-name">Clarity</div>
-            <div class="score-bar-wrap"><div class="score-bar clarity" id="scoreClarity" style="width:0%"></div></div>
+            <div class="score-bar-wrap"><div class="score-target-zone" id="zoneClarity"></div><div class="score-bar clarity" id="scoreClarity" style="width:0%"></div></div>
             <div class="score-val" id="scoreClarityVal">—</div>
+            <div class="score-status" id="statusClarity"></div>
           </div>
           <div class="score-row">
             <div class="score-name">Low Pressure</div>
-            <div class="score-bar-wrap"><div class="score-bar urgency" id="scorePressure" style="width:0%"></div></div>
+            <div class="score-bar-wrap"><div class="score-target-zone" id="zonePressure"></div><div class="score-bar urgency" id="scorePressure" style="width:0%"></div></div>
             <div class="score-val" id="scorePressureVal">—</div>
+            <div class="score-status" id="statusPressure"></div>
+          </div>
+          <hr class="score-divider">
+          <div class="score-row">
+            <div class="score-name" style="color:#f472b6; font-weight:700;">Stage Fit</div>
+            <div class="score-bar-wrap"><div class="score-bar stagefit" id="scoreStageFit" style="width:0%"></div></div>
+            <div class="score-val" id="scoreStageFitVal">—</div>
+            <div class="score-status" id="statusStageFit"></div>
           </div>
         </div>
       </div>
@@ -895,6 +918,63 @@ const TECHNIQUE_META = {
   black_swan:          { label: '🦢 Black Swan Discovery',   desc: 'Opens a door to unknown leverage: "What am I missing here?"' },
 };
 
+// ── Stage Benchmarks for Tone Calibration ─────────────────────────
+const STAGE_BENCHMARKS = {
+  cold:      { empathy: [85,100], trust: [75,90],  clarity: [80,95],  low_pressure: [90,100] },
+  warm:      { empathy: [75,90],  trust: [80,95],  clarity: [85,100], low_pressure: [80,95]  },
+  follow_up: { empathy: [70,85],  trust: [80,95],  clarity: [90,100], low_pressure: [85,100] },
+  re_engage: { empathy: [80,95],  trust: [85,100], clarity: [85,100], low_pressure: [90,100] },
+  active:    { empathy: [65,80],  trust: [75,90],  clarity: [90,100], low_pressure: [70,85]  },
+};
+
+const STAGE_LABELS = {
+  cold: 'Cold Outreach', warm: 'Warm Lead', follow_up: 'Follow-Up',
+  re_engage: 'Re-Engage', active: 'Active Deal',
+};
+
+const STAGE_TONE_GUIDANCE = {
+  cold: `TONE CALIBRATION FOR COLD OUTREACH:
+- Lead with maximum empathy and vulnerability — they don't know you yet
+- Zero pressure whatsoever. Give them every reason to feel safe
+- High clarity — you have seconds to convey value before they stop reading
+- Trust builds over time, don't force it; show credibility through specificity`,
+  warm: `TONE CALIBRATION FOR WARM LEAD:
+- They've met you — lean into trust-building, reference your connection
+- Be more direct and confident than cold; you've earned some attention
+- Empathy still matters but can be lighter — don't over-explain your understanding
+- Slight urgency is okay if tied to a genuine timeline or opportunity`,
+  follow_up: `TONE CALIBRATION FOR FOLLOW-UP (NO RESPONSE):
+- Maximum clarity — get to the point faster, they've already seen your pitch
+- Don't over-empathize — it reads as needy. Stay crisp and confident
+- Low pressure is critical — they ignored you once, pressure will kill it
+- Trust-building through a new hook or insight, not repetition`,
+  re_engage: `TONE CALIBRATION FOR RE-ENGAGEMENT (WENT COLD):
+- Lead with vulnerability and honesty — "I know it's been a while"
+- Trust is the #1 priority — something broke, rebuild it
+- Very low pressure — this is a soft door-knock, not a sales call
+- High empathy: acknowledge the silence without guilt-tripping`,
+  active: `TONE CALIBRATION FOR ACTIVE CONVERSATION:
+- Clarity is king — they're engaged, don't waste their time
+- Be more direct and action-oriented than other stages
+- Empathy can dial back — you're collaborating now, not prospecting
+- Some healthy urgency is appropriate when tied to deal mechanics`,
+};
+
+function computeStageFit(scores, stage) {
+  const bench = STAGE_BENCHMARKS[stage];
+  if (!bench) return 50;
+  const dims = ['empathy', 'trust', 'clarity', 'low_pressure'];
+  let totalFit = 0;
+  dims.forEach(d => {
+    const val = scores[d] || 0;
+    const [lo, hi] = bench[d];
+    if (val >= lo && val <= hi) totalFit += 100;
+    else if (val < lo) totalFit += Math.max(0, 100 - (lo - val) * 3);
+    else totalFit += Math.max(0, 100 - (val - hi) * 3);
+  });
+  return Math.round(totalFit / dims.length);
+}
+
 // ── Main rewrite function ─────────────────────────────────────────
 async function rewriteEmail() {
   if (!teamToken) {
@@ -959,6 +1039,8 @@ async function rewriteEmail() {
     active: 'active conversation already underway',
   };
 
+  const stageGuidance = STAGE_TONE_GUIDANCE[relStage] || '';
+
   const systemPrompt = `You are an expert in Chris Voss's FBI hostage negotiation techniques as described in "Never Split the Difference." You specialize in applying these techniques to commercial real estate outreach emails for Baum Realty Group, a Chicago-based commercial brokerage.
 
 Your task is to rewrite a draft email using specific Voss techniques. The rewritten email must feel completely natural — like a real human wrote it — not like a robotic application of a formula. It should be warm, honest, and low-pressure.
@@ -969,6 +1051,8 @@ Core Voss principles always in play:
 - Be radically honest — vulnerability builds trust
 - Slow down, don't rush to the ask
 - Short sentences. Calm tone. Human.
+
+${stageGuidance}
 
 Commercial real estate context: The sender is Mike Baum, a commercial real estate broker/attorney at Baum Realty Group in Chicago. He specializes in retail, office, industrial, land, and multifamily investment properties nationwide with a Chicagoland focus.`;
 
@@ -1008,7 +1092,7 @@ Respond ONLY with valid JSON in this exact format:
 
 Technique IDs must be from: tactical_empathy, labeling, calibrated_questions, accusation_audit, no_oriented, mirroring, dj_voice, black_swan
 
-Scores are integers 0-100 reflecting how well the rewritten email achieves each quality.`;
+Scores are integers 0-100. IMPORTANT: Calibrate your writing AND scoring to the relationship stage. The scores should reflect how well the email hits the ideal tone for THIS specific stage, not a universal benchmark. For example, a cold outreach should score very high on empathy and low pressure; an active conversation should prioritize clarity over empathy.`;
 
   try {
     const response = await fetch(PROXY_URL, {
@@ -1038,7 +1122,7 @@ Scores are integers 0-100 reflecting how well the rewritten email achieves each 
     const jsonStr = raw.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
     const result = JSON.parse(jsonStr);
 
-    renderOutput(result, techniques);
+    renderOutput(result, techniques, relStage);
 
   } catch (err) {
     console.error(err);
@@ -1050,7 +1134,12 @@ Scores are integers 0-100 reflecting how well the rewritten email achieves each 
 }
 
 // ── Render output ─────────────────────────────────────────────────
-function renderOutput(result, requestedTechs) {
+let lastRenderedStage = 'cold';
+
+function renderOutput(result, requestedTechs, stage) {
+  stage = stage || 'cold';
+  lastRenderedStage = stage;
+
   // Reset edit & diff mode on new render
   const card = document.getElementById('emailOutputCard');
   const el   = document.getElementById('emailOutputText');
@@ -1069,12 +1158,28 @@ function renderOutput(result, requestedTechs) {
   // Email text
   el.textContent = result.rewritten_email;
 
-  // Scores (animate)
+  // Stage label
+  const stageLabel = document.getElementById('stageLabel');
+  stageLabel.textContent = STAGE_LABELS[stage] || stage;
+  stageLabel.style.display = '';
+
+  // Scores (animate) with target zones
   const scores = result.scores || {};
-  animateScore('scoreEmpathy',  'scoreEmpathyVal',  scores.empathy    || 0);
-  animateScore('scoreTrust',    'scoreTrustVal',    scores.trust      || 0);
-  animateScore('scoreClarity',  'scoreClarityVal',  scores.clarity    || 0);
-  animateScore('scorePressure', 'scorePressureVal', scores.low_pressure || 0);
+  const bench = STAGE_BENCHMARKS[stage] || STAGE_BENCHMARKS.cold;
+
+  animateScoreWithZone('scoreEmpathy',  'scoreEmpathyVal',  'zoneEmpathy',  'statusEmpathy',  scores.empathy       || 0, bench.empathy);
+  animateScoreWithZone('scoreTrust',    'scoreTrustVal',    'zoneTrust',    'statusTrust',    scores.trust         || 0, bench.trust);
+  animateScoreWithZone('scoreClarity',  'scoreClarityVal',  'zoneClarity',  'statusClarity',  scores.clarity       || 0, bench.clarity);
+  animateScoreWithZone('scorePressure', 'scorePressureVal', 'zonePressure', 'statusPressure', scores.low_pressure  || 0, bench.low_pressure);
+
+  // Stage Fit composite
+  const stageFit = computeStageFit(scores, stage);
+  animateScore('scoreStageFit', 'scoreStageFitVal', stageFit);
+  const sfStatus = document.getElementById('statusStageFit');
+  setTimeout(() => {
+    sfStatus.textContent = stageFit >= 75 ? '✓' : '⚠';
+    sfStatus.className = 'score-status ' + (stageFit >= 75 ? 'in-zone' : 'out-zone');
+  }, 150);
 
   // Technique pills with Remove buttons
   const container = document.getElementById('techniquesUsed');
@@ -1114,6 +1219,24 @@ function animateScore(barId, valId, value) {
     document.getElementById(barId).style.width = pct + '%';
     document.getElementById(valId).textContent = pct;
   }, 100);
+}
+
+function animateScoreWithZone(barId, valId, zoneId, statusId, value, range) {
+  animateScore(barId, valId, value);
+  const [lo, hi] = range;
+  // Show target zone on the bar track
+  const zone = document.getElementById(zoneId);
+  setTimeout(() => {
+    zone.style.left = lo + '%';
+    zone.style.width = (hi - lo) + '%';
+  }, 50);
+  // Status indicator
+  const status = document.getElementById(statusId);
+  setTimeout(() => {
+    const inZone = value >= lo && value <= hi;
+    status.textContent = inZone ? '✓' : '⚠';
+    status.className = 'score-status ' + (inZone ? 'in-zone' : 'out-zone');
+  }, 150);
 }
 
 // ── Inline edit mode ──────────────────────────────────────────────
@@ -1250,8 +1373,9 @@ Respond ONLY with valid JSON:
     const jsonStr = raw.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
     const result = JSON.parse(jsonStr);
 
-    // Update output
-    renderOutput(result, []);
+    // Update output (use current stage selection)
+    const currentStage = document.getElementById('relStage').value;
+    renderOutput(result, [], currentStage);
     showStatus(`"${meta.label}" removed. Email updated.`, 'info', 3000);
 
   } catch (err) {
