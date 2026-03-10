@@ -529,9 +529,43 @@ function escHtml(s) { const d = document.createElement('div'); d.textContent = s
 function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
 function showStatus(id, type, msg) { const el = document.getElementById(id); if (!el) return; el.className = 'status-bar ' + type; el.textContent = msg; el.style.display = 'block'; setTimeout(() => el.style.display = 'none', 5000); }
 
+// ── KV Persistence Layer ─────────────────────────────────────
+const API_URL = 'https://leasing-api.mike-3ac.workers.dev';
+
+async function kvGet(key) {
+  try {
+    const token = sessionStorage.getItem('ba_team_token') || '';
+    const res = await fetch(API_URL + '/data/' + encodeURIComponent(key), {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.data;
+  } catch(e) { return null; }
+}
+
+async function kvPut(key, data) {
+  try {
+    const token = sessionStorage.getItem('ba_team_token') || '';
+    const res = await fetch(API_URL + '/data/' + encodeURIComponent(key), {
+      method: 'PUT',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data })
+    });
+    return res.ok;
+  } catch(e) { return false; }
+}
+
 // ── Broker Auth ──────────────────────────────────────────────
-function initBrokers() {
-  try { allBrokers = JSON.parse(localStorage.getItem('leasingBrokers') || '[]'); } catch(e) { allBrokers = []; }
+async function initBrokers() {
+  // Try KV first, fall back to localStorage
+  const kvData = await kvGet('leasingBrokers');
+  if (kvData && kvData.length) {
+    allBrokers = kvData;
+    localStorage.setItem('leasingBrokers', JSON.stringify(allBrokers)); // cache locally
+  } else {
+    try { allBrokers = JSON.parse(localStorage.getItem('leasingBrokers') || '[]'); } catch(e) { allBrokers = []; }
+  }
   if (!allBrokers.length) {
     allBrokers = [{
       id: 'broker_admin', username: 'mike',
@@ -539,12 +573,15 @@ function initBrokers() {
       displayName: 'Mike Demetriou', role: 'admin',
       createdAt: new Date().toISOString()
     }];
-    saveBrokers();
+    await saveBrokers();
   }
 }
-function saveBrokers() { localStorage.setItem('leasingBrokers', JSON.stringify(allBrokers)); }
+async function saveBrokers() {
+  localStorage.setItem('leasingBrokers', JSON.stringify(allBrokers));
+  await kvPut('leasingBrokers', allBrokers);
+}
 
-function loginBroker() {
+async function loginBroker() {
   const u = document.getElementById('loginUsername').value.trim().toLowerCase();
   const p = document.getElementById('loginPassphrase').value.trim();
   if (!u || !p) { showStatus('loginStatus', 'error', 'Enter username and passphrase.'); return; }
@@ -579,7 +616,7 @@ function checkBrokerSession() {
   return true;
 }
 
-function enterApp() {
+async function enterApp() {
   document.getElementById('loginGate').classList.add('hidden');
   document.getElementById('appMain').style.display = 'grid';
   setText('sidebarBrokerName', currentBroker.displayName);
@@ -587,7 +624,9 @@ function enterApp() {
   document.getElementById('adminNavSection').style.display = currentBroker.role === 'admin' ? 'block' : 'none';
   // Migrate old data if needed
   migrateOldData();
-  loadData();
+  await loadData();
+  // One-time migration of localStorage to KV
+  await migrateLocalToKV();
   if (properties.length) selectedPropertyId = properties[0].id;
   renderPropertyList();
 }
@@ -608,18 +647,51 @@ function migrateOldData() {
   localStorage.removeItem('leasingSettings');
 }
 
-// ── Persistence (per-broker) ──────────────────────────────────
-function loadData() {
+// ── Persistence (per-broker, KV + localStorage) ──────────────
+async function loadData() {
   const k = 'leasing_' + brokerId + '_';
-  try { properties = JSON.parse(localStorage.getItem(k + 'properties') || '[]'); } catch(e) { properties = []; }
-  try { prospects  = JSON.parse(localStorage.getItem(k + 'prospects')  || '[]'); } catch(e) { prospects  = []; }
-  try { snapshots  = JSON.parse(localStorage.getItem(k + 'snapshots')  || '[]'); } catch(e) { snapshots  = []; }
-  try { settings   = JSON.parse(localStorage.getItem(k + 'settings')   || '{}'); } catch(e) { settings   = {}; }
+  async function loadKey(suffix, fallback) {
+    const kvData = await kvGet(k + suffix);
+    if (kvData !== null) {
+      localStorage.setItem(k + suffix, JSON.stringify(kvData)); // cache locally
+      return kvData;
+    }
+    try { return JSON.parse(localStorage.getItem(k + suffix) || fallback); } catch(e) { return JSON.parse(fallback); }
+  }
+  properties = await loadKey('properties', '[]');
+  prospects  = await loadKey('prospects',  '[]');
+  snapshots  = await loadKey('snapshots',  '[]');
+  settings   = await loadKey('settings',   '{}');
 }
-function saveProperties() { localStorage.setItem('leasing_' + brokerId + '_properties', JSON.stringify(properties)); }
-function saveProspects()  { localStorage.setItem('leasing_' + brokerId + '_prospects',  JSON.stringify(prospects)); }
-function saveSnapshots()  { localStorage.setItem('leasing_' + brokerId + '_snapshots',  JSON.stringify(snapshots)); }
-function saveSettingsData() { localStorage.setItem('leasing_' + brokerId + '_settings', JSON.stringify(settings)); }
+async function saveProperties() { localStorage.setItem('leasing_' + brokerId + '_properties', JSON.stringify(properties)); await kvPut('leasing_' + brokerId + '_properties', properties); }
+async function saveProspects()  { localStorage.setItem('leasing_' + brokerId + '_prospects',  JSON.stringify(prospects));  await kvPut('leasing_' + brokerId + '_prospects',  prospects); }
+async function saveSnapshots()  { localStorage.setItem('leasing_' + brokerId + '_snapshots',  JSON.stringify(snapshots));  await kvPut('leasing_' + brokerId + '_snapshots',  snapshots); }
+async function saveSettingsData() { localStorage.setItem('leasing_' + brokerId + '_settings', JSON.stringify(settings));  await kvPut('leasing_' + brokerId + '_settings',  settings); }
+
+// ── KV Migration (one-time) ──────────────────────────────────
+async function migrateLocalToKV() {
+  if (localStorage.getItem('leasing_kv_synced')) return;
+  try {
+    const token = sessionStorage.getItem('ba_team_token') || '';
+    const migrationData = { brokers: allBrokers, brokerData: {} };
+    for (const broker of allBrokers) {
+      const bid = broker.id;
+      const k = 'leasing_' + bid + '_';
+      migrationData.brokerData[bid] = {
+        properties: JSON.parse(localStorage.getItem(k + 'properties') || '[]'),
+        prospects:  JSON.parse(localStorage.getItem(k + 'prospects')  || '[]'),
+        snapshots:  JSON.parse(localStorage.getItem(k + 'snapshots')  || '[]'),
+        settings:   JSON.parse(localStorage.getItem(k + 'settings')   || '{}')
+      };
+    }
+    const res = await fetch(API_URL + '/migrate', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(migrationData)
+    });
+    if (res.ok) localStorage.setItem('leasing_kv_synced', 'true');
+  } catch(e) { /* will retry next session */ }
+}
 
 // ── Navigation ────────────────────────────────────────────────
 function showPage(name, el) {
@@ -676,7 +748,7 @@ function openPropertyForm(id) {
 function editProperty(id) { openPropertyForm(id); }
 function cancelPropertyForm() { document.getElementById('propertyFormWrap').style.display = 'none'; editingPropertyId = null; }
 
-function saveProperty() {
+async function saveProperty() {
   const addr = document.getElementById('propAddress').value.trim();
   if (!addr) { showStatus('propStatus', 'error', 'Address is required.'); return; }
   const now = new Date().toISOString();
@@ -704,7 +776,7 @@ function saveProperty() {
     const idx = properties.findIndex(p => p.id === editingPropertyId);
     if (idx >= 0) { data.createdAt = properties[idx].createdAt; properties[idx] = data; }
   } else { data.createdAt = now; properties.push(data); selectedPropertyId = data.id; }
-  saveProperties(); cancelPropertyForm(); renderPropertyList();
+  await saveProperties(); cancelPropertyForm(); renderPropertyList();
   showStatus('propStatus', 'success', '✅ Property saved.');
 }
 
@@ -777,7 +849,7 @@ function renderImportPreview(d) {
     '<div class="form-row">' + field('Broker Name', 'broker', d.brokerName) + field('Broker Phone', 'brokerPhone', d.brokerPhone) + '</div>';
 }
 
-function confirmImport() {
+async function confirmImport() {
   const addr = document.getElementById('imp_address').value.trim();
   if (!addr) { alert('Address is required.'); return; }
   const now = new Date().toISOString();
@@ -800,17 +872,17 @@ function confirmImport() {
     brokerEmail: '', createdAt: now, updatedAt: now,
   };
   properties.push(prop); selectedPropertyId = prop.id;
-  saveProperties(); closeImportWizard(); renderPropertyList();
+  await saveProperties(); closeImportWizard(); renderPropertyList();
   showStatus('propStatus', 'success', '✅ Property imported: ' + addr);
 }
 
-function deleteProperty(id) {
+async function deleteProperty(id) {
   if (!confirm('Delete this property and all its prospects?')) return;
   properties = properties.filter(p => p.id !== id);
   prospects = prospects.filter(l => l.propertyId !== id);
   snapshots = snapshots.filter(s => s.propertyId !== id);
   if (selectedPropertyId === id) selectedPropertyId = properties[0]?.id || '';
-  saveProperties(); saveProspects(); saveSnapshots(); renderPropertyList();
+  await saveProperties(); await saveProspects(); await saveSnapshots(); renderPropertyList();
 }
 
 // ── Prospects ─────────────────────────────────────────────────
@@ -847,13 +919,13 @@ function renderProspects() {
   tbody.innerHTML = filtered.map(l => '<tr><td><strong>' + escHtml(l.businessName || l.prospectName) + '</strong></td><td>' + escHtml(l.prospectName) + '</td><td>' + escHtml(l.businessType || '') + '</td><td><select class="btn btn-sm stage-badge ' + l.stage + '" style="width:auto;padding:4px 8px;font-size:11px" onchange="changeStage(\'' + l.id + '\',this.value)">' + STAGES.map(s => '<option value="' + s.key + '"' + (s.key === l.stage ? ' selected' : '') + '>' + s.label + '</option>').join('') + '</select></td><td style="max-width:250px;font-size:12px;color:var(--muted)">' + escHtml((l.notes||'').substring(0,120)) + ((l.notes||'').length > 120 ? '…' : '') + '</td><td><div class="prospect-actions"><button class="btn btn-sm" onclick="editProspect(\'' + l.id + '\')" title="Edit">✏️</button><button class="btn btn-sm" onclick="deleteProspect(\'' + l.id + '\')" title="Delete" style="color:var(--danger)">🗑️</button></div></td></tr>').join('');
 }
 
-function changeStage(id, newStage) {
+async function changeStage(id, newStage) {
   const l = prospects.find(x => x.id === id);
   if (!l || l.stage === newStage) return;
   l.stageHistory = l.stageHistory || [];
   l.stageHistory.push({ stage: newStage, date: new Date().toISOString(), note: 'Changed from ' + stageLabel(l.stage) + ' to ' + stageLabel(newStage) });
   l.stage = newStage; l.updatedAt = new Date().toISOString();
-  saveProspects(); renderProspects();
+  await saveProspects(); renderProspects();
 }
 
 function openProspectForm(id) {
@@ -878,7 +950,7 @@ function openProspectForm(id) {
 function closeProspectModal() { document.getElementById('prospectModal').classList.remove('open'); }
 function editProspect(id) { openProspectForm(id); }
 
-function saveProspect() {
+async function saveProspect() {
   const name = document.getElementById('leadName').value.trim();
   const biz = document.getElementById('leadBusiness').value.trim();
   if (!name && !biz) { alert('Enter a prospect name or business name.'); return; }
@@ -905,17 +977,17 @@ function saveProspect() {
     const idx = prospects.findIndex(l => l.id === editId);
     if (idx >= 0) { data.createdAt = prospects[idx].createdAt; data.stageHistory = prospects[idx].stageHistory || []; if (prospects[idx].stage !== newStage) { data.stageHistory.push({ stage: newStage, date: now, note: 'Changed to ' + stageLabel(newStage) }); } prospects[idx] = data; }
   } else { data.createdAt = now; data.stageHistory = [{ stage: newStage, date: now, note: 'Created' }]; prospects.push(data); }
-  saveProspects(); closeProspectModal(); renderProspects();
+  await saveProspects(); closeProspectModal(); renderProspects();
 }
 
-function deleteProspect(id) { if (!confirm('Delete this prospect?')) return; prospects = prospects.filter(l => l.id !== id); saveProspects(); renderProspects(); }
+async function deleteProspect(id) { if (!confirm('Delete this prospect?')) return; prospects = prospects.filter(l => l.id !== id); await saveProspects(); renderProspects(); }
 
 // ── Excel Import ──────────────────────────────────────────────
 function importExcel(files) {
   if (!files || !files[0]) return;
   if (!selectedPropertyId) { showStatus('prospectStatus', 'warning', 'Select a property first.'); return; }
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = async function(e) {
     try {
       const wb = XLSX.read(e.target.result, { type: 'array' });
       const ws = wb.Sheets[wb.SheetNames[0]];
@@ -953,7 +1025,7 @@ function importExcel(files) {
         prospects.push({ id: 'lead_' + uid(), propertyId: selectedPropertyId, prospectName: name, businessName: (row[typeCol] || '').toString().trim(), businessType: (row[typeCol] || '').toString().trim(), stage: stage, stageHistory: [{ stage, date: now, note: 'Imported from Excel' }], notes: fullNotes, contactPhone: '', contactEmail: '', desiredSF: null, maxRent: null, leaseTermYears: null, tourDate: null, nextFollowUp: null, source: 'Excel import', createdAt: now, updatedAt: now });
         imported++;
       }
-      saveProspects(); renderProspects();
+      await saveProspects(); renderProspects();
       showStatus('prospectStatus', 'success', '✅ Imported ' + imported + ' prospect' + (imported !== 1 ? 's' : '') + '.');
     } catch(err) { showStatus('prospectStatus', 'error', 'Import error: ' + err.message); }
   };
@@ -971,7 +1043,7 @@ function populateGenPropSelect() {
   if (cur && properties.find(p => p.id === cur)) sel.value = cur;
 }
 
-function createSnapshot(propertyId) {
+async function createSnapshot(propertyId) {
   const prop = properties.find(p => p.id === propertyId);
   if (!prop) return null;
   const propProspects = prospects.filter(l => l.propertyId === propertyId);
@@ -992,14 +1064,14 @@ function createSnapshot(propertyId) {
     prospectsSnapshot: propProspects.map(l => JSON.parse(JSON.stringify(l))),
     stats: { totalProspects: propProspects.length, activeCount: active.length, tourCount: tours.length, dealCount: deals.length, leaseCount: leased.length, avgDaysInPipeline: avgDays }
   };
-  snapshots.push(snap); saveSnapshots();
+  snapshots.push(snap); await saveSnapshots();
   return snap;
 }
 
-function generateSnapshot() {
+async function generateSnapshot() {
   const propId = document.getElementById('genPropSelect').value;
   if (!propId) { showStatus('genStatus', 'error', 'Select a property.'); return; }
-  const snap = createSnapshot(propId);
+  const snap = await createSnapshot(propId);
   if (!snap) { showStatus('genStatus', 'error', 'Failed to create snapshot.'); return; }
   showStatus('genStatus', 'success', '✅ Snapshot saved: ' + snap.generatedDate + ' at ' + snap.generatedTime);
   // Show quick summary
@@ -1043,10 +1115,10 @@ function viewSnapshot(snapId) {
   renderSnapshotReport(snap);
 }
 
-function deleteSnapshot(snapId) {
+async function deleteSnapshot(snapId) {
   if (!confirm('Delete this snapshot? This cannot be undone.')) return;
   snapshots = snapshots.filter(s => s.id !== snapId);
-  saveSnapshots(); renderArchive();
+  await saveSnapshots(); renderArchive();
   showStatus('archiveStatus', 'success', '✅ Snapshot deleted.');
 }
 
@@ -1194,16 +1266,16 @@ function loadSettingsForm() {
   document.getElementById('settBrokerPhone').value = settings.brokerPhone || '';
   document.getElementById('settBrokerEmail').value = settings.brokerEmail || '';
 }
-function saveSettings() {
+async function saveSettings() {
   settings.brokerName = document.getElementById('settBrokerName').value.trim();
   settings.brokerPhone = document.getElementById('settBrokerPhone').value.trim();
   settings.brokerEmail = document.getElementById('settBrokerEmail').value.trim();
-  saveSettingsData();
+  await saveSettingsData();
   showStatus('settingsStatus', 'success', '✅ Settings saved.');
 }
 
 // ── Self-Service: Change Own Passphrase ──────────────────────
-function changeSelfPassphrase() {
+async function changeSelfPassphrase() {
   const curr = document.getElementById('settCurrentPass').value;
   const newP = document.getElementById('settNewPass').value.trim();
   const conf = document.getElementById('settConfirmPass').value.trim();
@@ -1216,7 +1288,7 @@ function changeSelfPassphrase() {
   currentBroker.passphraseHash = newHash;
   const idx = allBrokers.findIndex(b => b.id === currentBroker.id);
   if (idx >= 0) allBrokers[idx].passphraseHash = newHash;
-  saveBrokers();
+  await saveBrokers();
   document.getElementById('settCurrentPass').value = '';
   document.getElementById('settNewPass').value = '';
   document.getElementById('settConfirmPass').value = '';
@@ -1224,7 +1296,7 @@ function changeSelfPassphrase() {
 }
 
 // ── Admin: Broker Management ──────────────────────────────────
-function createBroker() {
+async function createBroker() {
   const name = document.getElementById('adminName').value.trim();
   const username = document.getElementById('adminUsername').value.trim().toLowerCase();
   const pass = document.getElementById('adminPass').value.trim();
@@ -1237,7 +1309,7 @@ function createBroker() {
     displayName: name, role: role,
     createdAt: new Date().toISOString()
   });
-  saveBrokers(); renderBrokerTable();
+  await saveBrokers(); renderBrokerTable();
   document.getElementById('adminName').value = '';
   document.getElementById('adminUsername').value = '';
   document.getElementById('adminPass').value = '';
@@ -1258,12 +1330,12 @@ function renderBrokerTable() {
   }).join('');
 }
 
-function deleteBroker(id) {
+async function deleteBroker(id) {
   if (id === brokerId) return;
   const broker = allBrokers.find(b => b.id === id);
   if (!confirm('Delete broker "' + (broker ? broker.displayName : '') + '"? Their data will remain in localStorage.')) return;
   allBrokers = allBrokers.filter(b => b.id !== id);
-  saveBrokers(); renderBrokerTable();
+  await saveBrokers(); renderBrokerTable();
   showStatus('adminStatus', 'success', '✅ Broker deleted.');
 }
 
@@ -1280,7 +1352,7 @@ function openEditBrokerModal(id) {
 }
 function closeEditBrokerModal() { document.getElementById('editBrokerModal').style.display = 'none'; }
 
-function saveEditBroker() {
+async function saveEditBroker() {
   const id = document.getElementById('editBrokerId').value;
   const name = document.getElementById('editBrokerName').value.trim();
   const username = document.getElementById('editBrokerUsername').value.trim().toLowerCase();
@@ -1295,11 +1367,9 @@ function saveEditBroker() {
   allBrokers[idx].role = role;
   if (username !== oldUsername) {
     allBrokers[idx].username = username;
-    // Rehash with new username — passphrase stays the same but hash changes since username is part of hash
-    // Since we can't recover the passphrase from the hash, admin must reset passphrase if username changes
     showStatus('editBrokerStatus', 'warning', '⚠️ Username changed — broker will need a passphrase reset.');
   }
-  saveBrokers();
+  await saveBrokers();
   if (id === brokerId) {
     currentBroker = allBrokers[idx];
     sessionStorage.setItem('leasing_broker_name', name);
@@ -1324,7 +1394,7 @@ function openResetPassModal(id) {
 }
 function closeResetPassModal() { document.getElementById('resetPassModal').style.display = 'none'; }
 
-function saveResetPass() {
+async function saveResetPass() {
   const id = document.getElementById('resetPassBrokerId').value;
   const newP = document.getElementById('resetPassNew').value.trim();
   const conf = document.getElementById('resetPassConfirm').value.trim();
@@ -1334,19 +1404,21 @@ function saveResetPass() {
   const idx = allBrokers.findIndex(b => b.id === id);
   if (idx < 0) return;
   allBrokers[idx].passphraseHash = btoa(allBrokers[idx].username + '|' + newP);
-  saveBrokers();
+  await saveBrokers();
   if (id === brokerId) currentBroker.passphraseHash = allBrokers[idx].passphraseHash;
   closeResetPassModal();
   showStatus('adminStatus', 'success', '✅ Passphrase reset for "' + allBrokers[idx].displayName + '".');
 }
 
 // ── Init ──────────────────────────────────────────────────────
-initBrokers();
-if (checkBrokerSession()) {
-  enterApp();
-} else {
-  setTimeout(() => document.getElementById('loginUsername').focus(), 100);
-}
+(async function() {
+  await initBrokers();
+  if (checkBrokerSession()) {
+    await enterApp();
+  } else {
+    setTimeout(() => document.getElementById('loginUsername').focus(), 100);
+  }
+})();
 </script>
 </body>
 </html>
