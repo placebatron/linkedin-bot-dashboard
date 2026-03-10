@@ -86,6 +86,9 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
 .prospect-table td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
 .prospect-table tr:last-child td { border-bottom: none; }
 .prospect-table tr:hover td { background: rgba(79,110,247,0.04); }
+.rpt-edit { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; font-size: 13px; color: var(--text); width: 100%; box-sizing: border-box; font-family: inherit; }
+.rpt-edit:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px rgba(79,110,247,0.15); }
+textarea.rpt-edit { resize: vertical; }
 .prospect-actions { display: flex; gap: 4px; }
 
 /* Property list */
@@ -406,6 +409,9 @@ label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; 
       <div class="no-print" style="display:flex;gap:8px;margin-bottom:20px;align-items:center">
         <button class="btn btn-sm" onclick="showPage('archive',document.querySelector('[onclick*=archive]'))">← Back to Archive</button>
         <div style="flex:1"></div>
+        <button class="btn btn-sm" id="reportEditBtn" onclick="toggleReportEdit()">✏️ Edit</button>
+        <button class="btn btn-sm btn-primary" id="reportSaveBtn" style="display:none" onclick="saveReportEdits()">💾 Save Changes</button>
+        <button class="btn btn-sm" id="reportCancelBtn" style="display:none" onclick="cancelReportEdit()">Cancel</button>
         <button class="btn btn-sm" onclick="exportSnapshotPDF()">🖨️ PDF</button>
         <button class="btn btn-sm" onclick="exportSnapshotXLSX()">📥 XLSX</button>
       </div>
@@ -1165,13 +1171,20 @@ function renderSnapshotReport(snap) {
   });
   html += '</div></div>';
 
-  // Prospect Detail Table
+  // Prospect Detail Table (with notes + inline edit support)
   const clientProspects = active.filter(l => l.stage !== 'dead');
   if (clientProspects.length) {
-    html += '<div class="report-section"><div class="report-section-title">Prospect Details</div><div class="card" style="padding:0;overflow-x:auto"><table class="prospect-table"><thead><tr><th>Business</th><th>Type</th><th>Space Req.</th><th>Stage</th><th>Date Added</th></tr></thead><tbody>';
+    html += '<div class="report-section"><div class="report-section-title">Prospect Details</div><div class="card" style="padding:0;overflow-x:auto"><table class="prospect-table" id="reportProspectTable"><thead><tr><th>Business</th><th>Contact</th><th>Type</th><th>Space Req.</th><th>Stage</th><th>Notes</th><th>Date Added</th></tr></thead><tbody>';
     clientProspects.forEach(l => {
       const date = new Date(l.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-      html += '<tr><td><strong>' + escHtml(l.businessName || l.prospectName) + '</strong></td><td>' + escHtml(l.businessType || '—') + '</td><td>' + (l.desiredSF ? l.desiredSF.toLocaleString() + ' SF' : '—') + '</td><td><span class="stage-badge ' + l.stage + '">' + stageLabel(l.stage) + '</span></td><td style="color:var(--muted)">' + date + '</td></tr>';
+      html += '<tr data-prospect-id="' + l.id + '">';
+      html += '<td><span class="rpt-view">' + escHtml(l.businessName || '—') + '</span><input class="rpt-edit" style="display:none" data-field="businessName" value="' + escHtml(l.businessName || '') + '"></td>';
+      html += '<td><span class="rpt-view">' + escHtml(l.prospectName || '—') + '</span><input class="rpt-edit" style="display:none" data-field="prospectName" value="' + escHtml(l.prospectName || '') + '"></td>';
+      html += '<td>' + escHtml(l.businessType || '—') + '</td>';
+      html += '<td>' + (l.desiredSF ? l.desiredSF.toLocaleString() + ' SF' : '—') + '</td>';
+      html += '<td><span class="rpt-view"><span class="stage-badge ' + l.stage + '">' + stageLabel(l.stage) + '</span></span><select class="rpt-edit btn btn-sm stage-badge ' + l.stage + '" style="display:none;width:auto;padding:4px 8px;font-size:11px" data-field="stage">' + STAGES.map(s => '<option value="' + s.key + '"' + (s.key === l.stage ? ' selected' : '') + '>' + s.label + '</option>').join('') + '</select></td>';
+      html += '<td style="max-width:300px;font-size:12px;color:var(--muted)"><span class="rpt-view">' + escHtml(l.notes || '—') + '</span><textarea class="rpt-edit" style="display:none;width:100%;min-height:48px;font-size:12px" data-field="notes">' + escHtml(l.notes || '') + '</textarea></td>';
+      html += '<td style="color:var(--muted)">' + date + '</td></tr>';
     });
     html += '</tbody></table></div></div>';
   }
@@ -1191,6 +1204,65 @@ function renderSnapshotReport(snap) {
   html += '<div class="report-section" style="border-bottom:none"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px;padding:16px 0"><div><div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">Presented By</div><div style="font-size:15px;font-weight:700">' + escHtml(prop.brokerName || '') + '</div><div style="font-size:13px;color:var(--muted)">' + escHtml(prop.brokerPhone || '') + (prop.brokerEmail ? ' · ' + escHtml(prop.brokerEmail) : '') + '</div></div><div style="text-align:right"><div style="font-size:15px;font-weight:700">Baum Realty Group</div><div style="font-size:13px;color:var(--muted)">1030 W. Chicago Ave, Suite 200</div><div style="font-size:13px;color:var(--muted)">Chicago, IL 60642 · (312) 666-3000</div></div></div></div>';
 
   document.getElementById('reportContent').innerHTML = html;
+}
+
+// ── Report Inline Editing ──────────────────────────────────────
+let reportEditMode = false;
+
+function toggleReportEdit() {
+  reportEditMode = true;
+  document.querySelectorAll('#reportProspectTable .rpt-view').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('#reportProspectTable .rpt-edit').forEach(el => el.style.display = '');
+  document.getElementById('reportEditBtn').style.display = 'none';
+  document.getElementById('reportSaveBtn').style.display = '';
+  document.getElementById('reportCancelBtn').style.display = '';
+}
+
+function cancelReportEdit() {
+  reportEditMode = false;
+  const snap = snapshots.find(s => s.id === viewingSnapshotId);
+  if (snap) renderSnapshotReport(snap);
+  document.getElementById('reportEditBtn').style.display = '';
+  document.getElementById('reportSaveBtn').style.display = 'none';
+  document.getElementById('reportCancelBtn').style.display = 'none';
+}
+
+async function saveReportEdits() {
+  const snap = snapshots.find(s => s.id === viewingSnapshotId);
+  if (!snap) return;
+  const rows = document.querySelectorAll('#reportProspectTable tbody tr[data-prospect-id]');
+  const now = new Date().toISOString();
+  rows.forEach(row => {
+    const pid = row.getAttribute('data-prospect-id');
+    const sp = snap.prospectsSnapshot.find(p => p.id === pid);
+    if (!sp) return;
+    const liveP = prospects.find(p => p.id === pid);
+    row.querySelectorAll('.rpt-edit').forEach(input => {
+      const field = input.getAttribute('data-field');
+      const val = input.value.trim();
+      const oldVal = sp[field] || '';
+      if (val !== oldVal) {
+        sp[field] = val;
+        sp.updatedAt = now;
+        // Also update the live prospect data
+        if (liveP) {
+          if (field === 'stage' && liveP.stage !== val) {
+            liveP.stageHistory = liveP.stageHistory || [];
+            liveP.stageHistory.push({ stage: val, date: now, note: 'Updated from report view' });
+          }
+          liveP[field] = val;
+          liveP.updatedAt = now;
+        }
+      }
+    });
+  });
+  await saveSnapshots();
+  await saveProspects();
+  reportEditMode = false;
+  renderSnapshotReport(snap);
+  document.getElementById('reportEditBtn').style.display = '';
+  document.getElementById('reportSaveBtn').style.display = 'none';
+  document.getElementById('reportCancelBtn').style.display = 'none';
 }
 
 // ── Export: PDF (from snapshot) ────────────────────────────────
