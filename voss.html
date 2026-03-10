@@ -476,6 +476,31 @@ textarea.email-input { min-height: 200px; font-size: 14px; line-height: 1.6; }
 .status-bar.error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #f87171; }
 .status-bar.info  { background: rgba(79,110,247,0.1); border: 1px solid rgba(79,110,247,0.3); color: #818cf8; }
 
+/* ── Subject Line Generator ── */
+.subject-lines-section { margin-bottom: 16px; }
+.subject-lines-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.subject-lines-label .sl-badge { font-size: 10px; font-weight: 700; letter-spacing: 0.05em; padding: 2px 8px; border-radius: 12px; background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.25); }
+.subject-line-card {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--surface); margin-bottom: 8px;
+  transition: all 0.15s; cursor: pointer; user-select: none;
+}
+.subject-line-card:hover { border-color: rgba(16,185,129,0.4); background: rgba(16,185,129,0.04); }
+.subject-line-card.selected { background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.5); }
+.sl-approach-icon { font-size: 16px; flex-shrink: 0; width: 22px; text-align: center; }
+.sl-body { flex: 1; min-width: 0; }
+.sl-text { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.4; }
+.sl-approach { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px; }
+.sl-copy-btn {
+  display: flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--surface2); color: var(--muted); font-size: 11px;
+  cursor: pointer; transition: all 0.15s; flex-shrink: 0; white-space: nowrap;
+}
+.sl-copy-btn:hover { border-color: rgba(16,185,129,0.5); color: #34d399; }
+.sl-copy-btn.copied { border-color: var(--success); color: var(--success); }
+
 @media (max-width: 768px) {
   .layout { grid-template-columns: 1fr; }
   .panel-left { border-right: none; border-bottom: 1px solid var(--border); }
@@ -760,6 +785,12 @@ Mike"></textarea>
             <button class="done-btn" onclick="toggleEditMode()">✓ Done editing</button>
           </div>
         </div>
+      </div>
+
+      <!-- Subject Line Generator -->
+      <div class="subject-lines-section" id="subjectLinesSection" style="display:none;">
+        <div class="subject-lines-label">Subject Lines <span class="sl-badge">A/B Test</span></div>
+        <div id="subjectLinesList"></div>
       </div>
 
       <!-- Outlook Button -->
@@ -1087,12 +1118,25 @@ Respond ONLY with valid JSON in this exact format:
     "trust": 78,
     "clarity": 90,
     "low_pressure": 82
-  }
+  },
+  "subject_lines": [
+    {
+      "text": "A subject line variant",
+      "approach": "curiosity",
+      "rationale": "One sentence why this subject line works"
+    }
+  ]
 }
 
 Technique IDs must be from: tactical_empathy, labeling, calibrated_questions, accusation_audit, no_oriented, mirroring, dj_voice, black_swan
 
-Scores are integers 0-100. IMPORTANT: Calibrate your writing AND scoring to the relationship stage. The scores should reflect how well the email hits the ideal tone for THIS specific stage, not a universal benchmark. For example, a cold outreach should score very high on empathy and low pressure; an active conversation should prioritize clarity over empathy.`;
+Scores are integers 0-100. IMPORTANT: Calibrate your writing AND scoring to the relationship stage. The scores should reflect how well the email hits the ideal tone for THIS specific stage, not a universal benchmark. For example, a cold outreach should score very high on empathy and low pressure; an active conversation should prioritize clarity over empathy.
+
+SUBJECT LINES: Generate exactly 3 subject line variants optimized for open rates using different Voss-inspired approaches:
+1. Curiosity-based (approach: "curiosity") — Open a loop. Hint at value without revealing it. Make them NEED to open.
+2. No-oriented (approach: "no_oriented") — Frame as a question that invites a "No" to reduce resistance. "Would it be terrible if…" or a pattern-interrupt.
+3. Label-based (approach: "label") — Use a labeling statement that names their situation or feeling. "It sounds like [their world]…"
+Each subject line must be under 60 characters, lowercase-friendly (no ALL CAPS), and feel human — not like marketing spam. No emoji in subject lines.`;
 
   try {
     const response = await fetch(PROXY_URL, {
@@ -1203,6 +1247,9 @@ function renderOutput(result, requestedTechs, stage) {
     });
   }
 
+  // Subject lines
+  renderSubjectLines(result.subject_lines || []);
+
   // Show output, hide placeholder
   document.getElementById('outputPlaceholder').style.display = 'none';
   document.getElementById('outputBlock').classList.add('visible');
@@ -1237,6 +1284,53 @@ function animateScoreWithZone(barId, valId, zoneId, statusId, value, range) {
     status.textContent = inZone ? '✓' : '⚠';
     status.className = 'score-status ' + (inZone ? 'in-zone' : 'out-zone');
   }, 150);
+}
+
+// ── Subject Line Generator ────────────────────────────────────────
+const SL_APPROACH_ICONS = { curiosity: '🔍', no_oriented: '🔄', label: '🏷️' };
+const SL_APPROACH_LABELS = { curiosity: 'Curiosity', no_oriented: 'No-Oriented', label: 'Label-Based' };
+
+function renderSubjectLines(subjectLines) {
+  const section = document.getElementById('subjectLinesSection');
+  const list = document.getElementById('subjectLinesList');
+
+  if (!subjectLines || subjectLines.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+
+  list.innerHTML = '';
+  subjectLines.forEach((sl, idx) => {
+    const icon = SL_APPROACH_ICONS[sl.approach] || '✉️';
+    const approachLabel = SL_APPROACH_LABELS[sl.approach] || sl.approach;
+    const card = document.createElement('div');
+    card.className = 'subject-line-card' + (idx === 0 ? ' selected' : '');
+    card.title = sl.rationale || '';
+    card.innerHTML = `
+      <div class="sl-approach-icon">${icon}</div>
+      <div class="sl-body">
+        <div class="sl-text">${escHtml(sl.text)}</div>
+        <div class="sl-approach">${escHtml(approachLabel)}${sl.rationale ? ' — ' + escHtml(sl.rationale) : ''}</div>
+      </div>
+      <button class="sl-copy-btn" onclick="event.stopPropagation(); copySubjectLine(this, ${idx})">📋 Copy</button>`;
+    card.addEventListener('click', () => {
+      list.querySelectorAll('.subject-line-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+    });
+    list.appendChild(card);
+  });
+  section.style.display = '';
+}
+
+function copySubjectLine(btn, idx) {
+  const cards = document.querySelectorAll('#subjectLinesList .sl-text');
+  const text = cards[idx] ? cards[idx].textContent : '';
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.innerHTML = '📋 Copy'; btn.classList.remove('copied'); }, 2000);
+  });
 }
 
 // ── Inline edit mode ──────────────────────────────────────────────
@@ -1782,6 +1876,9 @@ function loadDraft(id) {
   // Show output block, hide placeholder
   document.getElementById('outputPlaceholder').style.display = 'none';
   document.getElementById('outputBlock').classList.add('visible');
+
+  // Hide subject lines (draft doesn't have them)
+  document.getElementById('subjectLinesSection').style.display = 'none';
 
   // Clear technique pills (draft doesn't have full pill data) and show a note
   const container = document.getElementById('techniquesUsed');
