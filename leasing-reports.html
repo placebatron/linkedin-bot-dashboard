@@ -375,6 +375,21 @@ textarea.rpt-edit { resize: vertical; }
       </div>
     </div>
 
+    <!-- MULTI-SHEET IMPORT MODAL -->
+    <div class="modal-overlay" id="sheetImportModal" style="display:none">
+      <div class="modal" style="max-width:560px">
+        <div class="modal-title">📥 Import Excel — Multiple Sheets Detected</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:16px">This workbook has multiple sheets. Each sheet will be imported as a separate property. Select which sheets to import:</div>
+        <div id="sheetImportList" style="max-height:320px;overflow-y:auto"></div>
+        <div style="display:flex;gap:8px;margin-top:16px">
+          <button class="btn btn-primary" onclick="confirmSheetImport()">Import Selected</button>
+          <button class="btn" onclick="document.getElementById('sheetImportModal').style.display='none'">Cancel</button>
+          <div style="flex:1"></div>
+          <button class="btn" onclick="toggleAllSheets()" style="font-size:12px">Toggle All</button>
+        </div>
+      </div>
+    </div>
+
     <!-- GENERATE PAGE -->
     <div class="page" id="page-generate">
       <div class="section-title">⚡ Generate Report</div>
@@ -988,55 +1003,293 @@ async function saveProspect() {
 
 async function deleteProspect(id) { if (!confirm('Delete this prospect?')) return; prospects = prospects.filter(l => l.id !== id); await saveProspects(); renderProspects(); }
 
-// ── Excel Import ──────────────────────────────────────────────
+// ── Excel Import (Smart Multi-Format Engine) ─────────────────
+let pendingWorkbook = null;
+
 function importExcel(files) {
   if (!files || !files[0]) return;
-  if (!selectedPropertyId) { showStatus('prospectStatus', 'warning', 'Select a property first.'); return; }
   const reader = new FileReader();
   reader.onload = async function(e) {
     try {
       const wb = XLSX.read(e.target.result, { type: 'array' });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-      if (rows.length < 2) { showStatus('prospectStatus', 'error', 'No data rows found.'); return; }
-      const headers = rows[0].map(h => (h || '').toString().toLowerCase().trim());
-      let nameCol = -1, typeCol = -1, notesCol = -1, extraCol = -1;
-      headers.forEach((h, i) => {
-        if (nameCol < 0 && (h.includes('prospect') || h.includes('broker') || h.includes('name') || h.includes('contact'))) nameCol = i;
-        if (typeCol < 0 && (h.includes('type') || h.includes('business') || h.includes('concept'))) typeCol = i;
-        if (notesCol < 0 && (h.includes('comment') || h.includes('note') || h.includes('status') || h.includes('detail'))) notesCol = i;
-      });
-      if (nameCol < 0) nameCol = 0;
-      if (typeCol < 0 && rows[0].length > 1) typeCol = 1;
-      if (notesCol < 0 && rows[0].length > 2) notesCol = 2;
-      if (rows[0].length > 3) extraCol = 3;
-      const firstRowIsHeader = headers.some(h => h.includes('prospect') || h.includes('broker') || h.includes('type') || h.includes('comment') || h.includes('name'));
-      const startRow = firstRowIsHeader ? 1 : 0;
-      const existing = getPropertyProspects();
-      const existingNames = new Set(existing.map(l => (l.prospectName || '').toLowerCase().trim()));
-      let imported = 0; const now = new Date().toISOString();
-      for (let i = startRow; i < rows.length; i++) {
-        const row = rows[i]; const name = (row[nameCol] || '').toString().trim();
-        if (!name) continue;
-        if (name.toLowerCase().includes('lease') && !row[typeCol]) continue;
-        if (existingNames.has(name.toLowerCase())) continue;
-        const notes = (row[notesCol] || '').toString().trim();
-        const extra = extraCol >= 0 ? (row[extraCol] || '').toString().trim() : '';
-        const fullNotes = [notes, extra].filter(Boolean).join(' | ');
-        let stage = 'inquiry'; const nl = fullNotes.toLowerCase();
-        if (nl.includes('tour scheduled') || nl.includes('tour completed') || nl.includes('went on tour') || nl.includes('showing')) stage = 'tour';
-        else if (nl.includes('loi') || nl.includes('letter of intent')) stage = 'loi';
-        else if (nl.includes('proposal') || nl.includes('term sheet')) stage = 'proposal';
-        else if (nl.includes('lease signed') || nl.includes('lease executed')) stage = 'lease';
-        prospects.push({ id: 'lead_' + uid(), propertyId: selectedPropertyId, prospectName: name, businessName: (row[typeCol] || '').toString().trim(), businessType: (row[typeCol] || '').toString().trim(), stage: stage, stageHistory: [{ stage, date: now, note: 'Imported from Excel' }], notes: fullNotes, contactPhone: '', contactEmail: '', desiredSF: null, maxRent: null, leaseTermYears: null, tourDate: null, nextFollowUp: null, source: 'Excel import', createdAt: now, updatedAt: now });
-        imported++;
+      if (wb.SheetNames.length > 1) {
+        // Multi-sheet workbook — show selection modal
+        pendingWorkbook = wb;
+        const list = document.getElementById('sheetImportList');
+        list.innerHTML = wb.SheetNames.map((name, i) => {
+          const ws = wb.Sheets[name];
+          const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+          const dataRows = rows.filter(r => r.some(c => (c || '').toString().trim())).length;
+          const addrGuess = guessPropertyAddress(rows, name);
+          return '<label style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;cursor:pointer;background:var(--surface)">' +
+            '<input type="checkbox" checked data-sheet-idx="' + i + '" style="margin-top:3px">' +
+            '<div><div style="font-weight:600;font-size:14px">' + escHtml(name) + '</div>' +
+            '<div style="font-size:12px;color:var(--muted)">' + dataRows + ' rows' + (addrGuess ? ' · Address: ' + escHtml(addrGuess) : '') + '</div></div></label>';
+        }).join('');
+        document.getElementById('sheetImportModal').style.display = 'flex';
+      } else {
+        // Single sheet — import directly to selected property
+        if (!selectedPropertyId) { showStatus('prospectStatus', 'warning', 'Select a property first.'); return; }
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+        const result = parseSheetProspects(rows, wb.SheetNames[0]);
+        const imported = await mergeProspects(result.prospects, selectedPropertyId);
+        await saveProspects(); renderProspects();
+        showStatus('prospectStatus', 'success', '✅ Imported ' + imported + ' prospect' + (imported !== 1 ? 's' : '') + '.');
       }
-      await saveProspects(); renderProspects();
-      showStatus('prospectStatus', 'success', '✅ Imported ' + imported + ' prospect' + (imported !== 1 ? 's' : '') + '.');
     } catch(err) { showStatus('prospectStatus', 'error', 'Import error: ' + err.message); }
   };
   reader.readAsArrayBuffer(files[0]);
   document.getElementById('xlsxUpload').value = '';
+}
+
+function toggleAllSheets() {
+  const boxes = document.querySelectorAll('#sheetImportList input[type=checkbox]');
+  const allChecked = [...boxes].every(b => b.checked);
+  boxes.forEach(b => b.checked = !allChecked);
+}
+
+async function confirmSheetImport() {
+  if (!pendingWorkbook) return;
+  const boxes = document.querySelectorAll('#sheetImportList input[type=checkbox]:checked');
+  if (!boxes.length) return;
+  document.getElementById('sheetImportModal').style.display = 'none';
+  let totalImported = 0; let propsCreated = 0;
+  const now = new Date().toISOString();
+  for (const box of boxes) {
+    const idx = parseInt(box.getAttribute('data-sheet-idx'));
+    const sheetName = pendingWorkbook.SheetNames[idx];
+    const ws = pendingWorkbook.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+    const result = parseSheetProspects(rows, sheetName);
+    // Find or create property for this sheet
+    const addr = result.propertyAddress || sheetName;
+    let prop = properties.find(p => p.address.toLowerCase().trim() === addr.toLowerCase().trim());
+    if (!prop) {
+      prop = { id: 'prop_' + uid(), address: addr, suiteFloor: '', city: '', state: '', zip: '', submarket: '', propertyType: 'retail', leaseType: '', availableSF: 0, askingRent: 0, camTax: 0, highlights: [], ownerName: '', ownerCompany: '', brokerName: result.brokerName || '', brokerPhone: '', brokerEmail: '', createdAt: now, updatedAt: now };
+      properties.push(prop); propsCreated++;
+    }
+    const imported = await mergeProspects(result.prospects, prop.id);
+    totalImported += imported;
+  }
+  if (propsCreated) await saveProperties();
+  await saveProspects();
+  selectedPropertyId = properties[properties.length - 1]?.id || '';
+  renderPropertyList(); renderProspects();
+  showStatus('prospectStatus', 'success', '✅ Imported ' + totalImported + ' prospect' + (totalImported !== 1 ? 's' : '') + ' across ' + boxes.length + ' sheet' + (boxes.length !== 1 ? 's' : '') + (propsCreated ? ' (' + propsCreated + ' new propert' + (propsCreated !== 1 ? 'ies' : 'y') + ' created)' : '') + '.');
+  pendingWorkbook = null;
+}
+
+// Guess property address from header rows or sheet name
+function guessPropertyAddress(rows, sheetName) {
+  // Check first ~10 rows for an address-like string
+  for (let i = 0; i < Math.min(rows.length, 10); i++) {
+    for (let j = 0; j < Math.min(rows[i].length, 8); j++) {
+      const cell = (rows[i][j] || '').toString().trim();
+      // Address pattern: number + street name (e.g. "4842-4848 W. Irving Park Road", "875 N Rush")
+      if (/^\d[\d\-]*\s+[A-Za-z]/.test(cell) && cell.length > 5 && cell.length < 120 && !cell.toLowerCase().includes('report') && !cell.toLowerCase().includes('date')) return cell;
+    }
+  }
+  // Fall back to sheet name if it looks like an address
+  if (/\d/.test(sheetName) && sheetName.length > 3) return sheetName;
+  return '';
+}
+
+// Find the header row — scan for rows containing prospect-like column names
+function findHeaderRow(rows) {
+  const headerTerms = ['prospect', 'broker', 'tenant', 'name', 'contact', 'type', 'category', 'stage', 'status', 'comment', 'note', 'discussion', 'size', 'price', 'term', 'floor'];
+  for (let i = 0; i < Math.min(rows.length, 25); i++) {
+    const cells = rows[i].map(c => (c || '').toString().toLowerCase().trim());
+    const matches = cells.filter(c => headerTerms.some(t => c.includes(t))).length;
+    if (matches >= 2) return i;
+  }
+  return -1;
+}
+
+// Detect column offset (some sheets have empty col A)
+function detectColOffset(rows, headerIdx) {
+  if (headerIdx < 0) return 0;
+  const row = rows[headerIdx];
+  for (let j = 0; j < Math.min(row.length, 4); j++) {
+    if ((row[j] || '').toString().trim()) return j;
+  }
+  return 0;
+}
+
+// Map stages from various formats
+function mapStage(raw, sectionStage) {
+  if (sectionStage) return sectionStage;
+  if (!raw) return 'inquiry';
+  const s = raw.toString().toLowerCase().trim();
+  // Numeric stage codes (NewCastle format: 1=Presented, 2=Toured, 3=LOI, etc.)
+  const num = parseInt(s);
+  if (num === 1) return 'inquiry';
+  if (num === 2) return 'tour';
+  if (num === 3) return 'loi';
+  if (num === 4 || num === 5 || num === 6 || num === 7 || num === 8) return 'lease';
+  // Text stage matching
+  if (s.includes('prospect') || s.includes('presented') || s.includes('reviewing') || s.includes('need to reach') || s.includes('inquiry') || s === 'merchandiser') return 'inquiry';
+  if (s.includes('tour') || s.includes('showing')) return 'tour';
+  if (s.includes('loi') || s.includes('letter of intent')) return 'loi';
+  if (s.includes('proposal') || s.includes('term sheet')) return 'proposal';
+  if (s.includes('lease') || s.includes('signed') || s.includes('executed') || s.includes('permit') || s.includes('occupancy') || s.includes('construct')) return 'lease';
+  if (s.includes('decline') || s.includes('dead') || s.includes('inactive') || s.includes('withdrew') || s.includes('passed') || s.includes('no interest')) return 'dead';
+  return 'inquiry';
+}
+
+// Parse prospect data from a single sheet with smart detection
+function parseSheetProspects(rows, sheetName) {
+  const result = { prospects: [], propertyAddress: '', brokerName: '' };
+  if (!rows.length) return result;
+
+  // Try to extract property address and broker from header area
+  result.propertyAddress = guessPropertyAddress(rows, sheetName);
+  for (let i = 0; i < Math.min(rows.length, 8); i++) {
+    for (let j = 0; j < Math.min(rows[i].length, 4); j++) {
+      const cell = (rows[i][j] || '').toString().toLowerCase().trim();
+      // Only match "brokers" or "broker:" as label — not data cells that happen to contain "broker"
+      if ((cell === 'brokers' || cell === 'broker' || cell === 'broker:' || cell === 'brokers:') && j + 1 < rows[i].length) {
+        const val = (rows[i][j + 1] || '').toString().trim();
+        if (val && val.length > 2 && val.length < 100) result.brokerName = val;
+      }
+    }
+  }
+
+  // Check for NewCastle-style sectioned format (sections like "Lease", "LOI", "Prospect")
+  const sectionPattern = /^(lease|loi|prospect|presented|toured|dead|inactive)\s*$/i;
+  let hasSections = false;
+  for (let i = 0; i < rows.length; i++) {
+    const firstCell = (rows[i][0] || '').toString().trim();
+    if (sectionPattern.test(firstCell)) { hasSections = true; break; }
+  }
+
+  if (hasSections) {
+    // Section-based parsing (NewCastle format)
+    let currentSection = '';
+    let colMap = null;
+    for (let i = 0; i < rows.length; i++) {
+      const firstCell = (rows[i][0] || '').toString().trim();
+      if (sectionPattern.test(firstCell)) {
+        currentSection = firstCell.toLowerCase();
+        colMap = null; // Reset — next row should be headers
+        continue;
+      }
+      // Detect header rows within sections (require 2+ short header-like terms)
+      const cells = rows[i].map(c => (c || '').toString().toLowerCase().trim());
+      const headerTerms = ['prospect', 'broker', 'tenant', 'type', 'category', 'stage', 'status', 'size', 'price', 'term', 'comments', 'notes'];
+      const headerHits = cells.filter(c => c.length < 25 && headerTerms.some(t => c.includes(t))).length;
+      if (headerHits >= 2) {
+        colMap = mapColumns(cells);
+        continue;
+      }
+      if (!colMap) continue;
+      const prospect = extractProspect(rows[i], colMap, currentSection);
+      if (prospect) result.prospects.push(prospect);
+    }
+  } else {
+    // Flat format (Irving Park, simple sheets)
+    const headerIdx = findHeaderRow(rows);
+    if (headerIdx < 0) {
+      // No recognizable header — try best-guess positional parsing
+      const offset = rows[0] && !(rows[0][0] || '').toString().trim() ? 1 : 0;
+      for (let i = 1; i < rows.length; i++) {
+        const name = (rows[i][offset] || '').toString().trim();
+        if (!name) continue;
+        const type = (rows[i][offset + 1] || '').toString().trim();
+        const stage = (rows[i][offset + 2] || '').toString().trim();
+        const notes = (rows[i][offset + 3] || '').toString().trim() || (rows[i][offset + 4] || '').toString().trim();
+        result.prospects.push({ name: name, businessType: type, stage: mapStage(stage, ''), notes: notes, desiredSF: null, maxRent: null, leaseTermYears: null });
+      }
+    } else {
+      const cells = rows[headerIdx].map(c => (c || '').toString().toLowerCase().trim());
+      const colMap = mapColumns(cells);
+      for (let i = headerIdx + 1; i < rows.length; i++) {
+        const prospect = extractProspect(rows[i], colMap, '');
+        if (prospect) result.prospects.push(prospect);
+      }
+    }
+  }
+  return result;
+}
+
+// Map column indices from header cells
+function mapColumns(cells) {
+  const map = { name: -1, type: -1, stage: -1, notes: -1, size: -1, price: -1, term: -1, site: -1 };
+  cells.forEach((c, i) => {
+    if (map.name < 0 && (c.includes('prospect') || c.includes('broker') || c.includes('tenant') || c.includes('name') || c.includes('contact'))) map.name = i;
+    if (map.type < 0 && (c.includes('type') || c.includes('category') || c.includes('concept') || c.includes('business'))) map.type = i;
+    if (map.stage < 0 && (c.includes('stage') || c.includes('status'))) map.stage = i;
+    if (map.notes < 0 && (c.includes('comment') || c.includes('note') || c.includes('discussion') || c.includes('detail') || c.includes('update'))) map.notes = i;
+    if (map.size < 0 && (c.includes('size') || c.includes('sf') || c.includes('sq') || c.includes('site'))) map.size = i;
+    if (map.price < 0 && (c.includes('price') || c.includes('rent') || c.includes('rate'))) map.price = i;
+    if (map.term < 0 && (c.includes('term') || c.includes('year') || c.includes('length'))) map.term = i;
+  });
+  // Fallback: if name not found, use first non-empty column
+  if (map.name < 0) {
+    for (let i = 0; i < cells.length; i++) { if (cells[i]) { map.name = i; break; } }
+  }
+  return map;
+}
+
+// Extract a prospect object from a data row using column map
+function extractProspect(row, colMap, sectionStage) {
+  const name = colMap.name >= 0 ? (row[colMap.name] || '').toString().trim() : '';
+  if (!name) return null;
+  // Skip section headers or junk rows
+  const nl = name.toLowerCase();
+  if (nl === 'lease' || nl === 'loi' || nl === 'prospect' || nl === 'presented' || nl.includes('prospect/broker') || nl.includes('tenant')) return null;
+  const type = colMap.type >= 0 ? (row[colMap.type] || '').toString().trim() : '';
+  const stageRaw = colMap.stage >= 0 ? (row[colMap.stage] || '').toString().trim() : '';
+  const notes = colMap.notes >= 0 ? (row[colMap.notes] || '').toString().trim() : '';
+  const sizeRaw = colMap.size >= 0 ? (row[colMap.size] || '').toString().trim() : '';
+  const price = colMap.price >= 0 ? (row[colMap.price] || '').toString().trim() : '';
+  const term = colMap.term >= 0 ? (row[colMap.term] || '').toString().trim() : '';
+  // Also grab any extra populated cells after mapped columns for notes
+  let extraNotes = [];
+  const maxCol = Math.max(colMap.name, colMap.type, colMap.stage, colMap.notes, colMap.size, colMap.price, colMap.term);
+  for (let j = maxCol + 1; j < Math.min(row.length, maxCol + 4); j++) {
+    const v = (row[j] || '').toString().trim();
+    if (v && v.length > 3) extraNotes.push(v);
+  }
+  const fullNotes = [notes, ...extraNotes].filter(Boolean).join(' | ');
+  // Combine stage from section header + explicit stage column + notes inference
+  let stage = mapStage(sectionStage || stageRaw, '');
+  if (stage === 'inquiry' && fullNotes) {
+    const fnl = fullNotes.toLowerCase();
+    if (fnl.includes('tour scheduled') || fnl.includes('tour completed') || fnl.includes('went on tour') || fnl.includes('showing')) stage = 'tour';
+    else if (fnl.includes('loi') || fnl.includes('letter of intent')) stage = 'loi';
+    else if (fnl.includes('proposal') || fnl.includes('term sheet')) stage = 'proposal';
+    else if (fnl.includes('lease signed') || fnl.includes('lease executed')) stage = 'lease';
+  }
+  // Parse SF
+  let desiredSF = null;
+  if (sizeRaw) {
+    const sfNum = parseInt(sizeRaw.toString().replace(/[,\s]/g, ''));
+    if (!isNaN(sfNum) && sfNum > 0) desiredSF = sfNum;
+  }
+  return { name, businessType: type, stage, notes: fullNotes, desiredSF, maxRent: price || null, leaseTermYears: term || null };
+}
+
+// Merge parsed prospects into a property, deduplicating
+async function mergeProspects(parsed, propertyId) {
+  const existing = prospects.filter(l => l.propertyId === propertyId);
+  const existingNames = new Set(existing.map(l => (l.prospectName || '').toLowerCase().trim()));
+  let imported = 0;
+  const now = new Date().toISOString();
+  for (const p of parsed) {
+    if (existingNames.has(p.name.toLowerCase())) continue;
+    prospects.push({
+      id: 'lead_' + uid(), propertyId: propertyId,
+      prospectName: p.name, businessName: p.businessType || p.name, businessType: p.businessType || '',
+      stage: p.stage, stageHistory: [{ stage: p.stage, date: now, note: 'Imported from Excel' }],
+      notes: p.notes || '', contactPhone: '', contactEmail: '',
+      desiredSF: p.desiredSF, maxRent: p.maxRent, leaseTermYears: p.leaseTermYears,
+      tourDate: null, nextFollowUp: null, source: 'Excel import', createdAt: now, updatedAt: now
+    });
+    existingNames.add(p.name.toLowerCase());
+    imported++;
+  }
+  return imported;
 }
 
 // ── Snapshots ─────────────────────────────────────────────────
