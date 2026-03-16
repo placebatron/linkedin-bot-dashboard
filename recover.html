@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leasing Data Recovery — BaumAgents</title>
+<script src="https://unpkg.com/@azure/msal-browser@2.38.3/lib/msal-browser.min.js"></script>
+<script src="auth.js"></script>
+<script>BaumAuth.requireAuth();</script>
+<style>
+:root {
+  --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a; --border: #2e3250;
+  --accent: #4f6ef7; --text: #e8eaf6; --muted: #8b90b0;
+  --success: #10b981; --warning: #f59e0b; --danger: #ef4444;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 24px; }
+header { display: flex; align-items: center; justify-content: space-between; padding: 0 0 24px 0; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+header h1 { font-size: 22px; font-weight: 600; }
+header a { color: var(--accent); text-decoration: none; font-size: 14px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+.card h2 { font-size: 16px; margin-bottom: 12px; color: var(--accent); }
+.status-badge { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+.badge-good { background: rgba(16,185,129,.15); color: var(--success); }
+.badge-empty { background: rgba(245,158,11,.15); color: var(--warning); }
+.badge-missing { background: rgba(239,68,68,.15); color: var(--danger); }
+table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 14px; }
+th { color: var(--muted); font-weight: 500; font-size: 12px; text-transform: uppercase; }
+.count { font-weight: 700; font-variant-numeric: tabular-nums; }
+.count-good { color: var(--success); }
+.count-zero { color: var(--warning); }
+button { cursor: pointer; border: none; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 600; }
+.btn-primary { background: var(--accent); color: white; }
+.btn-primary:disabled { opacity: .4; cursor: not-allowed; }
+.btn-danger { background: var(--danger); color: white; }
+.actions { display: flex; gap: 12px; align-items: center; margin-top: 16px; flex-wrap: wrap; }
+#log { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: 'SF Mono', monospace; font-size: 13px; max-height: 300px; overflow-y: auto; white-space: pre-wrap; color: var(--muted); margin-top: 16px; display: none; }
+.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.summary-item { background: var(--surface2); border-radius: 8px; padding: 12px 16px; text-align: center; }
+.summary-item .label { font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
+.summary-item .value { font-size: 24px; font-weight: 700; }
+.kv-section { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<header>
+  <h1>🔧 Leasing Data Diagnostic &amp; Recovery</h1>
+  <a href="index.html">← Back to BaumAgents</a>
+</header>
+
+<div id="loading" class="card"><p>Signing in and scanning data…</p></div>
+<div id="content" style="display:none;">
+
+  <div class="card">
+    <h2>👤 Your Identity</h2>
+    <p>Signed in as <strong id="userName"></strong> (<span id="userEmail"></span>)</p>
+    <p style="margin-top:4px; color:var(--muted);">Broker ID: <code id="brokerIdDisplay">—</code></p>
+  </div>
+
+  <div class="card">
+    <h2>💾 localStorage Scan</h2>
+    <p style="color:var(--muted); margin-bottom:8px;">Data stored in THIS browser only. This is what we're trying to recover.</p>
+    <div class="summary" id="localSummary"></div>
+    <table>
+      <thead><tr><th>Key</th><th>Items</th><th>Status</th></tr></thead>
+      <tbody id="localTable"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>☁️ Cloud KV Data</h2>
+    <p style="color:var(--muted); margin-bottom:8px;">Data stored in Cloudflare KV (shared across all devices).</p>
+    <div class="summary" id="kvSummary"></div>
+    <table>
+      <thead><tr><th>Key</th><th>Items</th><th>Status</th></tr></thead>
+      <tbody id="kvTable"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>⚡ Actions</h2>
+    <p style="color:var(--muted); margin-bottom:4px;">Choose what to do based on the scan results above.</p>
+    <div class="actions">
+      <button class="btn-primary" id="btnPushToKV" onclick="pushLocalToKV()" disabled>
+        Push localStorage → Cloud KV
+      </button>
+      <button class="btn-primary" id="btnPullFromKV" onclick="pullKVToLocal()" disabled style="background: var(--success);">
+        Pull Cloud KV → localStorage
+      </button>
+    </div>
+    <p style="margin-top:8px; font-size:12px; color:var(--muted);" id="actionHint"></p>
+    <div id="log"></div>
+  </div>
+
+  <div class="card" id="allKeysCard">
+    <h2>🔍 All Leasing Keys in localStorage</h2>
+    <p style="color:var(--muted); margin-bottom:8px;">Every key in this browser's localStorage that starts with "leasing".</p>
+    <table>
+      <thead><tr><th>Key</th><th>Size</th><th>Preview</th></tr></thead>
+      <tbody id="allKeysTable"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+const API_URL = 'https://leasing-api.mike-3ac.workers.dev';
+const SUFFIXES = ['properties', 'prospects', 'snapshots', 'settings'];
+
+let brokerId = null;
+let localData = {};
+let kvData = {};
+
+function log(msg) {
+  const el = document.getElementById('log');
+  el.style.display = 'block';
+  el.textContent += new Date().toLocaleTimeString() + '  ' + msg + '\n';
+  el.scrollTop = el.scrollHeight;
+}
+
+function countItems(data) {
+  if (Array.isArray(data)) return data.length;
+  if (data && typeof data === 'object') return Object.keys(data).length;
+  return 0;
+}
+
+function badge(count, exists) {
+  if (!exists) return '<span class="status-badge badge-missing">Not Found</span>';
+  if (count === 0) return '<span class="status-badge badge-empty">Empty</span>';
+  return '<span class="status-badge badge-good">' + count + ' items</span>';
+}
+
+function renderTable(tableId, summaryId, dataObj, source) {
+  const tbody = document.getElementById(tableId);
+  const summary = document.getElementById(summaryId);
+  let html = '';
+  let totalItems = 0;
+  let hasAnyData = false;
+
+  for (const suffix of SUFFIXES) {
+    const key = 'leasing_' + brokerId + '_' + suffix;
+    const val = dataObj[suffix];
+    const exists = val !== undefined && val !== null;
+    const count = exists ? countItems(val) : 0;
+    totalItems += count;
+    if (count > 0) hasAnyData = true;
+    html += '<tr><td><code>' + key + '</code></td>';
+    html += '<td class="count ' + (count > 0 ? 'count-good' : 'count-zero') + '">' + count + '</td>';
+    html += '<td>' + badge(count, exists) + '</td></tr>';
+  }
+  tbody.innerHTML = html;
+
+  summary.innerHTML =
+    '<div class="summary-item"><div class="label">Total Items</div><div class="value" style="color:' + (totalItems > 0 ? 'var(--success)' : 'var(--warning)') + '">' + totalItems + '</div></div>' +
+    '<div class="summary-item"><div class="label">Status</div><div class="value" style="font-size:16px;color:' + (hasAnyData ? 'var(--success)' : 'var(--danger)') + '">' + (hasAnyData ? 'Has Data' : 'Empty') + '</div></div>';
+
+  return { totalItems, hasAnyData };
+}
+
+function renderAllKeys() {
+  const tbody = document.getElementById('allKeysTable');
+  let html = '';
+  const keys = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key.startsWith('leasing')) keys.push(key);
+  }
+  keys.sort();
+  if (keys.length === 0) {
+    html = '<tr><td colspan="3" style="color:var(--muted);">No leasing keys found in localStorage</td></tr>';
+  }
+  for (const key of keys) {
+    const raw = localStorage.getItem(key);
+    const size = raw ? (raw.length / 1024).toFixed(1) + ' KB' : '0 KB';
+    let preview = raw || '';
+    if (preview.length > 100) preview = preview.substring(0, 100) + '…';
+    html += '<tr><td><code>' + key + '</code></td><td>' + size + '</td><td style="font-size:12px;color:var(--muted);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + preview.replace(/</g, '&lt;') + '</td></tr>';
+  }
+  tbody.innerHTML = html;
+}
+
+async function kvGet(key) {
+  try {
+    const token = await BaumAuth.getToken() || '';
+    const res = await fetch(API_URL + '/data/' + encodeURIComponent(key), {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.data;
+  } catch(e) { return null; }
+}
+
+async function kvPut(key, value) {
+  const token = await BaumAuth.getToken() || '';
+  const res = await fetch(API_URL + '/data/' + encodeURIComponent(key), {
+    method: 'PUT',
+    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data: value })
+  });
+  return res.ok;
+}
+
+async function scanLocal() {
+  localData = {};
+  const k = 'leasing_' + brokerId + '_';
+  for (const suffix of SUFFIXES) {
+    const raw = localStorage.getItem(k + suffix);
+    if (raw !== null) {
+      try { localData[suffix] = JSON.parse(raw); } catch(e) { localData[suffix] = null; }
+    }
+  }
+}
+
+async function scanKV() {
+  kvData = {};
+  const k = 'leasing_' + brokerId + '_';
+  for (const suffix of SUFFIXES) {
+    const val = await kvGet(k + suffix);
+    kvData[suffix] = val;
+  }
+}
+
+async function pushLocalToKV() {
+  const btn = document.getElementById('btnPushToKV');
+  btn.disabled = true;
+  btn.textContent = 'Pushing…';
+  log('Starting push: localStorage → Cloud KV');
+
+  const k = 'leasing_' + brokerId + '_';
+  let pushed = 0;
+  for (const suffix of SUFFIXES) {
+    const val = localData[suffix];
+    if (val !== undefined && val !== null && countItems(val) > 0) {
+      log('  Pushing ' + suffix + ' (' + countItems(val) + ' items)…');
+      const ok = await kvPut(k + suffix, val);
+      if (ok) { pushed++; log('  ✓ ' + suffix + ' pushed successfully'); }
+      else { log('  ✗ ' + suffix + ' FAILED'); }
+    } else {
+      log('  Skipping ' + suffix + ' (empty/missing)');
+    }
+  }
+  log('Done! Pushed ' + pushed + ' keys to KV.');
+  log('Rescanning KV…');
+  await scanKV();
+  renderTable('kvTable', 'kvSummary', kvData, 'kv');
+  updateActions();
+  btn.textContent = 'Push localStorage → Cloud KV';
+  btn.disabled = false;
+}
+
+async function pullKVToLocal() {
+  const btn = document.getElementById('btnPullFromKV');
+  btn.disabled = true;
+  btn.textContent = 'Pulling…';
+  log('Starting pull: Cloud KV → localStorage');
+
+  const k = 'leasing_' + brokerId + '_';
+  let pulled = 0;
+  for (const suffix of SUFFIXES) {
+    const val = kvData[suffix];
+    if (val !== undefined && val !== null && countItems(val) > 0) {
+      log('  Pulling ' + suffix + ' (' + countItems(val) + ' items)…');
+      localStorage.setItem(k + suffix, JSON.stringify(val));
+      pulled++;
+      log('  ✓ ' + suffix + ' saved to localStorage');
+    } else {
+      log('  Skipping ' + suffix + ' (empty in KV)');
+    }
+  }
+  log('Done! Pulled ' + pulled + ' keys from KV.');
+  scanLocal();
+  renderTable('localTable', 'localSummary', localData, 'local');
+  renderAllKeys();
+  updateActions();
+  btn.textContent = 'Pull Cloud KV → localStorage';
+  btn.disabled = false;
+}
+
+function updateActions() {
+  const localHas = SUFFIXES.some(s => localData[s] && countItems(localData[s]) > 0);
+  const kvHas = SUFFIXES.some(s => kvData[s] && countItems(kvData[s]) > 0);
+
+  document.getElementById('btnPushToKV').disabled = !localHas;
+  document.getElementById('btnPullFromKV').disabled = !kvHas;
+
+  const hint = document.getElementById('actionHint');
+  if (localHas && !kvHas) {
+    hint.textContent = '✅ Recommendation: Push your localStorage data to the cloud. This will restore your data across all devices.';
+    hint.style.color = 'var(--success)';
+  } else if (!localHas && kvHas) {
+    hint.textContent = '✅ Recommendation: Pull cloud data to this browser. Your data exists in the cloud already.';
+    hint.style.color = 'var(--success)';
+  } else if (localHas && kvHas) {
+    hint.textContent = 'Both have data. Compare the counts above and push or pull as needed.';
+    hint.style.color = 'var(--warning)';
+  } else {
+    hint.textContent = '⚠️ No data found in either location for your broker ID. Data may have been overwritten. Contact Mike.';
+    hint.style.color = 'var(--danger)';
+  }
+}
+
+// ── Find broker ID from localStorage or KV ──
+async function findBrokerId(email) {
+  // Try fetching broker list from KV
+  const brokers = await kvGet('leasingBrokers');
+  if (brokers && Array.isArray(brokers)) {
+    const match = brokers.find(b =>
+      (b.email && b.email.toLowerCase() === email.toLowerCase()) ||
+      (b.username && b.username.toLowerCase() === email.toLowerCase()) ||
+      (b.username && b.username.toLowerCase() === email.split('@')[0].toLowerCase())
+    );
+    if (match) return match.id;
+  }
+  // Fallback: scan localStorage keys
+  const prefix = 'leasing_broker_';
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key.startsWith(prefix) && key.endsWith('_properties')) {
+      return key.replace('leasing_', '').replace('_properties', '');
+    }
+  }
+  return null;
+}
+
+// ── Init ──
+BaumAuth.onReady(async function() {
+  const user = BaumAuth.getUser();
+  if (!user) { document.getElementById('loading').innerHTML = '<p>Not signed in. <a href="index.html">Go back</a></p>'; return; }
+
+  document.getElementById('userName').textContent = user.name || user.email;
+  document.getElementById('userEmail').textContent = user.email;
+
+  brokerId = await findBrokerId(user.email);
+  if (!brokerId) {
+    document.getElementById('loading').innerHTML = '<p style="color:var(--danger);">Could not find a broker ID for ' + user.email + '. Check the All Keys section below.</p>';
+    document.getElementById('content').style.display = 'block';
+    document.getElementById('brokerIdDisplay').textContent = 'NOT FOUND';
+    renderAllKeys();
+    return;
+  }
+
+  document.getElementById('brokerIdDisplay').textContent = brokerId;
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('content').style.display = 'block';
+
+  // Scan both sources
+  scanLocal();
+  await scanKV();
+
+  // Render
+  renderTable('localTable', 'localSummary', localData, 'local');
+  renderTable('kvTable', 'kvSummary', kvData, 'kv');
+  renderAllKeys();
+  updateActions();
+});
+</script>
+</body>
+</html>

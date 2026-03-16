@@ -654,11 +654,26 @@ async function loadData() {
   const k = 'leasing_' + brokerId + '_';
   async function loadKey(suffix, fallback) {
     const kvData = await kvGet(k + suffix);
-    if (kvData !== null) {
-      localStorage.setItem(k + suffix, JSON.stringify(kvData)); // cache locally
+    let localRaw;
+    try { localRaw = JSON.parse(localStorage.getItem(k + suffix) || fallback); } catch(e) { localRaw = JSON.parse(fallback); }
+    const localHasData = Array.isArray(localRaw) ? localRaw.length > 0 : (typeof localRaw === 'object' && Object.keys(localRaw).length > 0);
+    const kvHasData = kvData !== null && (Array.isArray(kvData) ? kvData.length > 0 : (typeof kvData === 'object' && Object.keys(kvData).length > 0));
+
+    if (kvHasData) {
+      // KV has real data — use it and cache locally
+      localStorage.setItem(k + suffix, JSON.stringify(kvData));
+      return kvData;
+    } else if (localHasData) {
+      // KV is empty but localStorage has data — keep local, push to KV
+      console.log('[loadData] Preserving localStorage for ' + suffix + ' (' + (Array.isArray(localRaw) ? localRaw.length : 'obj') + ' items) — pushing to KV');
+      kvPut(k + suffix, localRaw); // fire-and-forget push
+      return localRaw;
+    } else if (kvData !== null) {
+      // Both empty but KV responded — cache locally
+      localStorage.setItem(k + suffix, JSON.stringify(kvData));
       return kvData;
     }
-    try { return JSON.parse(localStorage.getItem(k + suffix) || fallback); } catch(e) { return JSON.parse(fallback); }
+    return localRaw;
   }
   properties = await loadKey('properties', '[]');
   prospects  = await loadKey('prospects',  '[]');
@@ -670,29 +685,32 @@ async function saveProspects()  { localStorage.setItem('leasing_' + brokerId + '
 async function saveSnapshots()  { localStorage.setItem('leasing_' + brokerId + '_snapshots',  JSON.stringify(snapshots));  await kvPut('leasing_' + brokerId + '_snapshots',  snapshots); }
 async function saveSettingsData() { localStorage.setItem('leasing_' + brokerId + '_settings', JSON.stringify(settings));  await kvPut('leasing_' + brokerId + '_settings',  settings); }
 
-// ── KV Migration (one-time) ──────────────────────────────────
+// ── KV Migration (per-broker, safe) ──────────────────────────
 async function migrateLocalToKV() {
-  if (localStorage.getItem('leasing_kv_synced')) return;
+  // Only migrate THIS broker's data — never overwrite other brokers' KV data
+  const syncKey = 'leasing_kv_synced_' + brokerId;
+  if (localStorage.getItem(syncKey)) return;
   try {
+    const k = 'leasing_' + brokerId + '_';
+    const localProps = JSON.parse(localStorage.getItem(k + 'properties') || '[]');
+    const localProsp = JSON.parse(localStorage.getItem(k + 'prospects')  || '[]');
+    const localSnaps = JSON.parse(localStorage.getItem(k + 'snapshots')  || '[]');
+    const localSets  = JSON.parse(localStorage.getItem(k + 'settings')   || '{}');
+    // Only migrate if there's actual local data to push
+    const hasData = localProps.length || localProsp.length || localSnaps.length || Object.keys(localSets).length;
+    if (!hasData) { localStorage.setItem(syncKey, 'true'); return; }
     const token = await BaumAuth.getToken() || '';
     const migrationData = { brokers: allBrokers, brokerData: {} };
-    for (const broker of allBrokers) {
-      const bid = broker.id;
-      const k = 'leasing_' + bid + '_';
-      migrationData.brokerData[bid] = {
-        properties: JSON.parse(localStorage.getItem(k + 'properties') || '[]'),
-        prospects:  JSON.parse(localStorage.getItem(k + 'prospects')  || '[]'),
-        snapshots:  JSON.parse(localStorage.getItem(k + 'snapshots')  || '[]'),
-        settings:   JSON.parse(localStorage.getItem(k + 'settings')   || '{}')
-      };
-    }
+    migrationData.brokerData[brokerId] = {
+      properties: localProps, prospects: localProsp, snapshots: localSnaps, settings: localSets
+    };
     const res = await fetch(API_URL + '/migrate', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
       body: JSON.stringify(migrationData)
     });
-    if (res.ok) localStorage.setItem('leasing_kv_synced', 'true');
-  } catch(e) { /* will retry next session */ }
+    if (res.ok) localStorage.setItem(syncKey, 'true');
+  } catch(e) { console.warn('[migrate] Error:', e.message); }
 }
 
 // ── Navigation ────────────────────────────────────────────────
