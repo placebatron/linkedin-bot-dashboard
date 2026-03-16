@@ -537,10 +537,14 @@ async function loginBrokerSSO() {
   const user = BaumAuth.getUser();
   if (!user || !user.email) return false;
 
-  // Find broker by email (primary match) or username (fallback)
+  // Find broker by email (primary match), then username fallbacks
   let broker = allBrokers.find(b => b.email && b.email.toLowerCase() === user.email);
   if (!broker) {
-    // Fallback: match by username (first part of email)
+    // Fallback 1: match username against full email (old records stored email as username)
+    broker = allBrokers.find(b => b.username && b.username.toLowerCase() === user.email);
+  }
+  if (!broker) {
+    // Fallback 2: match by username prefix (first part of email)
     const username = user.email.split('@')[0].toLowerCase();
     broker = allBrokers.find(b => b.username && b.username.toLowerCase() === username);
   }
@@ -563,21 +567,33 @@ async function loginBrokerSSO() {
     }
   }
 
-  // Update broker email if not set (migration from old system)
+  // Migrate old broker record: set email, normalize username
+  let needsSave = false;
+  const idx = allBrokers.findIndex(b => b.id === broker.id);
   if (!broker.email) {
     broker.email = user.email;
-    const idx = allBrokers.findIndex(b => b.id === broker.id);
     if (idx >= 0) allBrokers[idx].email = user.email;
-    await saveBrokers();
+    needsSave = true;
   }
-
+  // Fix username if it was stored as full email (old system)
+  if (broker.username && broker.username.includes('@')) {
+    broker.username = user.email.split('@')[0].toLowerCase();
+    if (idx >= 0) allBrokers[idx].username = broker.username;
+    needsSave = true;
+  }
+  // Update display name from Entra if it looks more complete
+  if (user.name && user.name !== user.email.split('@')[0] && broker.displayName !== user.name) {
+    broker.displayName = user.name;
+    if (idx >= 0) allBrokers[idx].displayName = user.name;
+    needsSave = true;
+  }
   // Update role from Entra group membership
   if (BaumAuth.isAdmin() && broker.role !== 'admin') {
     broker.role = 'admin';
-    const idx = allBrokers.findIndex(b => b.id === broker.id);
     if (idx >= 0) allBrokers[idx].role = 'admin';
-    await saveBrokers();
+    needsSave = true;
   }
+  if (needsSave) await saveBrokers();
 
   sessionStorage.setItem('leasing_broker_id', broker.id);
   sessionStorage.setItem('leasing_broker_name', broker.displayName);
