@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<script>if (!sessionStorage.getItem('ba_team_token')) { window.location.href = 'index.html'; }</script>
+<script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
+<script src="auth.js"></script>
+<script>BaumAuth.requireAuth();</script>
 <title>Leasing Reports — Baum Realty Group</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -163,17 +165,13 @@ textarea.rpt-edit { resize: vertical; }
 </head>
 <body>
 
-<!-- Broker Login Gate -->
+<!-- Auth Loading Gate (SSO resolves automatically) -->
 <div class="login-gate" id="loginGate">
   <div class="login-box">
     <div style="font-size:32px;margin-bottom:12px">📋</div>
     <div style="font-size:20px;font-weight:700;margin-bottom:4px">Leasing Reports</div>
-    <div style="font-size:13px;color:var(--muted);margin-bottom:24px">Sign in with your broker credentials</div>
-    <input type="text" id="loginUsername" placeholder="Username" autocomplete="off" onkeydown="if(event.key==='Enter')document.getElementById('loginPassphrase').focus()">
-    <input type="password" id="loginPassphrase" placeholder="Passphrase" autocomplete="off" onkeydown="if(event.key==='Enter')loginBroker()">
-    <button class="login-btn" onclick="loginBroker()">Sign In</button>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:24px" id="loginStatusMsg">Loading your session...</div>
     <div class="status-bar" id="loginStatus" style="text-align:left"></div>
-    <div style="font-size:11px;color:var(--muted);margin-top:16px">Contact your team lead for credentials.</div>
   </div>
 </div>
 
@@ -555,7 +553,7 @@ const API_URL = 'https://leasing-api.mike-3ac.workers.dev';
 
 async function kvGet(key) {
   try {
-    const token = sessionStorage.getItem('ba_team_token') || '';
+    const token = await BaumAuth.getToken() || '';
     const res = await fetch(API_URL + '/data/' + encodeURIComponent(key), {
       headers: { 'Authorization': 'Bearer ' + token }
     });
@@ -567,7 +565,7 @@ async function kvGet(key) {
 
 async function kvPut(key, data) {
   try {
-    const token = sessionStorage.getItem('ba_team_token') || '';
+    const token = await BaumAuth.getToken() || '';
     const res = await fetch(API_URL + '/data/' + encodeURIComponent(key), {
       method: 'PUT',
       headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
@@ -577,7 +575,7 @@ async function kvPut(key, data) {
   } catch(e) { return false; }
 }
 
-// ── Broker Auth ──────────────────────────────────────────────
+// ── Broker Auth (SSO-backed) ─────────────────────────────────
 async function initBrokers() {
   // Try KV first, fall back to localStorage
   const kvData = await kvGet('leasingBrokers');
@@ -590,7 +588,7 @@ async function initBrokers() {
   if (!allBrokers.length) {
     allBrokers = [{
       id: 'broker_admin', username: 'mike',
-      passphraseHash: btoa('mike|baum2026'),
+      email: 'mike@baumrealty.com',
       displayName: 'Mike Demetriou', role: 'admin',
       createdAt: new Date().toISOString()
     }];
@@ -602,18 +600,58 @@ async function saveBrokers() {
   await kvPut('leasingBrokers', allBrokers);
 }
 
-async function loginBroker() {
-  const u = document.getElementById('loginUsername').value.trim().toLowerCase();
-  const p = document.getElementById('loginPassphrase').value.trim();
-  if (!u || !p) { showStatus('loginStatus', 'error', 'Enter username and passphrase.'); return; }
-  const hash = btoa(u + '|' + p);
-  const broker = allBrokers.find(b => b.username.toLowerCase() === u && b.passphraseHash === hash);
-  if (!broker) { showStatus('loginStatus', 'error', 'Invalid credentials.'); return; }
+// SSO auto-login: match Entra user email to broker profile
+async function loginBrokerSSO() {
+  const user = BaumAuth.getUser();
+  if (!user || !user.email) return false;
+
+  // Find broker by email (primary match) or username (fallback)
+  let broker = allBrokers.find(b => b.email && b.email.toLowerCase() === user.email);
+  if (!broker) {
+    // Fallback: match by username (first part of email)
+    const username = user.email.split('@')[0].toLowerCase();
+    broker = allBrokers.find(b => b.username && b.username.toLowerCase() === username);
+  }
+
+  if (!broker) {
+    // Auto-provision: if user has leasing access in Entra, create a broker profile
+    if (BaumAuth.hasLeasing() || BaumAuth.isAdmin()) {
+      broker = {
+        id: 'broker_' + Date.now(),
+        username: user.email.split('@')[0].toLowerCase(),
+        email: user.email,
+        displayName: user.name || user.email.split('@')[0],
+        role: BaumAuth.isAdmin() ? 'admin' : 'broker',
+        createdAt: new Date().toISOString()
+      };
+      allBrokers.push(broker);
+      await saveBrokers();
+    } else {
+      return false;
+    }
+  }
+
+  // Update broker email if not set (migration from old system)
+  if (!broker.email) {
+    broker.email = user.email;
+    const idx = allBrokers.findIndex(b => b.id === broker.id);
+    if (idx >= 0) allBrokers[idx].email = user.email;
+    await saveBrokers();
+  }
+
+  // Update role from Entra group membership
+  if (BaumAuth.isAdmin() && broker.role !== 'admin') {
+    broker.role = 'admin';
+    const idx = allBrokers.findIndex(b => b.id === broker.id);
+    if (idx >= 0) allBrokers[idx].role = 'admin';
+    await saveBrokers();
+  }
+
   sessionStorage.setItem('leasing_broker_id', broker.id);
   sessionStorage.setItem('leasing_broker_name', broker.displayName);
   currentBroker = broker;
   brokerId = broker.id;
-  enterApp();
+  return true;
 }
 
 function logoutBroker() {
@@ -621,11 +659,7 @@ function logoutBroker() {
   sessionStorage.removeItem('leasing_broker_name');
   currentBroker = null;
   brokerId = '';
-  document.getElementById('appMain').style.display = 'none';
-  document.getElementById('loginGate').classList.remove('hidden');
-  document.getElementById('loginUsername').value = '';
-  document.getElementById('loginPassphrase').value = '';
-  setTimeout(() => document.getElementById('loginUsername').focus(), 100);
+  BaumAuth.logout();
 }
 
 function checkBrokerSession() {
@@ -693,7 +727,7 @@ async function saveSettingsData() { localStorage.setItem('leasing_' + brokerId +
 async function migrateLocalToKV() {
   if (localStorage.getItem('leasing_kv_synced')) return;
   try {
-    const token = sessionStorage.getItem('ba_team_token') || '';
+    const token = await BaumAuth.getToken() || '';
     const migrationData = { brokers: allBrokers, brokerData: {} };
     for (const broker of allBrokers) {
       const bid = broker.id;
@@ -1735,13 +1769,26 @@ async function saveResetPass() {
   showStatus('adminStatus', 'success', '✅ Passphrase reset for "' + allBrokers[idx].displayName + '".');
 }
 
-// ── Init ──────────────────────────────────────────────────────
+// ── Init (SSO-backed) ─────────────────────────────────────────
 (async function() {
+  // Wait for Entra auth to resolve
+  const user = await BaumAuth.init();
+  if (!user) {
+    document.getElementById('loginStatusMsg').textContent = 'Redirecting to sign in...';
+    BaumAuth.login();
+    return;
+  }
+  // Check leasing access
+  if (!BaumAuth.hasLeasing() && !BaumAuth.isAdmin()) {
+    document.getElementById('loginStatusMsg').textContent = 'You don\'t have access to Leasing Reports. Contact your admin.';
+    return;
+  }
   await initBrokers();
-  if (checkBrokerSession()) {
+  // Try existing session first, then SSO auto-login
+  if (checkBrokerSession() || await loginBrokerSSO()) {
     await enterApp();
   } else {
-    setTimeout(() => document.getElementById('loginUsername').focus(), 100);
+    document.getElementById('loginStatusMsg').textContent = 'Unable to match your account. Contact your admin.';
   }
 })();
 </script>

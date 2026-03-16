@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BaumAgents — AI Tools for Baum Realty Group</title>
+<!-- MSAL.js 2.x for Entra SSO -->
+<script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
 <style>
 :root {
   --bg: #0f1117;
@@ -179,12 +181,15 @@ header {
 .app-card.linkedin::before  { background: linear-gradient(135deg, rgba(0,119,181,0.1), rgba(0,96,149,0.05)); }
 .app-card.voss::before      { background: linear-gradient(135deg, rgba(79,110,247,0.1), rgba(124,58,237,0.05)); }
 .app-card.reports::before   { background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(217,119,6,0.05)); }
+.app-card.admin-card::before { background: linear-gradient(135deg, rgba(239,68,68,0.1), rgba(220,38,38,0.05)); }
 .app-card.coming::before    { background: linear-gradient(135deg, rgba(139,144,176,0.05), transparent); }
 .app-card:hover::before     { opacity: 1; }
-.app-card.linkedin:hover { border-color: rgba(0,119,181,0.4); }
-.app-card.voss:hover     { border-color: rgba(79,110,247,0.4); }
-.app-card.reports:hover  { border-color: rgba(245,158,11,0.4); }
-.app-card.coming         { opacity: 0.55; cursor: default; pointer-events: none; }
+.app-card.linkedin:hover    { border-color: rgba(0,119,181,0.4); }
+.app-card.voss:hover        { border-color: rgba(79,110,247,0.4); }
+.app-card.reports:hover     { border-color: rgba(245,158,11,0.4); }
+.app-card.admin-card:hover  { border-color: rgba(239,68,68,0.4); }
+.app-card.coming            { opacity: 0.55; cursor: default; pointer-events: none; }
+.app-card[hidden]           { display: none; }
 
 .card-header {
   display: flex;
@@ -202,11 +207,12 @@ header {
   font-size: 26px;
   flex-shrink: 0;
 }
-.app-icon.linkedin-icon { background: linear-gradient(135deg, #0077b5, #005f93); }
-.app-icon.voss-icon     { background: linear-gradient(135deg, #4f6ef7, #7c3aed); }
-.app-icon.core-icon     { background: linear-gradient(135deg, #10b981, #059669); }
-.app-icon.research-icon { background: linear-gradient(135deg, #f59e0b, #d97706); }
-.app-icon.reports-icon  { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.app-icon.linkedin-icon  { background: linear-gradient(135deg, #0077b5, #005f93); }
+.app-icon.voss-icon      { background: linear-gradient(135deg, #4f6ef7, #7c3aed); }
+.app-icon.core-icon      { background: linear-gradient(135deg, #10b981, #059669); }
+.app-icon.research-icon  { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.app-icon.reports-icon   { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.app-icon.admin-icon     { background: linear-gradient(135deg, #ef4444, #dc2626); }
 
 .card-status {
   font-size: 11px;
@@ -219,6 +225,7 @@ header {
 .status-live   { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
 .status-new    { background: rgba(79,110,247,0.15); color: #818cf8; border: 1px solid rgba(79,110,247,0.3); }
 .status-coming { background: rgba(139,144,176,0.1); color: var(--muted); border: 1px solid var(--border); }
+.status-admin  { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
 
 .app-name {
   font-size: 18px;
@@ -297,7 +304,7 @@ footer {
   50% { opacity: 0.6; transform: scale(0.85); }
 }
 
-/* ── Auth Gate ── */
+/* ── Auth Gate (SSO) ── */
 .auth-gate {
   position: fixed; inset: 0; z-index: 999;
   background: var(--bg);
@@ -324,27 +331,30 @@ footer {
 .auth-box .auth-sub {
   font-size: 13px; color: var(--muted); margin-bottom: 24px;
 }
-.auth-box input {
-  background: var(--surface2); border: 1px solid var(--border);
-  border-radius: 8px; color: var(--text); font-size: 14px;
-  padding: 11px 14px; width: 100%; font-family: inherit;
-  transition: border 0.15s; margin-bottom: 14px; text-align: center;
-}
-.auth-box input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,110,247,0.1); }
-.auth-box input::placeholder { color: rgba(139,144,176,0.5); font-style: italic; }
 .auth-box .auth-btn {
   background: linear-gradient(135deg, var(--accent), var(--accent2));
-  border: none; color: white; padding: 10px 24px; border-radius: 8px;
+  border: none; color: white; padding: 12px 24px; border-radius: 8px;
   font-size: 14px; font-weight: 600; cursor: pointer; width: 100%;
-  transition: opacity 0.15s;
+  transition: opacity 0.15s; display: flex; align-items: center;
+  justify-content: center; gap: 10px;
 }
 .auth-box .auth-btn:hover { opacity: 0.9; }
-.auth-box .auth-error {
-  font-size: 12px; color: var(--danger); margin-top: 10px; display: none;
-}
 .auth-box .auth-hint {
   font-size: 11px; color: var(--muted); margin-top: 16px;
 }
+.auth-box .auth-error {
+  font-size: 12px; color: var(--danger); margin-top: 10px; display: none;
+}
+.auth-loading {
+  font-size: 13px; color: var(--muted); margin-top: 16px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.auth-loading .spinner {
+  width: 16px; height: 16px; border: 2px solid var(--border);
+  border-top-color: var(--accent); border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 .main-content { display: none; }
 .main-content.visible { display: contents; }
 
@@ -352,9 +362,15 @@ footer {
 .header-auth {
   display: flex; align-items: center; gap: 10px;
 }
-.header-auth .auth-status {
-  font-size: 12px; color: var(--muted);
+.header-auth .auth-user-name {
+  font-size: 12px; color: var(--text); font-weight: 600;
 }
+.header-auth .auth-role-badge {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 10px;
+}
+.auth-role-badge.admin { background: rgba(239,68,68,0.15); color: #f87171; }
+.auth-role-badge.broker { background: rgba(16,185,129,0.15); color: #34d399; }
 .header-auth .signout-btn {
   background: var(--surface2); border: 1px solid var(--border);
   color: var(--muted); padding: 5px 10px; border-radius: 6px;
@@ -362,27 +378,82 @@ footer {
 }
 .header-auth .signout-btn:hover { border-color: var(--accent); color: var(--text); }
 
+/* ── Admin Panel Page ── */
+.admin-page {
+  display: none; padding: 40px; max-width: 900px; margin: 0 auto; width: 100%;
+}
+.admin-page.visible { display: block; }
+.admin-page h2 {
+  font-size: 24px; font-weight: 800; margin-bottom: 8px;
+  background: linear-gradient(135deg, #ef4444, #f87171);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.admin-page .admin-subtitle {
+  font-size: 14px; color: var(--muted); margin-bottom: 32px;
+}
+.admin-section {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 24px; margin-bottom: 24px;
+}
+.admin-section h3 {
+  font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 16px;
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.admin-table {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+}
+.admin-table th {
+  text-align: left; padding: 8px 12px; color: var(--muted); font-weight: 600;
+  font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+.admin-table td {
+  padding: 10px 12px; border-bottom: 1px solid rgba(46,50,80,0.5);
+  color: var(--text);
+}
+.admin-table tr:last-child td { border-bottom: none; }
+.group-badge {
+  display: inline-block; font-size: 10px; font-weight: 600;
+  padding: 2px 8px; border-radius: 8px; margin-right: 4px;
+}
+.group-badge.admins { background: rgba(239,68,68,0.15); color: #f87171; }
+.group-badge.brokers { background: rgba(16,185,129,0.15); color: #34d399; }
+.group-badge.leasing { background: rgba(245,158,11,0.15); color: #fbbf24; }
+.back-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--accent); font-size: 13px; font-weight: 600;
+  text-decoration: none; margin-bottom: 24px; cursor: pointer;
+}
+.back-link:hover { text-decoration: underline; }
+
 @media (max-width: 600px) {
   header { padding: 0 20px; }
   .hero { padding: 48px 20px 40px; }
   .hero h1 { font-size: 30px; }
   .apps-section { padding: 0 20px 60px; }
+  .admin-page { padding: 20px; }
   footer { flex-direction: column; gap: 8px; text-align: center; }
 }
 </style>
 </head>
 <body>
 
-<!-- Auth Gate -->
+<!-- Auth Gate (SSO) -->
 <div class="auth-gate" id="authGate">
   <div class="auth-box">
     <div class="logo-mark">BA</div>
     <h2>BaumAgents</h2>
     <div class="auth-sub">Internal tools for Baum Realty Group</div>
-    <input type="password" id="passphraseInput" placeholder="Enter team passphrase…" onkeydown="if(event.key==='Enter')signIn()" autofocus />
-    <button class="auth-btn" onclick="signIn()">Sign In</button>
-    <div class="auth-error" id="authError">Please enter the team passphrase.</div>
-    <div class="auth-hint">Ask Mike if you don't have the passphrase.</div>
+    <div class="auth-loading" id="authLoading">
+      <div class="spinner"></div>
+      Checking sign-in status...
+    </div>
+    <button class="auth-btn" id="authSignInBtn" onclick="BaumAuth.login()" style="display:none;">
+      <svg width="20" height="20" viewBox="0 0 21 21" fill="none"><rect width="10" height="10" fill="#F25022"/><rect x="11" width="10" height="10" fill="#7FBA00"/><rect y="11" width="10" height="10" fill="#00A4EF"/><rect x="11" y="11" width="10" height="10" fill="#FFB900"/></svg>
+      Sign in with Microsoft
+    </button>
+    <div class="auth-error" id="authError"></div>
+    <div class="auth-hint">Sign in with your @baumrealty.com account</div>
   </div>
 </div>
 
@@ -390,7 +461,7 @@ footer {
 <div class="main-content" id="mainContent">
 
 <header>
-  <a class="logo" href="/">
+  <a class="logo" href="/" onclick="showHome(); return false;">
     <div class="logo-mark">BA</div>
     <div>
       <div class="logo-name">BaumAgents</div>
@@ -398,11 +469,14 @@ footer {
     </div>
   </a>
   <div class="header-auth">
-    <span class="auth-status" id="authStatusText">✓ Signed in</span>
-    <button class="signout-btn" onclick="signOut()">Sign Out</button>
+    <span class="auth-user-name" id="authUserName"></span>
+    <span class="auth-role-badge" id="authRoleBadge"></span>
+    <button class="signout-btn" onclick="BaumAuth.logout()">Sign Out</button>
   </div>
 </header>
 
+<!-- Home View -->
+<div id="homeView">
 <div class="hero">
   <div class="hero-eyebrow">
     <span>⚡</span> AI-Powered Brokerage Platform
@@ -416,7 +490,7 @@ footer {
   <div class="apps-grid">
 
     <!-- LinkedIn Bot -->
-    <a class="app-card linkedin" href="linkedin.html">
+    <a class="app-card linkedin" href="linkedin.html" id="card-linkedin" data-requires="brokers">
       <div class="card-header">
         <div class="app-icon linkedin-icon">💼</div>
         <span class="card-status status-live">Live</span>
@@ -436,10 +510,10 @@ footer {
     </a>
 
     <!-- Voss Email Rewriter -->
-    <a class="app-card voss" href="voss.html">
+    <a class="app-card voss" href="voss.html" id="card-voss" data-requires="brokers">
       <div class="card-header">
         <div class="app-icon voss-icon">🎯</div>
-        <span class="card-status status-new">New</span>
+        <span class="card-status status-live">Live</span>
       </div>
       <div>
         <div class="app-name">Voss Email Rewriter</div>
@@ -456,10 +530,10 @@ footer {
     </a>
 
     <!-- Client Reports: Leasing -->
-    <a class="app-card reports" href="leasing-reports.html">
+    <a class="app-card reports" href="leasing-reports.html" id="card-leasing" data-requires="leasing">
       <div class="card-header">
         <div class="app-icon reports-icon">📋</div>
-        <span class="card-status status-new">New</span>
+        <span class="card-status status-live">Live</span>
       </div>
       <div>
         <div class="app-name">Leasing Activity Reports</div>
@@ -470,6 +544,26 @@ footer {
           <span class="tag">Leasing</span>
           <span class="tag">Reports</span>
           <span class="tag">Landlord Rep</span>
+        </div>
+        <div class="card-arrow">→</div>
+      </div>
+    </a>
+
+    <!-- Admin Panel -->
+    <a class="app-card admin-card" href="#" onclick="showAdminPanel(); return false;" id="card-admin" data-requires="admins" hidden>
+      <div class="card-header">
+        <div class="app-icon admin-icon">🔐</div>
+        <span class="card-status status-admin">Admin</span>
+      </div>
+      <div>
+        <div class="app-name">Access Control</div>
+        <div class="app-tagline">View team members, group assignments, and tool access levels. Manage who can see what across the BaumAgents platform.</div>
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">Security</span>
+          <span class="tag">SSO</span>
+          <span class="tag">Entra</span>
         </div>
         <div class="card-arrow">→</div>
       </div>
@@ -515,6 +609,61 @@ footer {
 
   </div>
 </div>
+</div><!-- /homeView -->
+
+<!-- Admin Panel Page -->
+<div class="admin-page" id="adminPage">
+  <a class="back-link" onclick="showHome(); return false;">← Back to Apps</a>
+  <h2>Access Control</h2>
+  <div class="admin-subtitle">Team access managed via Microsoft Entra security groups. Contact Mike or your IT admin to change group assignments.</div>
+
+  <div class="admin-section">
+    <h3>Your Session</h3>
+    <table class="admin-table">
+      <tr><td style="color:var(--muted); width:140px;">Name</td><td id="adminYourName">—</td></tr>
+      <tr><td style="color:var(--muted);">Email</td><td id="adminYourEmail">—</td></tr>
+      <tr><td style="color:var(--muted);">Groups</td><td id="adminYourGroups">—</td></tr>
+      <tr><td style="color:var(--muted);">Tenant ID</td><td style="font-family:monospace; font-size:12px; color:var(--muted);" id="adminTenantId">—</td></tr>
+    </table>
+  </div>
+
+  <div class="admin-section">
+    <h3>Security Groups</h3>
+    <table class="admin-table">
+      <thead>
+        <tr><th>Group</th><th>Object ID</th><th>Controls Access To</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="group-badge admins">Admins</span> BaumAgents-Admins</td>
+          <td style="font-family:monospace; font-size:11px; color:var(--muted);">77847c26-7281-456d-a064-57b53481022f</td>
+          <td>Full platform + this admin panel</td>
+        </tr>
+        <tr>
+          <td><span class="group-badge brokers">Brokers</span> BaumAgents-Brokers</td>
+          <td style="font-family:monospace; font-size:11px; color:var(--muted);">2771698b-ee50-4198-8c45-74e5d1f64690</td>
+          <td>LinkedIn Bot, Voss Rewriter</td>
+        </tr>
+        <tr>
+          <td><span class="group-badge leasing">Leasing</span> BaumAgents-LeasingAccess</td>
+          <td style="font-family:monospace; font-size:11px; color:var(--muted);">8875efd3-d6fc-46cf-a49b-1b7ebc60e917</td>
+          <td>Leasing Activity Reports</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="admin-section">
+    <h3>How Access Works</h3>
+    <table class="admin-table">
+      <tr><td style="color:var(--muted); width:160px;">Authentication</td><td>Microsoft Entra ID (SSO) — all @baumrealty.com accounts</td></tr>
+      <tr><td style="color:var(--muted);">Authorization</td><td>Entra security group membership determines which tools each broker can see and use</td></tr>
+      <tr><td style="color:var(--muted);">Token type</td><td>Authorization Code + PKCE (ID tokens with group claims)</td></tr>
+      <tr><td style="color:var(--muted);">Session duration</td><td>24-hour refresh window; browser tab scoped</td></tr>
+      <tr><td style="color:var(--muted);">To change access</td><td>Add or remove users from security groups in Microsoft Entra admin (via ETS)</td></tr>
+    </table>
+  </div>
+</div>
 
 <footer>
   <div class="footer-left">© 2026 Baum Realty Group · Internal use only</div>
@@ -526,37 +675,94 @@ footer {
 
 </div><!-- /main-content -->
 
+<script src="auth.js"></script>
 <script>
-const AUTH_KEY = 'ba_team_token';
+// ── App visibility based on group membership ──
+function applyAccessControl(user) {
+  if (!user) return;
 
-function signIn() {
-  const phrase = document.getElementById('passphraseInput').value.trim();
-  const err = document.getElementById('authError');
-  if (!phrase) { err.style.display = 'block'; return; }
-  err.style.display = 'none';
-  sessionStorage.setItem(AUTH_KEY, phrase);
-  showApp();
+  // Admins see everything
+  const isAdmin = user.isAdmin;
+
+  document.querySelectorAll('.app-card[data-requires]').forEach(function (card) {
+    const req = card.getAttribute('data-requires');
+    let visible = isAdmin; // admins always see all cards
+
+    if (!visible) {
+      if (req === 'brokers') visible = user.isBroker;
+      else if (req === 'leasing') visible = user.hasLeasing;
+      else if (req === 'admins') visible = user.isAdmin;
+    }
+
+    card.hidden = !visible;
+  });
+
+  // Update header
+  document.getElementById('authUserName').textContent = user.name || user.email;
+  const badge = document.getElementById('authRoleBadge');
+  if (isAdmin) {
+    badge.textContent = 'Admin';
+    badge.className = 'auth-role-badge admin';
+  } else {
+    badge.textContent = 'Broker';
+    badge.className = 'auth-role-badge broker';
+  }
 }
 
-function signOut() {
-  sessionStorage.removeItem(AUTH_KEY);
-  document.getElementById('mainContent').classList.remove('visible');
-  document.getElementById('authGate').classList.remove('hidden');
-  document.getElementById('passphraseInput').value = '';
-  setTimeout(() => document.getElementById('passphraseInput').focus(), 100);
+// ── Admin panel ──
+function showAdminPanel() {
+  var user = BaumAuth.getUser();
+  if (!user || !user.isAdmin) return;
+
+  document.getElementById('homeView').style.display = 'none';
+  document.getElementById('adminPage').classList.add('visible');
+
+  // Populate session info
+  document.getElementById('adminYourName').textContent = user.name || '—';
+  document.getElementById('adminYourEmail').textContent = user.email || '—';
+  document.getElementById('adminTenantId').textContent = BaumAuth.getConfig().tenantId;
+
+  // Group badges
+  var groupsHtml = '';
+  if (user.isAdmin)     groupsHtml += '<span class="group-badge admins">Admins</span>';
+  if (user.isBroker)    groupsHtml += '<span class="group-badge brokers">Brokers</span>';
+  if (user.hasLeasing)  groupsHtml += '<span class="group-badge leasing">Leasing</span>';
+  if (!groupsHtml)      groupsHtml = '<span style="color:var(--muted);">No groups assigned</span>';
+  document.getElementById('adminYourGroups').innerHTML = groupsHtml;
 }
 
-function showApp() {
-  document.getElementById('authGate').classList.add('hidden');
-  document.getElementById('mainContent').classList.add('visible');
+function showHome() {
+  document.getElementById('adminPage').classList.remove('visible');
+  document.getElementById('homeView').style.display = '';
 }
 
-// On load: check if already signed in this session
-if (sessionStorage.getItem(AUTH_KEY)) {
-  showApp();
-} else {
-  setTimeout(() => document.getElementById('passphraseInput').focus(), 100);
-}
+// ── Initialize auth ──
+(async function () {
+  var loadingEl = document.getElementById('authLoading');
+  var signInBtn = document.getElementById('authSignInBtn');
+  var errorEl = document.getElementById('authError');
+
+  try {
+    var user = await BaumAuth.init();
+
+    if (user) {
+      // Authenticated — show the app
+      document.getElementById('authGate').classList.add('hidden');
+      document.getElementById('mainContent').classList.add('visible');
+      applyAccessControl(user);
+    } else {
+      // Not authenticated — show sign-in button
+      loadingEl.style.display = 'none';
+      signInBtn.style.display = 'flex';
+    }
+  } catch (err) {
+    loadingEl.style.display = 'none';
+    errorEl.textContent = 'Authentication error. Please try again.';
+    errorEl.style.display = 'block';
+    signInBtn.style.display = 'flex';
+    console.error('[BaumAgents] Auth init error:', err);
+  }
+})();
 </script>
 
 </body>

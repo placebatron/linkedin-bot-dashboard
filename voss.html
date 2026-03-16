@@ -512,10 +512,10 @@ textarea.email-input { min-height: 200px; font-size: 14px; line-height: 1.6; }
 </head>
 <body>
 
-<!-- Auth guard: redirect to index if not signed in -->
-<script>
-if (!sessionStorage.getItem('ba_team_token')) { window.location.href = 'index.html'; }
-</script>
+<!-- Auth: Entra SSO via MSAL.js -->
+<script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
+<script src="auth.js"></script>
+<script>BaumAuth.requireAuth();</script>
 
 <!-- Header -->
 <header>
@@ -907,7 +907,16 @@ Mike"></textarea>
 <script>
 // ── Config ────────────────────────────────────────────────────────
 const PROXY_URL = 'https://voss-proxy.mike-3ac.workers.dev/v1/messages';
-let teamToken = sessionStorage.getItem('ba_team_token') || '';
+// Auth token — retrieved dynamically from Entra SSO
+async function getAuthToken() {
+  const token = await BaumAuth.getToken();
+  if (!token) { window.location.href = 'index.html'; return ''; }
+  return token;
+}
+let teamToken = ''; // initialized after auth resolves
+BaumAuth.onReady(async function(user) {
+  if (user) teamToken = await BaumAuth.getToken() || '';
+});
 
 // ── Char counter ──────────────────────────────────────────────────
 document.getElementById('emailDraft').addEventListener('input', function() {
@@ -1008,10 +1017,8 @@ function computeStageFit(scores, stage) {
 
 // ── Main rewrite function ─────────────────────────────────────────
 async function rewriteEmail() {
-  if (!teamToken) {
-    window.location.href = 'index.html';
-    return;
-  }
+  teamToken = await getAuthToken();
+  if (!teamToken) return;
 
   const draft = document.getElementById('emailDraft').value.trim();
   if (!draft) {
@@ -1155,7 +1162,7 @@ Each subject line must be under 60 characters, lowercase-friendly (no ALL CAPS),
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      if (response.status === 401) { teamToken = ''; sessionStorage.removeItem('ba_team_token'); window.location.href = 'index.html'; }
+      if (response.status === 401) { teamToken = ''; BaumAuth.login(); return; }
       throw new Error(err.error?.message || `API error ${response.status}`);
     }
 
@@ -1458,7 +1465,7 @@ Respond ONLY with valid JSON:
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      if (response.status === 401) { teamToken = ''; sessionStorage.removeItem('ba_team_token'); window.location.href = 'index.html'; }
+      if (response.status === 401) { teamToken = ''; BaumAuth.login(); return; }
       throw new Error(err.error?.message || `API error ${response.status}`);
     }
 
@@ -1623,7 +1630,7 @@ Respond ONLY with valid JSON:
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      if (response.status === 401) { teamToken = ''; sessionStorage.removeItem('ba_team_token'); window.location.href = 'index.html'; }
+      if (response.status === 401) { teamToken = ''; BaumAuth.login(); return; }
       throw new Error(err.error?.message || `API error ${response.status}`);
     }
 
@@ -2055,7 +2062,7 @@ Focus on details that would make an outreach email more targeted and personal. O
     });
 
     if (!response.ok) {
-      if (response.status === 401) { teamToken = ''; sessionStorage.removeItem('ba_team_token'); window.location.href = 'index.html'; }
+      if (response.status === 401) { teamToken = ''; BaumAuth.login(); return; }
       throw new Error(`API error ${response.status}`);
     }
 
