@@ -200,10 +200,6 @@ textarea.rpt-edit { resize: vertical; }
       <div class="nav-label" style="margin-bottom:8px">Config</div>
       <div class="nav-item" onclick="showPage('settings',this)"><span class="nav-icon">⚙️</span> Settings</div>
     </div>
-    <div id="adminNavSection" style="display:none">
-      <div class="nav-label" style="margin-bottom:8px">Admin</div>
-      <div class="nav-item" onclick="showPage('admin',this)"><span class="nav-icon">🔑</span> Brokers</div>
-    </div>
 
     <!-- Broker + active property indicator -->
     <div style="margin-top:auto">
@@ -449,72 +445,8 @@ textarea.rpt-edit { resize: vertical; }
         <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
         <div class="status-bar" id="settingsStatus"></div>
       </div>
-      <div class="card" style="margin-top:16px">
-        <div style="font-size:14px;font-weight:700;margin-bottom:12px">🔒 Change Your Passphrase</div>
-        <div class="form-row-3">
-          <div class="form-group"><label>Current Passphrase</label><input id="settCurrentPass" type="password" placeholder="Enter current passphrase"></div>
-          <div class="form-group"><label>New Passphrase</label><input id="settNewPass" type="password" placeholder="Enter new passphrase"></div>
-          <div class="form-group"><label>Confirm New</label><input id="settConfirmPass" type="password" placeholder="Confirm new passphrase"></div>
-        </div>
-        <button class="btn btn-primary" onclick="changeSelfPassphrase()">Update Passphrase</button>
-        <div class="status-bar" id="selfPassStatus"></div>
-      </div>
     </div>
 
-    <!-- ADMIN PAGE -->
-    <div class="page" id="page-admin">
-      <div class="section-title">🔑 Broker Management</div>
-      <div class="section-sub">Create and manage broker accounts for the leasing reports module.</div>
-      <div class="status-bar" id="adminStatus"></div>
-      <div class="card">
-        <div style="font-size:14px;font-weight:700;margin-bottom:12px">Create New Broker</div>
-        <div class="form-row">
-          <div class="form-group"><label>Display Name</label><input id="adminName" placeholder="Sarah Aiyash"></div>
-          <div class="form-group"><label>Username</label><input id="adminUsername" placeholder="sarah"></div>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label>Passphrase</label><input id="adminPass" type="password" placeholder="Set a passphrase"></div>
-          <div class="form-group"><label>Role</label><select id="adminRole"><option value="broker">Broker</option><option value="admin">Admin</option></select></div>
-        </div>
-        <button class="btn btn-primary" onclick="createBroker()">Create Broker</button>
-      </div>
-      <div class="card" style="padding:0;overflow-x:auto">
-        <table class="prospect-table" id="brokerTable">
-          <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Created</th><th style="width:200px">Actions</th></tr></thead>
-          <tbody id="brokerTableBody"></tbody>
-        </table>
-      </div>
-      <!-- Edit Broker Modal -->
-      <div class="modal-overlay" id="editBrokerModal" style="display:none" onclick="if(event.target===this)closeEditBrokerModal()">
-        <div class="modal-inner card" style="max-width:480px;margin:auto">
-          <div style="font-size:16px;font-weight:700;margin-bottom:16px">✏️ Edit Broker</div>
-          <input type="hidden" id="editBrokerId">
-          <div class="form-group"><label>Display Name</label><input id="editBrokerName" placeholder="Full name"></div>
-          <div class="form-group"><label>Username</label><input id="editBrokerUsername" placeholder="Login username"></div>
-          <div class="form-group"><label>Role</label><select id="editBrokerRole"><option value="broker">Broker</option><option value="admin">Admin</option></select></div>
-          <div class="status-bar" id="editBrokerStatus"></div>
-          <div style="display:flex;gap:8px;margin-top:12px">
-            <button class="btn btn-primary" onclick="saveEditBroker()">Save Changes</button>
-            <button class="btn" onclick="closeEditBrokerModal()">Cancel</button>
-          </div>
-        </div>
-      </div>
-      <!-- Reset Passphrase Modal -->
-      <div class="modal-overlay" id="resetPassModal" style="display:none" onclick="if(event.target===this)closeResetPassModal()">
-        <div class="modal-inner card" style="max-width:400px;margin:auto">
-          <div style="font-size:16px;font-weight:700;margin-bottom:16px">🔑 Reset Passphrase</div>
-          <input type="hidden" id="resetPassBrokerId">
-          <div id="resetPassBrokerLabel" style="font-size:13px;color:var(--muted);margin-bottom:12px"></div>
-          <div class="form-group"><label>New Passphrase</label><input id="resetPassNew" type="password" placeholder="Enter new passphrase"></div>
-          <div class="form-group"><label>Confirm</label><input id="resetPassConfirm" type="password" placeholder="Confirm new passphrase"></div>
-          <div class="status-bar" id="resetPassStatus"></div>
-          <div style="display:flex;gap:8px;margin-top:12px">
-            <button class="btn btn-primary" onclick="saveResetPass()">Reset Passphrase</button>
-            <button class="btn" onclick="closeResetPassModal()">Cancel</button>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -676,7 +608,6 @@ async function enterApp() {
   document.getElementById('appMain').style.display = 'grid';
   setText('sidebarBrokerName', currentBroker.displayName);
   // Show admin nav if admin
-  document.getElementById('adminNavSection').style.display = currentBroker.role === 'admin' ? 'block' : 'none';
   // Migrate old data if needed
   migrateOldData();
   await loadData();
@@ -759,7 +690,6 @@ function showPage(name, el) {
   if (name === 'generate')   populateGenPropSelect();
   if (name === 'archive')    renderArchive();
   if (name === 'settings')   loadSettingsForm();
-  if (name === 'admin')      renderBrokerTable();
 }
 
 // ── Properties ────────────────────────────────────────────────
@@ -1633,141 +1563,6 @@ async function saveSettings() {
   showStatus('settingsStatus', 'success', '✅ Settings saved.');
 }
 
-// ── Self-Service: Change Own Passphrase ──────────────────────
-async function changeSelfPassphrase() {
-  const curr = document.getElementById('settCurrentPass').value;
-  const newP = document.getElementById('settNewPass').value.trim();
-  const conf = document.getElementById('settConfirmPass').value.trim();
-  if (!curr || !newP || !conf) { showStatus('selfPassStatus', 'error', 'All fields are required.'); return; }
-  const currHash = btoa(currentBroker.username + '|' + curr);
-  if (currHash !== currentBroker.passphraseHash) { showStatus('selfPassStatus', 'error', 'Current passphrase is incorrect.'); return; }
-  if (newP.length < 4) { showStatus('selfPassStatus', 'error', 'New passphrase must be at least 4 characters.'); return; }
-  if (newP !== conf) { showStatus('selfPassStatus', 'error', 'New passphrase and confirmation do not match.'); return; }
-  const newHash = btoa(currentBroker.username + '|' + newP);
-  currentBroker.passphraseHash = newHash;
-  const idx = allBrokers.findIndex(b => b.id === currentBroker.id);
-  if (idx >= 0) allBrokers[idx].passphraseHash = newHash;
-  await saveBrokers();
-  document.getElementById('settCurrentPass').value = '';
-  document.getElementById('settNewPass').value = '';
-  document.getElementById('settConfirmPass').value = '';
-  showStatus('selfPassStatus', 'success', '✅ Passphrase updated successfully.');
-}
-
-// ── Admin: Broker Management ──────────────────────────────────
-async function createBroker() {
-  const name = document.getElementById('adminName').value.trim();
-  const username = document.getElementById('adminUsername').value.trim().toLowerCase();
-  const pass = document.getElementById('adminPass').value.trim();
-  const role = document.getElementById('adminRole').value;
-  if (!name || !username || !pass) { showStatus('adminStatus', 'error', 'All fields are required.'); return; }
-  if (allBrokers.find(b => b.username.toLowerCase() === username)) { showStatus('adminStatus', 'error', 'Username already exists.'); return; }
-  allBrokers.push({
-    id: 'broker_' + uid(), username: username,
-    passphraseHash: btoa(username + '|' + pass),
-    displayName: name, role: role,
-    createdAt: new Date().toISOString()
-  });
-  await saveBrokers(); renderBrokerTable();
-  document.getElementById('adminName').value = '';
-  document.getElementById('adminUsername').value = '';
-  document.getElementById('adminPass').value = '';
-  showStatus('adminStatus', 'success', '✅ Broker "' + name + '" created.');
-}
-
-function renderBrokerTable() {
-  const tbody = document.getElementById('brokerTableBody');
-  tbody.innerHTML = allBrokers.map(b => {
-    const created = new Date(b.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    const isMe = b.id === brokerId;
-    let actions = '<div style="display:flex;gap:4px;flex-wrap:wrap">';
-    actions += '<button class="btn btn-sm" onclick="openEditBrokerModal(\'' + b.id + '\')" title="Edit">✏️</button>';
-    actions += '<button class="btn btn-sm" onclick="openResetPassModal(\'' + b.id + '\')" title="Reset Passphrase">🔑</button>';
-    if (!isMe) actions += '<button class="btn btn-sm" style="color:var(--danger)" onclick="deleteBroker(\'' + b.id + '\')" title="Delete">🗑️</button>';
-    actions += '</div>';
-    return '<tr><td><strong>' + escHtml(b.displayName) + '</strong>' + (isMe ? ' <span style="font-size:11px;color:var(--accent)">(you)</span>' : '') + '</td><td>' + escHtml(b.username) + '</td><td><span class="stage-badge ' + (b.role === 'admin' ? 'loi' : 'inquiry') + '">' + b.role + '</span></td><td style="color:var(--muted)">' + created + '</td><td>' + actions + '</td></tr>';
-  }).join('');
-}
-
-async function deleteBroker(id) {
-  if (id === brokerId) return;
-  const broker = allBrokers.find(b => b.id === id);
-  if (!confirm('Delete broker "' + (broker ? broker.displayName : '') + '"? Their data will remain in localStorage.')) return;
-  allBrokers = allBrokers.filter(b => b.id !== id);
-  await saveBrokers(); renderBrokerTable();
-  showStatus('adminStatus', 'success', '✅ Broker deleted.');
-}
-
-// ── Admin: Edit Broker ───────────────────────────────────────
-function openEditBrokerModal(id) {
-  const b = allBrokers.find(x => x.id === id);
-  if (!b) return;
-  document.getElementById('editBrokerId').value = id;
-  document.getElementById('editBrokerName').value = b.displayName;
-  document.getElementById('editBrokerUsername').value = b.username;
-  document.getElementById('editBrokerRole').value = b.role;
-  document.getElementById('editBrokerStatus').style.display = 'none';
-  document.getElementById('editBrokerModal').style.display = 'flex';
-}
-function closeEditBrokerModal() { document.getElementById('editBrokerModal').style.display = 'none'; }
-
-async function saveEditBroker() {
-  const id = document.getElementById('editBrokerId').value;
-  const name = document.getElementById('editBrokerName').value.trim();
-  const username = document.getElementById('editBrokerUsername').value.trim().toLowerCase();
-  const role = document.getElementById('editBrokerRole').value;
-  if (!name || !username) { showStatus('editBrokerStatus', 'error', 'Name and username are required.'); return; }
-  const idx = allBrokers.findIndex(b => b.id === id);
-  if (idx < 0) return;
-  const existing = allBrokers.find(b => b.username.toLowerCase() === username && b.id !== id);
-  if (existing) { showStatus('editBrokerStatus', 'error', 'Username "' + username + '" is already taken.'); return; }
-  const oldUsername = allBrokers[idx].username;
-  allBrokers[idx].displayName = name;
-  allBrokers[idx].role = role;
-  if (username !== oldUsername) {
-    allBrokers[idx].username = username;
-    showStatus('editBrokerStatus', 'warning', '⚠️ Username changed — broker will need a passphrase reset.');
-  }
-  await saveBrokers();
-  if (id === brokerId) {
-    currentBroker = allBrokers[idx];
-    sessionStorage.setItem('leasing_broker_name', name);
-    const nameEl = document.getElementById('brokerNameDisplay');
-    if (nameEl) nameEl.textContent = name;
-  }
-  renderBrokerTable();
-  closeEditBrokerModal();
-  showStatus('adminStatus', 'success', '✅ Broker "' + name + '" updated.');
-}
-
-// ── Admin: Reset Passphrase ──────────────────────────────────
-function openResetPassModal(id) {
-  const b = allBrokers.find(x => x.id === id);
-  if (!b) return;
-  document.getElementById('resetPassBrokerId').value = id;
-  document.getElementById('resetPassBrokerLabel').textContent = 'Resetting passphrase for: ' + b.displayName + ' (' + b.username + ')';
-  document.getElementById('resetPassNew').value = '';
-  document.getElementById('resetPassConfirm').value = '';
-  document.getElementById('resetPassStatus').style.display = 'none';
-  document.getElementById('resetPassModal').style.display = 'flex';
-}
-function closeResetPassModal() { document.getElementById('resetPassModal').style.display = 'none'; }
-
-async function saveResetPass() {
-  const id = document.getElementById('resetPassBrokerId').value;
-  const newP = document.getElementById('resetPassNew').value.trim();
-  const conf = document.getElementById('resetPassConfirm').value.trim();
-  if (!newP || !conf) { showStatus('resetPassStatus', 'error', 'Both fields are required.'); return; }
-  if (newP.length < 4) { showStatus('resetPassStatus', 'error', 'Passphrase must be at least 4 characters.'); return; }
-  if (newP !== conf) { showStatus('resetPassStatus', 'error', 'Passphrases do not match.'); return; }
-  const idx = allBrokers.findIndex(b => b.id === id);
-  if (idx < 0) return;
-  allBrokers[idx].passphraseHash = btoa(allBrokers[idx].username + '|' + newP);
-  await saveBrokers();
-  if (id === brokerId) currentBroker.passphraseHash = allBrokers[idx].passphraseHash;
-  closeResetPassModal();
-  showStatus('adminStatus', 'success', '✅ Passphrase reset for "' + allBrokers[idx].displayName + '".');
-}
 
 // ── Init (SSO-backed) ─────────────────────────────────────────
 (async function() {
