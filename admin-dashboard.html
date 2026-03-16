@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://unpkg.com/@azure/msal-browser@2.38.3/lib/msal-browser.min.js"></script>
+<script src="auth.js"></script>
+<script>BaumAuth.requireAuth();</script>
+<title>Admin Dashboard — Leasing Activity</title>
+<style>
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface2: #22263a;
+  --border: #2e3250;
+  --accent: #4f6ef7;
+  --accent2: #818cf8;
+  --text: #e2e4ed;
+  --muted: #7a7f9b;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #f87171;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 24px; background: var(--surface); border-bottom: 1px solid var(--border);
+}
+.header-left { display: flex; align-items: center; gap: 12px; }
+.back-link { color: var(--muted); text-decoration: none; font-size: 13px; }
+.back-link:hover { color: var(--accent2); }
+.header-title { font-size: 16px; font-weight: 700; }
+.header-sub { font-size: 12px; color: var(--muted); }
+.header-right { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 10px; }
+.admin-badge { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+.container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+.loading { text-align: center; padding: 60px; color: var(--muted); font-size: 14px; }
+.loading .spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.summary-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px; margin-bottom: 28px;
+}
+.summary-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px;
+}
+.summary-card .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.summary-card .value { font-size: 28px; font-weight: 800; }
+.summary-card .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+.broker-section {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  margin-bottom: 20px; overflow: hidden;
+}
+.broker-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; cursor: pointer; user-select: none;
+  transition: background 0.15s;
+}
+.broker-header:hover { background: var(--surface2); }
+.broker-name { font-size: 15px; font-weight: 700; }
+.broker-email { font-size: 12px; color: var(--muted); margin-left: 8px; }
+.broker-stats { display: flex; gap: 16px; font-size: 12px; color: var(--muted); }
+.broker-stats .stat { display: flex; align-items: center; gap: 4px; }
+.broker-stats .stat-num { font-weight: 700; color: var(--text); }
+.broker-chevron { color: var(--muted); font-size: 14px; transition: transform 0.2s; }
+.broker-section.open .broker-chevron { transform: rotate(180deg); }
+
+.broker-body { display: none; border-top: 1px solid var(--border); }
+.broker-section.open .broker-body { display: block; }
+
+.section-tabs {
+  display: flex; border-bottom: 1px solid var(--border); background: var(--surface2);
+}
+.section-tab {
+  padding: 10px 20px; font-size: 13px; font-weight: 600; color: var(--muted);
+  cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s;
+}
+.section-tab:hover { color: var(--text); }
+.section-tab.active { color: var(--accent2); border-bottom-color: var(--accent2); }
+
+.tab-content { display: none; padding: 16px 20px; }
+.tab-content.active { display: block; }
+
+.empty-msg { color: var(--muted); font-size: 13px; padding: 16px 0; text-align: center; font-style: italic; }
+
+table.data-table {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+}
+table.data-table th {
+  text-align: left; padding: 8px 10px; font-size: 11px; font-weight: 700;
+  color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--border);
+}
+table.data-table td {
+  padding: 8px 10px; border-bottom: 1px solid var(--border);
+  color: var(--text); vertical-align: top;
+}
+table.data-table tr:last-child td { border-bottom: none; }
+table.data-table tr:hover td { background: rgba(79, 110, 247, 0.04); }
+
+.stage-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 8px;
+  font-size: 11px; font-weight: 600; white-space: nowrap;
+}
+.stage-inquiry { background: #1e3a5f; color: #60a5fa; }
+.stage-tour { background: #1a3a2a; color: #34d399; }
+.stage-proposal { background: #3b2f1a; color: #fbbf24; }
+.stage-loi { background: #3b1f2e; color: #f472b6; }
+.stage-lease { background: #1a2e1a; color: #4ade80; }
+.stage-dead { background: #2a1a1a; color: #f87171; }
+
+.snap-card {
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 14px 16px; margin-bottom: 10px;
+}
+.snap-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.snap-title { font-size: 14px; font-weight: 700; }
+.snap-date { font-size: 12px; color: var(--muted); }
+.snap-stats { display: flex; gap: 16px; font-size: 12px; }
+.snap-stat { display: flex; flex-direction: column; align-items: center; }
+.snap-stat-val { font-size: 18px; font-weight: 800; }
+.snap-stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+
+.refresh-btn {
+  background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+  padding: 8px 16px; border-radius: 8px; font-size: 13px; cursor: pointer;
+  transition: all 0.15s;
+}
+.refresh-btn:hover { border-color: var(--accent); color: var(--accent2); }
+
+.no-access {
+  text-align: center; padding: 80px 24px; color: var(--muted);
+}
+.no-access h2 { font-size: 20px; color: var(--text); margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <a class="back-link" href="index.html">← Back</a>
+    <div>
+      <div class="header-title">📊 Leasing Activity Dashboard</div>
+      <div class="header-sub">Admin view — all brokers</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="admin-badge">Admin</span>
+    <span id="userName"></span>
+    <button class="refresh-btn" onclick="loadDashboard()">↻ Refresh</button>
+  </div>
+</header>
+
+<div class="container">
+  <!-- Loading -->
+  <div id="loadingState" class="loading">
+    <div class="spinner"></div>
+    <div>Loading broker data...</div>
+  </div>
+
+  <!-- No Access -->
+  <div id="noAccess" class="no-access" style="display:none">
+    <h2>Admin access required</h2>
+    <p>This dashboard is only available to administrators.</p>
+    <p style="margin-top:12px"><a href="index.html" style="color:var(--accent2)">← Back to BaumAgents</a></p>
+  </div>
+
+  <!-- Dashboard Content -->
+  <div id="dashboardContent" style="display:none">
+    <!-- Summary Cards -->
+    <div class="summary-row" id="summaryRow"></div>
+
+    <!-- Broker Sections -->
+    <div id="brokerSections"></div>
+  </div>
+</div>
+
+<script>
+const API_URL = 'https://leasing-api.mike-3ac.workers.dev';
+
+// ── Data Fetching ─────────────────────────────────────────────
+async function kvGet(key) {
+  const token = await BaumAuth.getToken();
+  if (!token) return null;
+  try {
+    const res = await fetch(API_URL + '/data/' + encodeURIComponent(key), {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.data;
+  } catch(e) { return null; }
+}
+
+async function loadDashboard() {
+  document.getElementById('loadingState').style.display = 'block';
+  document.getElementById('dashboardContent').style.display = 'none';
+
+  const brokers = await kvGet('leasingBrokers') || [];
+
+  // Fetch all broker data in parallel
+  const brokerData = await Promise.all(brokers.map(async (broker) => {
+    const [properties, prospects, snapshots] = await Promise.all([
+      kvGet('leasing_' + broker.id + '_properties').then(d => d || []),
+      kvGet('leasing_' + broker.id + '_prospects').then(d => d || []),
+      kvGet('leasing_' + broker.id + '_snapshots').then(d => d || []),
+    ]);
+    return { broker, properties, prospects, snapshots };
+  }));
+
+  renderDashboard(brokerData);
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('dashboardContent').style.display = 'block';
+}
+
+// ── Rendering ─────────────────────────────────────────────────
+function renderDashboard(brokerData) {
+  // Summary
+  let totalProps = 0, totalProspects = 0, totalReports = 0, totalActive = 0;
+  brokerData.forEach(d => {
+    totalProps += d.properties.length;
+    totalProspects += d.prospects.length;
+    totalReports += d.snapshots.length;
+    totalActive += d.prospects.filter(p => p.stage && p.stage !== 'dead').length;
+  });
+
+  const activeBrokers = brokerData.filter(d => d.properties.length > 0 || d.prospects.length > 0 || d.snapshots.length > 0).length;
+
+  document.getElementById('summaryRow').innerHTML = `
+    <div class="summary-card">
+      <div class="label">Active Brokers</div>
+      <div class="value">${activeBrokers}</div>
+      <div class="sub">${brokerData.length} total accounts</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Properties</div>
+      <div class="value">${totalProps}</div>
+      <div class="sub">Across all brokers</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Prospects</div>
+      <div class="value">${totalProspects}</div>
+      <div class="sub">${totalActive} active in pipeline</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Reports Generated</div>
+      <div class="value">${totalReports}</div>
+      <div class="sub">Archived snapshots</div>
+    </div>
+  `;
+
+  // Broker sections — sort by most activity first
+  const sorted = [...brokerData].sort((a, b) => {
+    const aScore = a.properties.length + a.prospects.length + a.snapshots.length;
+    const bScore = b.properties.length + b.prospects.length + b.snapshots.length;
+    return bScore - aScore;
+  });
+
+  document.getElementById('brokerSections').innerHTML = sorted.map((d, i) => {
+    const propCount = d.properties.length;
+    const prospCount = d.prospects.length;
+    const snapCount = d.snapshots.length;
+    const hasData = propCount + prospCount + snapCount > 0;
+    const bid = 'broker_' + i;
+
+    return `
+    <div class="broker-section${i === 0 && hasData ? ' open' : ''}" id="${bid}">
+      <div class="broker-header" onclick="toggleBroker('${bid}')">
+        <div style="display:flex;align-items:center">
+          <span class="broker-name">${esc(d.broker.displayName)}</span>
+          <span class="broker-email">${esc(d.broker.email || d.broker.username)}</span>
+          ${d.broker.role === 'admin' ? '<span class="admin-badge" style="margin-left:8px">Admin</span>' : ''}
+        </div>
+        <div style="display:flex;align-items:center;gap:16px">
+          <div class="broker-stats">
+            <div class="stat"><span class="stat-num">${propCount}</span> properties</div>
+            <div class="stat"><span class="stat-num">${prospCount}</span> prospects</div>
+            <div class="stat"><span class="stat-num">${snapCount}</span> reports</div>
+          </div>
+          <span class="broker-chevron">▼</span>
+        </div>
+      </div>
+      <div class="broker-body">
+        ${hasData ? renderBrokerBody(d, bid) : '<div class="empty-msg">No data yet — this broker hasn\'t added any properties or generated any reports.</div>'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderBrokerBody(data, bid) {
+  return `
+    <div class="section-tabs">
+      <div class="section-tab active" onclick="switchTab('${bid}', 'properties', this)">Properties (${data.properties.length})</div>
+      <div class="section-tab" onclick="switchTab('${bid}', 'prospects', this)">Prospects (${data.prospects.length})</div>
+      <div class="section-tab" onclick="switchTab('${bid}', 'reports', this)">Reports (${data.snapshots.length})</div>
+    </div>
+    <div class="tab-content active" id="${bid}_properties">${renderProperties(data.properties)}</div>
+    <div class="tab-content" id="${bid}_prospects">${renderProspects(data.prospects, data.properties)}</div>
+    <div class="tab-content" id="${bid}_reports">${renderReports(data.snapshots)}</div>
+  `;
+}
+
+function renderProperties(props) {
+  if (!props.length) return '<div class="empty-msg">No properties added yet.</div>';
+  return `<table class="data-table">
+    <thead><tr><th>Address</th><th>City</th><th>Type</th><th>Avail SF</th><th>Asking Rent</th><th>Owner</th><th>Updated</th></tr></thead>
+    <tbody>${props.map(p => `
+      <tr>
+        <td><strong>${esc(p.address)}${p.suiteFloor ? ', ' + esc(p.suiteFloor) : ''}</strong></td>
+        <td>${esc(p.city || '')}${p.state ? ', ' + esc(p.state) : ''}</td>
+        <td>${esc(p.propertyType || '-')}</td>
+        <td>${p.availableSF ? p.availableSF.toLocaleString() + ' SF' : '-'}</td>
+        <td>${p.askingRent ? '$' + p.askingRent.toFixed(2) : '-'}</td>
+        <td>${esc(p.ownerName || p.ownerCompany || '-')}</td>
+        <td style="color:var(--muted);font-size:12px">${p.updatedAt ? new Date(p.updatedAt).toLocaleDateString('en-US', {month:'short',day:'numeric'}) : '-'}</td>
+      </tr>
+    `).join('')}</tbody></table>`;
+}
+
+function renderProspects(prospects, properties) {
+  if (!prospects.length) return '<div class="empty-msg">No prospects tracked yet.</div>';
+  const propMap = {};
+  properties.forEach(p => propMap[p.id] = p.address);
+  const sorted = [...prospects].sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
+  return `<table class="data-table">
+    <thead><tr><th>Prospect</th><th>Business</th><th>Property</th><th>Stage</th><th>Desired SF</th><th>Updated</th></tr></thead>
+    <tbody>${sorted.map(l => `
+      <tr>
+        <td><strong>${esc(l.prospectName || l.businessName || '-')}</strong></td>
+        <td>${esc(l.businessType || '-')}</td>
+        <td style="font-size:12px">${esc(propMap[l.propertyId] || '-')}</td>
+        <td>${stageBadge(l.stage)}</td>
+        <td>${l.desiredSF ? l.desiredSF.toLocaleString() + ' SF' : '-'}</td>
+        <td style="color:var(--muted);font-size:12px">${l.updatedAt ? new Date(l.updatedAt).toLocaleDateString('en-US', {month:'short',day:'numeric'}) : '-'}</td>
+      </tr>
+    `).join('')}</tbody></table>`;
+}
+
+function renderReports(snapshots) {
+  if (!snapshots.length) return '<div class="empty-msg">No reports generated yet.</div>';
+  const sorted = [...snapshots].sort((a, b) => new Date(b.generatedAt || 0) - new Date(a.generatedAt || 0));
+  return sorted.map(s => `
+    <div class="snap-card">
+      <div class="snap-header">
+        <div class="snap-title">${esc(s.propertyAddress || 'Unknown Property')}</div>
+        <div class="snap-date">${esc(s.generatedDate || '')} ${esc(s.generatedTime || '')}</div>
+      </div>
+      <div class="snap-stats">
+        <div class="snap-stat"><div class="snap-stat-val">${s.stats ? s.stats.totalProspects : '-'}</div><div class="snap-stat-label">Total</div></div>
+        <div class="snap-stat"><div class="snap-stat-val">${s.stats ? s.stats.activeCount : '-'}</div><div class="snap-stat-label">Active</div></div>
+        <div class="snap-stat"><div class="snap-stat-val" style="color:var(--success)">${s.stats ? s.stats.tourCount : '-'}</div><div class="snap-stat-label">Tours+</div></div>
+        <div class="snap-stat"><div class="snap-stat-val" style="color:var(--warning)">${s.stats ? s.stats.dealCount : '-'}</div><div class="snap-stat-label">Deals</div></div>
+        <div class="snap-stat"><div class="snap-stat-val" style="color:#4ade80">${s.stats ? s.stats.leaseCount : '-'}</div><div class="snap-stat-label">Leased</div></div>
+        <div class="snap-stat"><div class="snap-stat-val">${s.stats ? s.stats.avgDaysInPipeline : '-'}</div><div class="snap-stat-label">Avg Days</div></div>
+      </div>
+      ${s.prospectsSnapshot && s.prospectsSnapshot.length ? `
+      <details style="margin-top:10px">
+        <summary style="font-size:12px;color:var(--muted);cursor:pointer">View ${s.prospectsSnapshot.length} prospect${s.prospectsSnapshot.length !== 1 ? 's' : ''} at time of report</summary>
+        <table class="data-table" style="margin-top:8px">
+          <thead><tr><th>Name</th><th>Business</th><th>Stage</th><th>Notes</th></tr></thead>
+          <tbody>${s.prospectsSnapshot.map(p => `
+            <tr>
+              <td>${esc(p.prospectName || p.businessName || '-')}</td>
+              <td>${esc(p.businessType || '-')}</td>
+              <td>${stageBadge(p.stage)}</td>
+              <td style="font-size:12px;color:var(--muted);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.notes || '-')}</td>
+            </tr>
+          `).join('')}</tbody>
+        </table>
+      </details>` : ''}
+    </div>
+  `).join('');
+}
+
+// ── Helpers ───────────────────────────────────────────────────
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function stageBadge(stage) {
+  const labels = { inquiry: 'Inquiry', tour: 'Tour', proposal: 'Proposal', loi: 'LOI', lease: 'Leased', dead: 'Dead' };
+  const cls = 'stage-' + (stage || 'inquiry');
+  return '<span class="stage-badge ' + cls + '">' + (labels[stage] || stage || 'Unknown') + '</span>';
+}
+
+function toggleBroker(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+function switchTab(brokerId, tabName, el) {
+  const parent = document.getElementById(brokerId);
+  parent.querySelectorAll('.section-tab').forEach(t => t.classList.remove('active'));
+  parent.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(brokerId + '_' + tabName).classList.add('active');
+}
+
+// ── Init ──────────────────────────────────────────────────────
+BaumAuth.onReady(async function(user) {
+  if (!user) { BaumAuth.login(); return; }
+  document.getElementById('userName').textContent = user.name || user.email;
+
+  if (!BaumAuth.isAdmin()) {
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('noAccess').style.display = 'block';
+    return;
+  }
+
+  await loadDashboard();
+});
+</script>
+</body>
+</html>
