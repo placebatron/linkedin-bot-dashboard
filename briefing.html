@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Market Briefing — BaumAgents</title>
-<script>if (!sessionStorage.getItem('ba_team_token')) { window.location.href = 'index.html'; }</script>
+<script src="https://unpkg.com/@azure/msal-browser@2.38.3/lib/msal-browser.min.js"></script>
 <style>
 :root {
   --bg: #0f1117;
@@ -593,6 +593,9 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 </script>
+
+<script src="auth.js"></script>
+<script>BaumAuth.requireAuth();</script>
 
 </body>
 </html>
