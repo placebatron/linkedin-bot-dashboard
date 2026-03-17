@@ -182,11 +182,13 @@ header {
 .app-card.voss::before      { background: linear-gradient(135deg, rgba(79,110,247,0.1), rgba(124,58,237,0.05)); }
 .app-card.reports::before   { background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(217,119,6,0.05)); }
 .app-card.admin-card::before { background: linear-gradient(135deg, rgba(239,68,68,0.1), rgba(220,38,38,0.05)); }
+.app-card.briefing::before  { background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(5,150,105,0.05)); }
 .app-card.coming::before    { background: linear-gradient(135deg, rgba(139,144,176,0.05), transparent); }
 .app-card:hover::before     { opacity: 1; }
 .app-card.linkedin:hover    { border-color: rgba(0,119,181,0.4); }
 .app-card.voss:hover        { border-color: rgba(79,110,247,0.4); }
 .app-card.reports:hover     { border-color: rgba(245,158,11,0.4); }
+.app-card.briefing:hover    { border-color: rgba(16,185,129,0.4); }
 .app-card.admin-card:hover  { border-color: rgba(239,68,68,0.4); }
 .app-card.coming            { opacity: 0.55; cursor: default; pointer-events: none; }
 .app-card[hidden]           { display: none; }
@@ -212,6 +214,7 @@ header {
 .app-icon.core-icon      { background: linear-gradient(135deg, #10b981, #059669); }
 .app-icon.research-icon  { background: linear-gradient(135deg, #f59e0b, #d97706); }
 .app-icon.reports-icon   { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.app-icon.briefing-icon  { background: linear-gradient(135deg, #10b981, #059669); }
 .app-icon.admin-icon     { background: linear-gradient(135deg, #ef4444, #dc2626); }
 
 .card-status {
@@ -584,6 +587,26 @@ footer {
           <span class="tag">Reports</span>
           <span class="tag">Activity</span>
           <span class="tag">Read-Only</span>
+        </div>
+        <div class="card-arrow">→</div>
+      </div>
+    </a>
+
+    <!-- Market Briefing -->
+    <a class="app-card briefing" href="briefing.html" id="card-briefing" data-requires="brokers">
+      <div class="card-header">
+        <div class="app-icon briefing-icon">📡</div>
+        <span class="card-status status-new">New</span>
+      </div>
+      <div>
+        <div class="app-name">Market Briefing</div>
+        <div class="app-tagline">Daily Chicago market intelligence — curated and enriched from Crain's, The Real Deal, Block Club Chicago, and more. AI-digested headlines with entity tracking.</div>
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">Market Intel</span>
+          <span class="tag">Daily</span>
+          <span class="tag">CRE News</span>
         </div>
         <div class="card-arrow">→</div>
       </div>

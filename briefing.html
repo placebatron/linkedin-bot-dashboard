@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Market Briefing — BaumAgents</title>
+<script>if (!sessionStorage.getItem('ba_team_token')) { window.location.href = 'index.html'; }</script>
+<style>
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface2: #22263a;
+  --border: #2e3250;
+  --accent: #4f6ef7;
+  --accent2: #7c3aed;
+  --text: #e8eaf6;
+  --muted: #8b90b0;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --crains: #e63946;
+  --blockclub: #2a9d8f;
+  --trd: #e76f51;
+  --costar: #457b9d;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ── */
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 0 40px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.back-link {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.2s;
+}
+.back-link:hover { color: var(--text); }
+.header-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--border);
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+.logo-mark {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 800;
+  color: white;
+  letter-spacing: -1px;
+}
+.page-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.date-display {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 500;
+}
+.live-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--success);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ── Main Layout ── */
+main {
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+
+/* ── Briefing Header ── */
+.briefing-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+.briefing-date {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--text) 40%, var(--muted));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 8px;
+}
+.briefing-subtitle {
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 500;
+}
+.briefing-meta {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 16px;
+}
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.meta-count {
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* ── Source Section ── */
+.source-section {
+  margin-bottom: 40px;
+}
+.source-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.source-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.source-icon.crains { background: linear-gradient(135deg, var(--crains), #c1121f); }
+.source-icon.blockclub { background: linear-gradient(135deg, var(--blockclub), #21867a); }
+.source-icon.trd { background: linear-gradient(135deg, var(--trd), #c85a3e); }
+.source-icon.costar { background: linear-gradient(135deg, var(--costar), #356a85); }
+.source-name {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.source-count {
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 2px 10px;
+  border-radius: 12px;
+  margin-left: auto;
+}
+
+/* ── Article Card ── */
+.article-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 12px;
+  transition: border-color 0.2s;
+}
+.article-card:hover {
+  border-color: rgba(79,110,247,0.3);
+}
+.article-headline a {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--accent);
+  text-decoration: none;
+  line-height: 1.4;
+  transition: color 0.15s;
+}
+.article-headline a:hover {
+  color: #7b94ff;
+  text-decoration: underline;
+}
+.article-digest {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-top: 8px;
+}
+.article-entities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+.entity-tag {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid;
+}
+.entity-tag.company { background: rgba(79,110,247,0.1); color: #818cf8; border-color: rgba(79,110,247,0.25); }
+.entity-tag.property { background: rgba(16,185,129,0.1); color: #34d399; border-color: rgba(16,185,129,0.25); }
+.entity-tag.deal { background: rgba(245,158,11,0.1); color: #fbbf24; border-color: rgba(245,158,11,0.25); }
+.entity-tag.neighborhood { background: rgba(124,58,237,0.1); color: #a78bfa; border-color: rgba(124,58,237,0.25); }
+.entity-tag.person { background: rgba(236,72,153,0.1); color: #f472b6; border-color: rgba(236,72,153,0.25); }
+
+/* ── Notion Match ── */
+.notion-match {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: rgba(79,110,247,0.06);
+  border: 1px solid rgba(79,110,247,0.15);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.notion-match a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.notion-match a:hover { text-decoration: underline; }
+
+/* ── Empty State ── */
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--muted);
+}
+.empty-state-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+.empty-state-text {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+.empty-state-sub {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ── Last Updated Bar ── */
+.updated-bar {
+  text-align: center;
+  padding: 16px;
+  margin-top: 40px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ── Footer ── */
+footer {
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+  padding: 20px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.footer-left {
+  font-size: 12px;
+  color: var(--muted);
+}
+.footer-right {
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.footer-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--success);
+  border-radius: 50%;
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  header { padding: 0 16px; }
+  main { padding: 24px 16px 60px; }
+  .briefing-date { font-size: 24px; }
+  .briefing-meta { flex-direction: column; align-items: center; gap: 8px; }
+  .article-card { padding: 16px; }
+  footer { padding: 16px; flex-direction: column; gap: 8px; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <a href="index.html" class="back-link">← Back</a>
+    <div class="header-divider"></div>
+    <a href="index.html" class="logo">
+      <div class="logo-mark">BA</div>
+    </a>
+    <span class="page-title">Market Briefing</span>
+  </div>
+  <div class="header-right">
+    <span class="date-display" id="headerDate"></span>
+    <div class="live-dot" title="Updated today"></div>
+  </div>
+</header>
+
+<main>
+  <div class="briefing-header">
+    <div class="briefing-date" id="briefingDate"></div>
+    <div class="briefing-subtitle">Chicago Market Intelligence for Baum Realty Group</div>
+    <div class="briefing-meta" id="briefingMeta"></div>
+  </div>
+
+  <div id="briefingContent">
+    <!-- Content is injected here by the update script or from briefing-data.js -->
+  </div>
+
+  <div class="updated-bar" id="updatedBar"></div>
+</main>
+
+<footer>
+  <div class="footer-left">BaumAgents — Baum Realty Group</div>
+  <div class="footer-right">
+    <div class="footer-dot"></div>
+    Market Briefing v1.0
+  </div>
+</footer>
+
+<script>
+// ── Briefing Data ──
+// This object is overwritten daily by the Cowork automation pipeline.
+// Structure: { date, generated, sources: [ { name, icon, articles: [ { headline, url, digest, entities?, notionMatch? } ] } ] }
+const BRIEFING_DATA = {
+  date: "2026-03-17",
+  generated: "2026-03-17T12:00:00Z",
+  sources: [
+    {
+      name: "Crain's Chicago Business",
+      icon: "crains",
+      emoji: "📰",
+      articles: [
+        {
+          headline: "AmTrust RE bets on Chicago apartments amid office distress",
+          url: "https://www.chicagobusiness.com/commercial-real-estate/amtrust-re-bets-chicago-apartments",
+          digest: "AmTrust Real Estate acquired a 25-story apartment tower at 220 W. Illinois St. for $77M from Cortland, which took a 27% loss on the deal. The purchase follows AmTrust's $88M buy at 60 E. Randolph and signals a strategic pivot from its troubled office holdings, including Illinois Center.",
+          entities: [
+            { label: "AmTrust RE", type: "company" },
+            { label: "220 W. Illinois St.", type: "property" },
+            { label: "$77M", type: "deal" },
+            { label: "River North", type: "neighborhood" }
+          ]
+        },
+        {
+          headline: "O'Hare expansion hits new turbulence as FAA tightens gate caps",
+          url: "https://www.chicagobusiness.com/commercial-real-estate/ohare-expansion-faa-gate-caps",
+          digest: "The FAA's new gate cap policy could delay O'Hare's $12.5B terminal expansion program. Airlines are pushing back on capacity limits that would constrain growth at one of the nation's busiest hubs.",
+          entities: [
+            { label: "O'Hare", type: "property" },
+            { label: "$12.5B", type: "deal" },
+            { label: "FAA", type: "company" }
+          ]
+        },
+        {
+          headline: "Burnham Lakefront project clears final city council hurdle",
+          url: "https://www.chicagobusiness.com/commercial-real-estate/burnham-lakefront-city-council",
+          digest: "The massive Burnham Lakefront mixed-use development won city council approval after months of community negotiation. The project will bring 2,000+ residential units and significant retail to the South Loop.",
+          entities: [
+            { label: "Burnham Lakefront", type: "property" },
+            { label: "South Loop", type: "neighborhood" },
+            { label: "2,000+ units", type: "deal" }
+          ]
+        }
+      ]
+    },
+    {
+      name: "The Real Deal Chicago",
+      icon: "trd",
+      emoji: "🏢",
+      articles: [
+        {
+          headline: "AmTrust pays $77M for Chicago apartment tower as Cortland takes loss",
+          url: "https://therealdeal.com/chicago/2026/03/16/amtrust-pays-77m-for-chicago-apartment-tower-as-cortland-takes-loss/",
+          digest: "New York-based AmTrust acquired the 188-unit tower at 220 W. Illinois St. at a steep discount from Cortland's $105M purchase in 2022. The deal reflects cap rate expansion and rising Cook County property taxes hitting even Class A assets.",
+          entities: [
+            { label: "Cortland", type: "company" },
+            { label: "60 E. Randolph", type: "property" },
+            { label: "Integra Realty Resources", type: "company" },
+            { label: "River North", type: "neighborhood" }
+          ],
+          notionMatch: { text: "Related: BRG tracking downtown multifamily activity", url: "#" }
+        },
+        {
+          headline: "Here are the primary races Chicago real estate is watching",
+          url: "https://therealdeal.com/chicago/2026/03/17/election-preview-here-are-the-illinois-primary-races-chicago-real-estate-is-watching/",
+          digest: "Illinois primary elections today will shape leadership in the Cook County Assessor's office, Board of Review, and Board President's race. Major CRE figures are donating heavily, with Magellan, CRG, and Riverside Investment backing challenger Patrick Hynes for Assessor.",
+          entities: [
+            { label: "Fritz Kaegi", type: "person" },
+            { label: "Patrick Hynes", type: "person" },
+            { label: "Magellan Development", type: "company" },
+            { label: "Riverside Investment", type: "company" },
+            { label: "Cook County", type: "neighborhood" }
+          ]
+        }
+      ]
+    },
+    {
+      name: "Block Club Chicago",
+      icon: "blockclub",
+      emoji: "🏘️",
+      articles: [
+        {
+          headline: "Brothers Open Proximo Padel Club In Logan Square With Hopes Of Growing Game In Chicago",
+          url: "https://blockclubchicago.org/2026/03/17/brothers-open-proximo-padel-club-in-logan-square-with-hopes-of-growing-game-in-chicago/",
+          digest: "Proximo Padel opens a 27,000 sq ft facility at 3043 N. Knox Ave. with four padel and three pickleball courts. The club plans two more locations in Goose Island and Northbrook later this year.",
+          entities: [
+            { label: "3043 N. Knox Ave.", type: "property" },
+            { label: "Logan Square", type: "neighborhood" },
+            { label: "27,000 sq ft", type: "deal" },
+            { label: "Proximo Padel", type: "company" }
+          ]
+        },
+        {
+          headline: "City Seeks To Dismiss Suit By Neighbors Trying To Overturn Broadway Rezoning",
+          url: "https://blockclubchicago.org/2026/03/15/city-seeks-to-dismiss-broadway-rezoning-lawsuit/",
+          digest: "The city is moving to dismiss a lawsuit challenging a Broadway corridor rezoning decision, a case being closely watched by developers and neighborhood groups alike.",
+          entities: [
+            { label: "Broadway", type: "property" },
+            { label: "Uptown", type: "neighborhood" }
+          ]
+        },
+        {
+          headline: "Stony Island Redesign, Transit Upgrades Pitched For South Side Corridor",
+          url: "https://blockclubchicago.org/2026/03/16/stony-island-redesign-south-side-corridor/",
+          digest: "A major redesign of the Stony Island corridor on the South Side includes transit upgrades and streetscape improvements aimed at spurring economic development.",
+          entities: [
+            { label: "Stony Island", type: "property" },
+            { label: "South Side", type: "neighborhood" }
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+// ── Render Functions ──
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  return d.toLocaleDateString('en-US', options);
+}
+
+function formatShortDate(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function renderBriefing(data) {
+  // Header date
+  document.getElementById('headerDate').textContent = formatShortDate(data.date);
+  document.getElementById('briefingDate').textContent = formatDate(data.date);
+
+  // Meta counts
+  const totalArticles = data.sources.reduce((sum, s) => sum + s.articles.length, 0);
+  const totalSources = data.sources.length;
+  const metaHtml = `
+    <div class="meta-item"><span class="meta-count">${totalArticles}</span> articles</div>
+    <div class="meta-item"><span class="meta-count">${totalSources}</span> sources</div>
+    <div class="meta-item"><span class="meta-count">${data.sources.reduce((sum, s) => sum + s.articles.reduce((a, art) => a + (art.entities ? art.entities.length : 0), 0), 0)}</span> entities tracked</div>
+  `;
+  document.getElementById('briefingMeta').innerHTML = metaHtml;
+
+  // Source sections
+  const container = document.getElementById('briefingContent');
+  container.innerHTML = '';
+
+  data.sources.forEach(source => {
+    const section = document.createElement('div');
+    section.className = 'source-section';
+
+    let articlesHtml = '';
+    source.articles.forEach(article => {
+      let entitiesHtml = '';
+      if (article.entities && article.entities.length > 0) {
+        entitiesHtml = '<div class="article-entities">' +
+          article.entities.map(e => `<span class="entity-tag ${e.type}">${e.label}</span>`).join('') +
+          '</div>';
+      }
+
+      let notionHtml = '';
+      if (article.notionMatch) {
+        notionHtml = `<div class="notion-match">🔗 ${article.notionMatch.text}</div>`;
+      }
+
+      // Check for cross-source duplicates (mark but still show)
+      let dupeNote = '';
+      if (article.crossRef) {
+        dupeNote = `<div style="font-size:12px; color:var(--muted); margin-top:6px; font-style:italic;">Also covered in ${article.crossRef}</div>`;
+      }
+
+      articlesHtml += `
+        <div class="article-card">
+          <div class="article-headline"><a href="${article.url}" target="_blank" rel="noopener">${article.headline}</a></div>
+          <div class="article-digest">${article.digest}</div>
+          ${entitiesHtml}
+          ${notionHtml}
+          ${dupeNote}
+        </div>
+      `;
+    });
+
+    section.innerHTML = `
+      <div class="source-header">
+        <div class="source-icon ${source.icon}">${source.emoji}</div>
+        <div class="source-name">${source.name}</div>
+        <div class="source-count">${source.articles.length} article${source.articles.length !== 1 ? 's' : ''}</div>
+      </div>
+      ${articlesHtml}
+    `;
+
+    container.appendChild(section);
+  });
+
+  // Updated bar
+  const generated = new Date(data.generated);
+  document.getElementById('updatedBar').textContent =
+    `Last updated ${generated.toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`;
+}
+
+// ── Initialize ──
+document.addEventListener('DOMContentLoaded', function() {
+  if (BRIEFING_DATA && BRIEFING_DATA.sources && BRIEFING_DATA.sources.length > 0) {
+    renderBriefing(BRIEFING_DATA);
+  } else {
+    document.getElementById('briefingContent').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">📡</div>
+        <div class="empty-state-text">No briefing available yet</div>
+        <div class="empty-state-sub">The daily market briefing hasn't been generated yet today.<br>Check back after the morning pipeline runs.</div>
+      </div>
+    `;
+    document.getElementById('headerDate').textContent = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    document.getElementById('briefingDate').textContent = 'Market Briefing';
+  }
+});
+</script>
+
+</body>
+</html>
