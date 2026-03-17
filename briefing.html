@@ -595,7 +595,11 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script src="auth.js"></script>
-<script>BaumAuth.requireAuth();</script>
+<script>
+// Non-blocking auth — page renders immediately, auth resolves in background.
+// The homepage auth gate is the primary protection layer.
+BaumAuth.init();
+</script>
 
 </body>
 </html>
