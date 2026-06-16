@@ -183,12 +183,14 @@ header {
 .app-card.reports::before   { background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(217,119,6,0.05)); }
 .app-card.admin-card::before { background: linear-gradient(135deg, rgba(239,68,68,0.1), rgba(220,38,38,0.05)); }
 .app-card.briefing::before  { background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(5,150,105,0.05)); }
+.app-card.training::before  { background: linear-gradient(135deg, rgba(200,166,78,0.12), rgba(19,40,76,0.05)); }
 .app-card.coming::before    { background: linear-gradient(135deg, rgba(139,144,176,0.05), transparent); }
 .app-card:hover::before     { opacity: 1; }
 .app-card.linkedin:hover    { border-color: rgba(0,119,181,0.4); }
 .app-card.voss:hover        { border-color: rgba(79,110,247,0.4); }
 .app-card.reports:hover     { border-color: rgba(245,158,11,0.4); }
 .app-card.briefing:hover    { border-color: rgba(16,185,129,0.4); }
+.app-card.training:hover    { border-color: rgba(200,166,78,0.45); }
 .app-card.admin-card:hover  { border-color: rgba(239,68,68,0.4); }
 .app-card.coming            { opacity: 0.55; cursor: default; pointer-events: none; }
 .app-card[hidden]           { display: none; }
@@ -215,6 +217,7 @@ header {
 .app-icon.research-icon  { background: linear-gradient(135deg, #f59e0b, #d97706); }
 .app-icon.reports-icon   { background: linear-gradient(135deg, #f59e0b, #d97706); }
 .app-icon.briefing-icon  { background: linear-gradient(135deg, #10b981, #059669); }
+.app-icon.training-icon  { background: linear-gradient(135deg, #c8a64e, #13284c); }
 .app-icon.admin-icon     { background: linear-gradient(135deg, #ef4444, #dc2626); }
 
 .card-status {
@@ -491,6 +494,26 @@ footer {
 <div class="apps-section">
   <div class="section-label">Available Apps</div>
   <div class="apps-grid">
+
+    <!-- Training & Onboarding (visible to all signed-in employees: no data-requires) -->
+    <a class="app-card training" href="training/" id="card-training">
+      <div class="card-header">
+        <div class="app-icon training-icon">🎓</div>
+        <span class="card-status status-new">New</span>
+      </div>
+      <div>
+        <div class="app-name">Training &amp; Onboarding</div>
+        <div class="app-tagline">The BRG/BAM institutional knowledge guide — companies, systems, tools, and how we actually work. Interactive and animated, for new team members and the Vibe Studio cohort.</div>
+      </div>
+      <div class="card-footer">
+        <div class="card-tags">
+          <span class="tag">Onboarding</span>
+          <span class="tag">Reference</span>
+          <span class="tag">All Teams</span>
+        </div>
+        <div class="card-arrow">→</div>
+      </div>
+    </a>
 
     <!-- LinkedIn Bot -->
     <a class="app-card linkedin" href="linkedin.html" id="card-linkedin" data-requires="brokers">
