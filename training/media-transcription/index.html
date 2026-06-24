@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- BaumAgents Entra SSO gate — redirects unauthenticated visitors to Microsoft login -->
+<script src="https://unpkg.com/@azure/msal-browser@2.38.3/lib/msal-browser.min.js"></script>
+<script src="../../auth.js"></script>
+<script>BaumAuth.requireAuth();</script>
+<title>Media Transcription — Drop a recording, get a transcript</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/theme/black.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#13284c; --navy2:#0c1c38; --gold:#c8a64e; --gold2:#e0c879;
+  --slate:#5b6b85; --line:rgba(255,255,255,.12);
+  --green:#37b27a; --red:#e0625e; --blue:#4f8fe0;
+}
+.reveal{font-family:'Inter',sans-serif; font-weight:400; color:#eaf0fa;}
+.reveal .slides{text-align:left;}
+.reveal section{height:100%;}
+.reveal h1,.reveal h2,.reveal h3,.reveal h4{font-family:'Inter',sans-serif; text-transform:none; letter-spacing:-.01em; color:#fff; font-weight:800; line-height:1.08;}
+.reveal h1{font-size:2.5em;} .reveal h2{font-size:1.7em;} .reveal h3{font-size:1.15em;}
+.reveal p,.reveal li{font-size:.62em; line-height:1.45; color:#d7e0f0;}
+.reveal strong{color:#fff;}
+.reveal .slide-background{background:radial-gradient(1200px 700px at 20% -10%, #1b3766 0%, var(--navy) 38%, var(--navy2) 100%);}
+.serif{font-family:'Playfair Display',serif;}
+.mono{font-family:'JetBrains Mono',monospace;}
+.kicker{font-size:.42em; letter-spacing:.32em; text-transform:uppercase; color:var(--gold2); font-weight:700; margin:0 0 .4em;}
+.subtle{color:var(--slate); font-size:.5em;}
+.gold{color:var(--gold2);}
+.lead{font-size:.7em; color:#cdd8ec; max-width:84%;}
+.mini{font-size:.46em; color:var(--slate);}
+.center{display:flex;flex-direction:column;justify-content:center;height:100%;}
+.accentbar{height:3px; width:48px; background:linear-gradient(90deg,var(--gold),var(--gold2)); border-radius:3px; margin:0 0 14px;}
+
+/* chips */
+.tagchips{display:flex; gap:8px; flex-wrap:wrap; margin:.4em 0;}
+.chip{font-size:.34em; letter-spacing:.12em; text-transform:uppercase; font-weight:700; padding:5px 12px; border-radius:999px; border:1px solid var(--line);}
+.chip.all{background:rgba(255,255,255,.08); color:#fff;}
+.chip.new{background:rgba(55,178,122,.16); color:#7fe0b3; border-color:rgba(55,178,122,.4);}
+
+/* logo */
+.logo{display:flex; align-items:center; gap:14px;}
+.logo .mark{width:54px;height:54px;}
+.logo .wm b{display:block; font-size:26px; font-weight:800; letter-spacing:.04em; color:#fff;}
+.logo .wm span{display:block; font-size:9px; letter-spacing:.42em; color:var(--gold2); margin-top:2px;}
+.orbit{transform-origin:32px 32px; animation:spin 14s linear infinite;}
+.orbit2{transform-origin:32px 32px; animation:spin 9s linear infinite reverse;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* layout */
+.grid{display:grid; gap:14px;}
+.g2{grid-template-columns:1fr 1fr;} .g3{grid-template-columns:repeat(3,1fr);} .g4{grid-template-columns:repeat(4,1fr);}
+.two{display:grid; grid-template-columns:1.05fr .95fr; gap:26px; align-items:center;}
+.card{background:linear-gradient(160deg, rgba(255,255,255,.07), rgba(255,255,255,.03)); border:1px solid var(--line); border-radius:14px; padding:16px 18px;}
+.card h3{font-size:.95em; margin:0 0 6px;}
+.card p{font-size:.52em; margin:0; color:#c4d0e6;}
+.card .ic{font-size:1.4em; margin-bottom:6px; display:block;}
+ul.clean{list-style:none; margin:0; padding:0;}
+ul.clean li{padding:6px 0 6px 22px; position:relative; border-bottom:1px solid rgba(255,255,255,.05); font-size:.6em;}
+ul.clean li::before{content:"▸"; color:var(--gold2); position:absolute; left:0;}
+.warn{border-left:3px solid var(--red); background:rgba(224,98,94,.1); padding:12px 16px; border-radius:0 10px 10px 0;}
+.good{border-left:3px solid var(--green); background:rgba(55,178,122,.1); padding:12px 16px; border-radius:0 10px 10px 0;}
+.warn p,.good p{font-size:.52em; margin:0;}
+
+/* 3-step pipeline */
+.pipe{display:flex; align-items:stretch; gap:0; margin-top:14px;}
+.pstep{flex:1; position:relative; text-align:center; padding:8px 8px;}
+.pstep .b{background:linear-gradient(160deg,rgba(255,255,255,.09),rgba(255,255,255,.03)); border:1px solid var(--line); border-radius:12px; padding:16px 10px; height:100%;}
+.pstep .num{font-family:'Playfair Display',serif; font-size:1.5em; color:var(--gold2); font-weight:700; line-height:1;}
+.pstep .ic{font-size:1.5em; display:block; margin:6px 0;}
+.pstep h4{font-size:.62em; margin:0 0 4px; color:#fff;}
+.pstep p{font-size:.44em; margin:0; color:#aebbd4;}
+.pstep .arrow{position:absolute; right:-8px; top:50%; transform:translateY(-50%); color:var(--gold2); font-size:1.2em; z-index:3;}
+
+/* browser/box frame */
+.frame{border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,.18); box-shadow:0 30px 70px rgba(0,0,0,.5); background:#fff;}
+.frame .bar{background:#e9edf3; padding:8px 12px; display:flex; align-items:center; gap:7px;}
+.frame .bar i{width:11px;height:11px;border-radius:50%; display:inline-block;}
+.frame .bar .u{margin-left:10px; background:#fff; border-radius:6px; padding:4px 12px; font-size:11px; color:#5b6b85; flex:1; font-family:'JetBrains Mono',monospace;}
+.dot-r{background:#ff5f57;} .dot-y{background:#febc2e;} .dot-g{background:#28c840;}
+.boxwin{background:#fff;color:#16284a;padding:14px 16px;}
+.boxrow{display:flex;align-items:center;gap:10px;padding:8px 6px;border-bottom:1px solid #eef1f6;font-size:11px;color:#3a4a66;}
+.boxrow .fi{font-size:15px;}
+.boxdrop{margin-top:10px;border:2px dashed #b9c6dc;border-radius:10px;padding:16px;text-align:center;color:#7b88a0;font-size:11px;}
+
+/* fill-in placeholders for Mike */
+.fillin{display:inline-block; background:rgba(200,166,78,.14); border:1px dashed var(--gold); color:var(--gold2); border-radius:7px; padding:2px 9px; font-family:'JetBrains Mono',monospace; font-size:.9em;}
+.fillin::before{content:"✎ "; opacity:.8;}
+
+.divnum{font-family:'Playfair Display',serif; font-size:6em; color:rgba(200,166,78,.18); line-height:.8; font-weight:700;}
+.foot{position:fixed; bottom:14px; left:24px; font-size:11px; letter-spacing:.18em; color:rgba(255,255,255,.32); text-transform:uppercase; z-index:30;}
+.reveal .progress{color:var(--gold);}
+.back{position:fixed; top:16px; left:20px; z-index:40; font-size:11px; letter-spacing:.08em; color:rgba(255,255,255,.5); text-decoration:none; font-weight:600;}
+.back:hover{color:var(--gold2);}
+</style>
+</head>
+<body>
+<a class="back" href="../">← Training Library</a>
+<div class="foot">Baum Realty Group · Baum Asset Management</div>
+<div class="reveal"><div class="slides">
+
+<!-- TITLE -->
+<section data-auto-animate>
+  <div class="center">
+    <div class="logo" style="margin-bottom:28px;">
+      <svg class="mark" viewBox="0 0 64 64" fill="none">
+        <ellipse class="orbit" cx="32" cy="32" rx="26" ry="11" stroke="#c8a64e" stroke-width="2.4"/>
+        <ellipse class="orbit2" cx="32" cy="32" rx="11" ry="26" stroke="#4f8fe0" stroke-width="2.4"/>
+        <circle cx="32" cy="32" r="5.5" fill="#fff"/>
+      </svg>
+      <div class="wm"><b>BAUM</b><span>REALTY GROUP</span></div>
+    </div>
+    <p class="kicker">Training · Media Transcription</p>
+    <h1>Drop a recording,<br><span class="gold serif" style="font-weight:600;">get a transcript</span></h1>
+    <p class="lead" style="margin-top:16px;">Corey's Media Transcription Engine turns a call or meeting recording into a clean, speaker-labeled transcript — automatically. No software to learn.</p>
+    <p class="tagchips" style="margin-top:16px;"><span class="chip new">For JP · Jack · Maria</span></p>
+    <p class="subtle" style="margin-top:14px;">Use the arrow keys or swipe to move through · Press <span class="mono">Esc</span> for an overview</p>
+  </div>
+</section>
+
+<!-- WHAT IT IS -->
+<section>
+  <p class="kicker">The idea</p>
+  <h2>Hand Corey a recording.<br>Get the transcript back.</h2>
+  <div class="accentbar"></div>
+  <p class="lead" style="margin-bottom:16px;">You don't transcribe anything by hand. You drop the audio file in one place, and Corey does the rest — speaker labels, timestamps, and a copy in Notion you can read.</p>
+  <div class="grid g3">
+    <div class="card"><span class="ic">📥</span><h3>You drop it</h3><p>Put the recording in the Box drop folder. One step.</p></div>
+    <div class="card"><span class="ic">🤖</span><h3>Corey transcribes</h3><p>It's picked up automatically and run through transcription with speaker labels.</p></div>
+    <div class="card"><span class="ic">📄</span><h3>You get it back</h3><p>A clean, timestamped transcript lands in Notion — ready to read.</p></div>
+  </div>
+</section>
+
+<!-- THE 3 STEPS -->
+<section>
+  <p class="kicker">How to use it</p>
+  <h2>Three steps</h2>
+  <div class="accentbar"></div>
+  <div class="pipe">
+    <div class="pstep"><div class="b"><div class="num">1</div><span class="ic">📁</span><h4>Drop it in the folder</h4><p>Add your audio file to the Box drop folder (next slide shows where).</p></div><span class="arrow">→</span></div>
+    <div class="pstep"><div class="b"><div class="num">2</div><span class="ic">⏱️</span><h4>Wait a few minutes</h4><p>Corey checks the folder about every 15 minutes and transcribes what's new.</p></div><span class="arrow">→</span></div>
+    <div class="pstep"><div class="b"><div class="num">3</div><span class="ic">✅</span><h4>Read your transcript</h4><p>Summary, action items, and the full speaker-labeled transcript — in the archive.</p></div></div>
+  </div>
+  <div class="good" style="margin-top:16px;"><p>That's the whole workflow. No buttons to press after you drop the file — it just shows up.</p></div>
+</section>
+
+<!-- THE DROP FOLDER -->
+<section>
+  <p class="kicker">Step 1, in detail</p>
+  <h2>Where to drop the file</h2>
+  <div class="accentbar"></div>
+  <div class="two">
+    <div>
+      <p>The drop folder lives in <strong>Box</strong>, the same place all our files live. Open it here:</p>
+      <p style="margin:10px 0;"><a class="mono gold" style="font-size:.7em; text-decoration:underline;" href="https://baumrealty.app.box.com/folder/393489374304" target="_blank">📁 Open the drop folder in Box →</a></p>
+      <p><strong>Two ways to add a file:</strong></p>
+      <ul class="clean">
+        <li><strong>Box Desktop (easiest):</strong> the folder shows up in Finder / File Explorer — just drag your recording into it.</li>
+        <li><strong>Box on the web:</strong> open the folder, click <span class="mono gold">Upload</span>, pick your file.</li>
+      </ul>
+      <p class="mini" style="margin-top:8px;">On your iPhone? Box Capture or the Box app can upload straight from your phone.</p>
+    </div>
+    <div class="frame">
+      <div class="bar"><i class="dot-r"></i><i class="dot-y"></i><i class="dot-g"></i><span class="u">Box · Media Transcription Drop</span></div>
+      <div class="boxwin">
+        <div class="boxrow"><span class="fi">🎙️</span> call-with-broker.m4a <span style="margin-left:auto;color:#28a745;font-size:10px;">✓ transcribed</span></div>
+        <div class="boxrow"><span class="fi">🎙️</span> zoom-tenant-meeting.m4a <span style="margin-left:auto;color:#febc2e;font-size:10px;">⏳ processing</span></div>
+        <div class="boxdrop">⬆︎ Drag a recording here</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT YOU GET / WHERE -->
+<section>
+  <p class="kicker">Step 3, in detail</p>
+  <h2>What comes back, and where</h2>
+  <div class="accentbar"></div>
+  <div class="two">
+    <div>
+      <p>Each transcript includes:</p>
+      <ul class="clean">
+        <li>A short <strong>summary</strong> of the conversation</li>
+        <li><strong>Action items</strong>, tagged by who owns them</li>
+        <li>The <strong>full transcript</strong>, labeled by speaker with timestamps</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Where to find it</h3>
+      <p>Your transcript lands here automatically — read it here:</p>
+      <p style="margin-top:10px;"><a class="mono gold" style="font-size:.62em; text-decoration:underline;" href="https://app.notion.com/p/placebatron/Unfiled-Mtg-Transcripts-37c09eeabb8c802abc5bde86461e6308" target="_blank">Notion → Unfiled Mtg Transcripts →</a></p>
+      <p class="mini" style="margin-top:8px;">Your transcript stays in Notion as your searchable record — it isn't deleted. (Only the original recording is removed, after 10 days.)</p>
+    </div>
+  </div>
+</section>
+
+<!-- FORMATS -->
+<section>
+  <p class="kicker">What works</p>
+  <h2>Supported recordings</h2>
+  <div class="accentbar"></div>
+  <div class="grid g4">
+    <div class="card"><span class="ic">📱</span><h3>m4a</h3><p>What your iPhone records by default.</p></div>
+    <div class="card"><span class="ic">🎵</span><h3>mp3</h3><p>The everywhere format.</p></div>
+    <div class="card"><span class="ic">🔊</span><h3>wav</h3><p>Uncompressed audio.</p></div>
+    <div class="card"><span class="ic">➕</span><h3>most others</h3><p>If it's a common audio file, it'll work.</p></div>
+  </div>
+  <div class="card" style="margin-top:14px;"><p>🎬 <strong>Video</strong> (a Zoom <span class="mono">.mp4</span>, a <span class="mono">.mov</span> from your phone) — support is on the way. For now, if you only have a video, ask Mike and we'll pull the audio for you.</p></div>
+</section>
+
+<!-- GOOD AT -->
+<section>
+  <p class="kicker">Where it shines</p>
+  <h2>What it's good at</h2>
+  <div class="accentbar"></div>
+  <div class="grid g3">
+    <div class="card"><span class="ic">👥</span><h3>Two-person calls</h3><p>Speaker labels ("you" vs "them") are reliable on 1-on-1 calls.</p></div>
+    <div class="card"><span class="ic">🏙️</span><h3>CRE vocabulary</h3><p>Tuned for our world — names, addresses, and deal terms come through clean.</p></div>
+    <div class="card"><span class="ic">⏳</span><h3>Long calls</h3><p>A 30-minute call is no problem — and costs us about a nickel to transcribe.</p></div>
+  </div>
+</section>
+
+<!-- GOOD TO KNOW -->
+<section>
+  <p class="kicker">Good to know</p>
+  <h2>A few rules &amp; gotchas</h2>
+  <div class="accentbar"></div>
+  <div class="grid g2">
+    <div>
+      <ul class="clean">
+        <li><strong>Baum recordings only.</strong> It's an internal tool — use your work files.</li>
+        <li><strong>3+ speakers?</strong> The transcript is complete, but the "who said it" labels can get muddy — read those with a skeptical eye.</li>
+        <li><strong>Not a legal record.</strong> It's very good, not perfect. Check the recording before you quote anyone.</li>
+        <li><strong>Duplicates are skipped.</strong> Drop the same file twice and Corey notices — no double transcripts.</li>
+      </ul>
+    </div>
+    <div class="warn">
+      <p>⚖️ <strong>Consent matters — Illinois is two-party consent.</strong> Everyone on a call must know it's being recorded. If everyone knew, you're fine. If you're not sure, ask Mike <strong>before</strong> recording — not after.</p>
+    </div>
+  </div>
+</section>
+
+<!-- PRIVACY & RETENTION -->
+<section>
+  <p class="kicker">Privacy &amp; retention</p>
+  <h2>Who sees it, and for how long</h2>
+  <div class="accentbar"></div>
+  <div class="card">
+    <p style="font-size:.6em;">The <strong>transcript</strong> is the record we keep; the <strong>raw recording</strong> is kept only as long as needed:</p>
+    <p style="margin-top:12px; font-size:.6em;">📄 <strong>Transcripts stay in Notion.</strong> Your transcript lives in the Notion archive it's filed under — it is <strong>not</strong> deleted.</p>
+    <p style="margin-top:8px; font-size:.6em;">🗑️ <strong>Recordings auto-delete after 10 days.</strong> The original audio file is removed automatically — we don't store recordings longer than necessary.</p>
+    <p style="margin-top:8px; font-size:.6em;">🔒 <strong>Limited visibility.</strong> While a recording still exists, its backup is visible only to <strong>David and Mike</strong>.</p>
+  </div>
+  <p class="mini" style="margin-top:12px;">When in doubt about a sensitive recording, ask Mike before dropping it in.</p>
+</section>
+
+<!-- RECAP -->
+<section class="divider" data-auto-animate>
+  <div class="center">
+    <p class="kicker">That's it</p>
+    <h1>Drop · Wait · Read</h1>
+    <p class="lead" style="margin-top:14px;">Drop the recording in the Box folder → Corey transcribes it within minutes → your speaker-labeled transcript is in the archive.</p>
+    <p style="margin-top:18px; font-size:.6em; color:#cdd8ec;">Questions or a weird result? Tell <strong>Mike</strong> — or reply to the transcript with what looked off.</p>
+    <p class="subtle" style="margin-top:20px;">Baum Realty Group &nbsp;|&nbsp; Baum Asset Management</p>
+  </div>
+</section>
+
+</div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.js"></script>
+<script>
+Reveal.initialize({ hash:true, slideNumber:'c/t', transition:'slide', controls:true, progress:true, center:false, width:1280, height:760, margin:0.06 });
+</script>
+</body>
+</html>

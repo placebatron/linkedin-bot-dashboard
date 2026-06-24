@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- BaumAgents Entra SSO gate — redirects unauthenticated visitors to Microsoft login -->
+<script src="https://unpkg.com/@azure/msal-browser@2.38.3/lib/msal-browser.min.js"></script>
+<script src="../../auth.js"></script>
+<script>BaumAuth.requireAuth();</script>
+<title>BRG / BAM — Training &amp; Institutional Knowledge</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/theme/black.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#13284c; --navy2:#0c1c38; --navy3:#1d3a6b;
+  --ink:#0a1730; --gold:#c8a64e; --gold2:#e0c879;
+  --paper:#f5f7fb; --slate:#5b6b85; --line:rgba(255,255,255,.12);
+  --green:#37b27a; --red:#e0625e; --blue:#4f8fe0;
+}
+.reveal{font-family:'Inter',sans-serif; font-weight:400; color:#eaf0fa;}
+.reveal .slides{text-align:left;}
+.reveal section{ height:100%; }
+.reveal h1,.reveal h2,.reveal h3,.reveal h4{font-family:'Inter',sans-serif; text-transform:none; letter-spacing:-.01em; color:#fff; font-weight:800; line-height:1.08;}
+.reveal h1{font-size:2.5em;} .reveal h2{font-size:1.7em;} .reveal h3{font-size:1.15em;}
+.reveal p,.reveal li{font-size:.62em; line-height:1.45; color:#d7e0f0;}
+.reveal strong{color:#fff;}
+.reveal .slide-background{background:radial-gradient(1200px 700px at 20% -10%, #1b3766 0%, var(--navy) 38%, var(--navy2) 100%);}
+.reveal section.divider .slide-background, .reveal .divider{ }
+.serif{font-family:'Playfair Display',serif;}
+.mono{font-family:'JetBrains Mono',monospace;}
+
+/* ---- Brand bits ---- */
+.kicker{font-size:.42em; letter-spacing:.32em; text-transform:uppercase; color:var(--gold2); font-weight:700; margin:0 0 .4em;}
+.subtle{color:var(--slate); font-size:.5em;}
+.gold{color:var(--gold2);}
+.tagchips{display:flex; gap:8px; flex-wrap:wrap; margin:.4em 0;}
+.chip{font-size:.34em; letter-spacing:.12em; text-transform:uppercase; font-weight:700; padding:5px 12px; border-radius:999px; border:1px solid var(--line);}
+.chip.broker{background:rgba(79,143,224,.16); color:#9cc1f2; border-color:rgba(79,143,224,.4);}
+.chip.pm{background:rgba(55,178,122,.16); color:#7fe0b3; border-color:rgba(55,178,122,.4);}
+.chip.acct{background:rgba(200,166,78,.16); color:var(--gold2); border-color:rgba(200,166,78,.45);}
+.chip.mkt{background:rgba(224,98,94,.16); color:#f0a09c; border-color:rgba(224,98,94,.4);}
+.chip.all{background:rgba(255,255,255,.08); color:#fff;}
+
+/* logo */
+.logo{display:flex; align-items:center; gap:14px;}
+.logo .mark{width:54px;height:54px;}
+.logo .wm{line-height:1;}
+.logo .wm b{display:block; font-size:26px; font-weight:800; letter-spacing:.04em; color:#fff;}
+.logo .wm span{display:block; font-size:9px; letter-spacing:.42em; color:var(--gold2); margin-top:2px;}
+.orbit{transform-origin:32px 32px; animation:spin 14s linear infinite;}
+.orbit2{transform-origin:32px 32px; animation:spin 9s linear infinite reverse;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* layout helpers */
+.grid{display:grid; gap:14px;}
+.g2{grid-template-columns:1fr 1fr;} .g3{grid-template-columns:repeat(3,1fr);} .g4{grid-template-columns:repeat(4,1fr);}
+.card{background:linear-gradient(160deg, rgba(255,255,255,.07), rgba(255,255,255,.03)); border:1px solid var(--line); border-radius:14px; padding:16px 18px; backdrop-filter:blur(4px);}
+.card h3{font-size:.95em; margin:0 0 6px;}
+.card p{font-size:.52em; margin:0; color:#c4d0e6;}
+.card .ic{font-size:1.4em; margin-bottom:6px; display:block;}
+.accentbar{height:3px; width:48px; background:linear-gradient(90deg,var(--gold),var(--gold2)); border-radius:3px; margin:0 0 14px;}
+
+/* stat counters */
+.stats{display:flex; gap:30px; flex-wrap:wrap; margin-top:10px;}
+.stat .n{font-family:'Playfair Display',serif; font-size:2.1em; font-weight:700; color:#fff; line-height:1;}
+.stat .l{font-size:.42em; text-transform:uppercase; letter-spacing:.14em; color:var(--gold2); margin-top:6px;}
+
+/* browser frame */
+.frame{border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,.18); box-shadow:0 30px 70px rgba(0,0,0,.5); background:#fff;}
+.frame .bar{background:#e9edf3; padding:8px 12px; display:flex; align-items:center; gap:7px;}
+.frame .bar i{width:11px;height:11px;border-radius:50%; display:inline-block;}
+.frame .bar .u{margin-left:10px; background:#fff; border-radius:6px; padding:4px 12px; font-size:11px; color:#5b6b85; flex:1; font-family:'JetBrains Mono',monospace;}
+.dot-r{background:#ff5f57;} .dot-y{background:#febc2e;} .dot-g{background:#28c840;}
+
+/* baum site recreation */
+.bsite{background:#fff; color:#16284a;}
+.bnav{display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-bottom:1px solid #eef1f6;}
+.bnav .ll{display:flex; align-items:center; gap:9px;}
+.bnav .ll b{font-size:15px; color:#16284a; letter-spacing:.04em; font-weight:800;}
+.bnav .mn{display:flex; gap:13px; font-size:8.5px; font-weight:700; color:#46587a; letter-spacing:.04em;}
+.bhero{position:relative; padding:26px 22px; color:#fff; background:linear-gradient(rgba(12,24,52,.55),rgba(12,24,52,.7)), linear-gradient(120deg,#3a4a66,#1d2c47);}
+.bhero .k{font-size:9px; letter-spacing:.34em; color:#dfe6f2;}
+.bhero .t{font-family:'Playfair Display',serif; font-size:23px; margin:5px 0 0; font-weight:600;}
+.listings{display:grid; grid-template-columns:repeat(4,1fr); gap:0;}
+.lcard{background:#fff; border-right:1px solid #eef1f6; padding:12px;}
+.lcard:last-child{border-right:none;}
+.lcard .ph{height:54px; border-radius:6px; background:linear-gradient(135deg,#c7d2e2,#9fb1cd); margin-bottom:8px; position:relative; overflow:hidden;}
+.lcard .ph::after{content:""; position:absolute; inset:0; background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.5) 50%,transparent 70%); transform:translateX(-120%); animation:shine 3.4s ease-in-out infinite;}
+@keyframes shine{0%,60%{transform:translateX(-120%);}100%{transform:translateX(120%);}}
+.lcard b{font-size:10px; color:#16284a; display:block;}
+.lcard small{font-size:8px; color:#7b88a0; display:block; margin-top:2px;}
+.lcard .pill{display:inline-block; margin-top:6px; font-size:7.5px; font-weight:700; color:#16284a; background:#f0c75e; padding:2px 7px; border-radius:999px;}
+
+/* CORE map mockup */
+.coremap{position:relative; height:330px; background:
+  linear-gradient(rgba(10,22,46,.2),rgba(10,22,46,.2)),
+  repeating-linear-gradient(0deg,#e7ecf3 0 38px,#dfe5ee 38px 39px),
+  repeating-linear-gradient(90deg,#e7ecf3 0 46px,#dfe5ee 46px 47px),
+  #e9eef5; overflow:hidden;}
+.road{position:absolute; background:#cfd8e6;}
+.pin{position:absolute; width:14px;height:14px; border-radius:50% 50% 50% 0; transform:rotate(-45deg); box-shadow:0 2px 5px rgba(0,0,0,.3);}
+.pin::after{content:""; position:absolute; inset:4px; background:#fff; border-radius:50%;}
+.pin.s{background:#37b27a;} .pin.c{background:#4f8fe0;} .pin.v{background:#e0625e;}
+.pulse{position:absolute; width:14px;height:14px;border-radius:50%; background:rgba(55,178,122,.5); animation:pulse 2.2s ease-out infinite;}
+@keyframes pulse{0%{transform:scale(.6);opacity:.8;}100%{transform:scale(4.5);opacity:0;}}
+.maptip{position:absolute; background:#0c1c38; color:#fff; border:1px solid var(--gold); border-radius:8px; padding:7px 10px; font-size:9px; box-shadow:0 8px 22px rgba(0,0,0,.4); z-index:5;}
+.maptip b{color:var(--gold2); font-size:10px;}
+.legend{position:absolute; bottom:10px; left:10px; background:rgba(12,28,56,.92); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:8.5px; color:#dfe6f2;}
+.legend i{width:9px;height:9px;border-radius:50%; display:inline-block; margin-right:5px; vertical-align:middle;}
+.searchbar{position:absolute; top:10px; left:10px; right:10px; background:#fff; border-radius:8px; padding:8px 12px; font-size:10px; color:#7b88a0; box-shadow:0 4px 14px rgba(0,0,0,.18); font-family:'JetBrains Mono',monospace; z-index:6;}
+.searchbar .cur{display:inline-block; width:1px; background:#16284a; animation:blink 1s step-end infinite;}
+@keyframes blink{50%{opacity:0;}}
+
+/* engagement bars (Crexi) */
+.bars{display:flex; flex-direction:column; gap:9px; margin-top:6px;}
+.barrow{display:flex; align-items:center; gap:10px; font-size:.5em;}
+.barrow .lab{width:130px; color:#cdd8ec;}
+.bartrack{flex:1; height:14px; background:rgba(255,255,255,.08); border-radius:8px; overflow:hidden;}
+.barfill{height:100%; border-radius:8px; background:linear-gradient(90deg,var(--gold),var(--gold2)); width:0; transition:width 1.4s cubic-bezier(.2,.7,.2,1);}
+.present .barfill.run{width:var(--w);}
+.barrow .val{width:42px; text-align:right; color:var(--gold2); font-weight:700;}
+
+/* pipeline flow */
+.pipe{display:flex; align-items:stretch; gap:0; margin-top:14px;}
+.pstep{flex:1; position:relative; text-align:center; padding:14px 8px;}
+.pstep .b{background:linear-gradient(160deg,rgba(255,255,255,.09),rgba(255,255,255,.03)); border:1px solid var(--line); border-radius:12px; padding:12px 8px; height:100%;}
+.pstep .ic{font-size:1.5em; display:block; margin-bottom:5px;}
+.pstep h4{font-size:.6em; margin:0 0 3px; color:#fff;}
+.pstep p{font-size:.42em; margin:0; color:#aebbd4;}
+.pstep .arrow{position:absolute; right:-9px; top:50%; transform:translateY(-50%); color:var(--gold2); font-size:1.1em; z-index:3;}
+.flowdot{position:absolute; top:50%; left:0; width:9px;height:9px;border-radius:50%; background:var(--gold2); box-shadow:0 0 12px var(--gold2); animation:flow 4s linear infinite;}
+@keyframes flow{0%{left:2%;}100%{left:98%;}}
+
+/* SSO lock */
+.ssoflow{display:flex; align-items:center; justify-content:center; gap:24px; margin-top:12px;}
+.ssoflow .node{text-align:center;}
+.ssoflow .ring{width:74px;height:74px;border-radius:50%; border:2px solid var(--line); display:flex;align-items:center;justify-content:center; font-size:1.8em; margin:0 auto 8px; position:relative;}
+.ssoflow .ring.on{border-color:var(--green); box-shadow:0 0 22px rgba(55,178,122,.4); animation:popin .5s ease;}
+@keyframes popin{from{transform:scale(.6);opacity:0;}to{transform:scale(1);opacity:1;}}
+.ssoflow .arr{color:var(--gold2); font-size:1.4em; animation:slide 1.6s ease-in-out infinite;}
+@keyframes slide{0%,100%{transform:translateX(0);opacity:.5;}50%{transform:translateX(6px);opacity:1;}}
+
+/* table */
+.tbl{width:100%; border-collapse:collapse; font-size:.46em;}
+.tbl th{background:rgba(255,255,255,.07); color:var(--gold2); text-transform:uppercase; letter-spacing:.08em; font-size:.85em; text-align:left; padding:7px 10px; border-bottom:1px solid var(--line);}
+.tbl td{padding:6px 10px; border-bottom:1px solid rgba(255,255,255,.06); color:#d4deef;}
+.tbl tr:hover td{background:rgba(200,166,78,.06);}
+.tbl td b{color:#fff;}
+
+/* news logos */
+.news{display:grid; grid-template-columns:repeat(4,1fr); gap:9px;}
+.nlogo{background:linear-gradient(160deg,rgba(255,255,255,.08),rgba(255,255,255,.03)); border:1px solid var(--line); border-radius:10px; padding:10px 12px;}
+.nlogo b{font-size:.56em; color:#fff; display:block;}
+.nlogo small{font-size:.4em; color:#9fb0cc;}
+
+/* warning */
+.warn{border-left:3px solid var(--red); background:rgba(224,98,94,.1); padding:12px 16px; border-radius:0 10px 10px 0;}
+.good{border-left:3px solid var(--green); background:rgba(55,178,122,.1); padding:12px 16px; border-radius:0 10px 10px 0;}
+.warn p,.good p{font-size:.52em; margin:0;}
+
+/* divider */
+.divnum{font-family:'Playfair Display',serif; font-size:6em; color:rgba(200,166,78,.18); line-height:.8; font-weight:700;}
+
+/* footer brand */
+.foot{position:fixed; bottom:14px; left:24px; font-size:11px; letter-spacing:.18em; color:rgba(255,255,255,.32); text-transform:uppercase; z-index:30;}
+.reveal .progress{color:var(--gold);}
+.pulse-tip{animation:fadeup .8s ease;}
+@keyframes fadeup{from{opacity:0;transform:translateY(8px);}to{opacity:1;}}
+.center{display:flex;flex-direction:column;justify-content:center;height:100%;}
+.lead{font-size:.7em; color:#cdd8ec; max-width:80%;}
+ul.clean{list-style:none; margin:0; padding:0;}
+ul.clean li{padding:6px 0 6px 22px; position:relative; border-bottom:1px solid rgba(255,255,255,.05);}
+ul.clean li::before{content:"▸"; color:var(--gold2); position:absolute; left:0;}
+.two{display:grid; grid-template-columns:1.05fr .95fr; gap:26px; align-items:center;}
+.mini{font-size:.46em; color:var(--slate);}
+</style>
+</head>
+<body>
+<div class="foot">Baum Realty Group · Baum Asset Management</div>
+<div class="reveal"><div class="slides">
+
+<!-- ============ TITLE ============ -->
+<section data-auto-animate>
+  <div class="center">
+    <div class="logo" style="margin-bottom:30px;">
+      <svg class="mark" viewBox="0 0 64 64" fill="none">
+        <ellipse class="orbit" cx="32" cy="32" rx="26" ry="11" stroke="#c8a64e" stroke-width="2.4"/>
+        <ellipse class="orbit2" cx="32" cy="32" rx="11" ry="26" stroke="#4f8fe0" stroke-width="2.4"/>
+        <circle cx="32" cy="32" r="5.5" fill="#fff"/>
+      </svg>
+      <div class="wm"><b>BAUM</b><span>REALTY GROUP</span></div>
+    </div>
+    <p class="kicker">Training &amp; Institutional Knowledge</p>
+    <h1 style="font-size:2.7em;">The Baum<br><span class="gold serif" style="font-weight:600;">Operating System</span></h1>
+    <p class="lead" style="margin-top:18px;">Everything a new team member needs to know — the companies, the systems, the tools, and the way we actually work.</p>
+    <p class="subtle" style="margin-top:24px;">Baum Realty Group &nbsp;|&nbsp; Baum Asset Management &nbsp;·&nbsp; Updated 2026</p>
+  </div>
+</section>
+
+<!-- ============ HOW TO USE ============ -->
+<section>
+  <p class="kicker">How to use this deck</p>
+  <h2>Find your role. Follow your tags.</h2>
+  <div class="accentbar"></div>
+  <p class="lead" style="margin-bottom:18px;">Every section is tagged for the roles it matters to. Watch for these chips:</p>
+  <div class="grid g4">
+    <div class="card"><span class="chip broker">Broker</span><p style="margin-top:10px;">Deals, research, CRM, marketing, daily intel.</p></div>
+    <div class="card"><span class="chip pm">Property Mgmt</span><p style="margin-top:10px;">BAM operations, Appfolio, maintenance.</p></div>
+    <div class="card"><span class="chip acct">Admin / Acctg</span><p style="margin-top:10px;">CORE accounting, the deal-to-payment pipeline.</p></div>
+    <div class="card"><span class="chip mkt">Marketing</span><p style="margin-top:10px;">GIS, maps, pitch books, tour books, design.</p></div>
+  </div>
+  <p class="mini" style="margin-top:18px;">Synthesized from live training sessions led by Mike Demetriou. A living document — sections evolve as we do.</p>
+</section>
+
+<!-- ============ DIVIDER 1 ============ -->
+<section class="divider" data-auto-animate>
+  <div class="center">
+    <div class="divnum">01</div>
+    <p class="kicker" style="margin-top:6px;">Section One</p>
+    <h1>Company Overview</h1>
+    <p class="tagchips"><span class="chip all">All Roles</span></p>
+    <p class="lead">Four related companies, one ecosystem.</p>
+  </div>
+</section>
+
+<!-- BRG -->
+<section>
+  <p class="kicker">1.1 — Baum Realty Group</p>
+  <h2>Chicago's premier retail<br>real estate firm <span class="gold">since 1991</span></h2>
+  <div class="accentbar"></div>
+  <div class="two">
+    <div>
+      <p>Founded by <strong>David Baum</strong> (still CEO). Started in condominiums, grew through tenant rep and landlord rep into investment sales and national services.</p>
+      <p>Primarily <strong>retail</strong>, plus office, industrial, land, and multifamily. Specialty practices: <span class="gold">cannabis, national tenant site selection, franchise retail,</span> and experiential entertainment.</p>
+      <p class="mini">1030 W. Chicago Ave, Suite 200, Chicago, IL 60642 · (312) 666-3000 · baumrealty.com</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="n" data-count="1991" data-suffix="">1991</div><div class="l">Founded</div></div>
+      <div class="stat"><div class="n" data-count="20" data-suffix="+">0</div><div class="l">Contractor brokers</div></div>
+      <div class="stat"><div class="n">Nat'l</div><div class="l">Footprint</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- live site -->
+<section>
+  <p class="kicker">baumrealty.com — live</p>
+  <h2>How the firm shows up to the market</h2>
+  <div class="accentbar"></div>
+  <div class="frame">
+    <div class="bar"><i class="dot-r"></i><i class="dot-y"></i><i class="dot-g"></i><span class="u">https://www.baumrealty.com</span></div>
+    <div class="bsite">
+      <div class="bnav">
+        <div class="ll">
+          <svg width="26" height="26" viewBox="0 0 64 64"><ellipse class="orbit" cx="32" cy="32" rx="26" ry="11" stroke="#16284a" stroke-width="3"/><ellipse class="orbit2" cx="32" cy="32" rx="11" ry="26" stroke="#c8a64e" stroke-width="3"/><circle cx="32" cy="32" r="6" fill="#16284a"/></svg>
+          <b>BAUM REALTY GROUP</b>
+        </div>
+        <div class="mn"><span>SERVICES</span><span>RETAIL LEASING</span><span>SITE SELECTION</span><span>INVESTMENT SALES</span><span>AUCTION</span><span>OFFICE &amp; FLEX</span><span>NATIONAL</span></div>
+      </div>
+      <div class="bhero">
+        <div class="k">BAUM REALTY GROUP</div>
+        <div class="t">Superior service, unmatched results.</div>
+      </div>
+      <div class="listings">
+        <div class="lcard"><div class="ph"></div><b>Grand Plaza</b><small>Chicago, IL 60654</small><span class="pill">4 Spaces Available</span></div>
+        <div class="lcard"><div class="ph"></div><b>875 N Rush St</b><small>Chicago, IL 60611 · 3,495 SF</small><span class="pill">Rate: Negotiable</span></div>
+        <div class="lcard"><div class="ph"></div><b>1122 W Randolph St</b><small>Chicago, IL 60607</small><span class="pill">2 Spaces Available</span></div>
+        <div class="lcard"><div class="ph"></div><b>Former School Building</b><small>Chicago, IL 60651</small><span class="pill">$1,250,005</span></div>
+      </div>
+    </div>
+  </div>
+  <p class="mini" style="margin-top:10px;">Real listings pulled live from baumrealty.com. The public site is the storefront — CORE is the engine behind it.</p>
+</section>
+
+<!-- divisions -->
+<section>
+  <p class="kicker">1.1 — The Divisions</p>
+  <h2>Five ways Baum does deals</h2>
+  <div class="accentbar"></div>
+  <div class="grid g3">
+    <div class="card"><span class="ic">🏢</span><h3>Landlord Rep</h3><p>Third-party leasing for property owners.</p></div>
+    <div class="card"><span class="ic">📍</span><h3>Tenant Rep</h3><p>Site selection &amp; lease negotiation for occupiers.</p></div>
+    <div class="card"><span class="ic">💰</span><h3>Investment Sales</h3><p>Acquisitions &amp; dispositions across all types.</p></div>
+    <div class="card"><span class="ic">🗺️</span><h3>NRES</h3><p>National Real Estate Services — multi-market site selection for national retailers &amp; franchisors.</p></div>
+    <div class="card"><span class="ic">🏭</span><h3>Flex Industrial</h3><p>Light &amp; urban industrial investment sales and tenant rep.</p></div>
+  </div>
+</section>
+
+<!-- BAM -->
+<section>
+  <p class="kicker">1.2 — Baum Asset Management</p>
+  <h2>Property management,<br><span class="gold">reimagined with data</span></h2>
+  <div class="accentbar"></div>
+  <div class="two">
+    <div>
+      <p>Third-party commercial property management, co-founded by <strong>David Baum &amp; Mike Demetriou in 2017.</strong> Manages Baum-owned and third-party client properties.</p>
+      <p>Primarily Chicagoland, with select national markets including <strong>Boise, ID.</strong></p>
+      <div class="good" style="margin-top:8px;"><p>⭐ <strong>Strategic priority:</strong> BAM is lucrative and growing — expansion is a top priority.</p></div>
+      <p class="mini">baumam.com</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="n" data-count="2.5" data-suffix="MM+" data-dec="1">0</div><div class="l">Sq ft managed</div></div>
+      <div class="stat"><div class="n">2017</div><div class="l">Founded</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- SLA + Revision -->
+<section>
+  <p class="kicker">1.3 / 1.4 — The Wider Family</p>
+  <h2>Two more entities to know</h2>
+  <div class="accentbar"></div>
+  <div class="grid g2">
+    <div class="card"><h3>Strategic Location Advisors (SLA)</h3><p>Founded by Mike, Jan 2023. Location consulting using big data + human capital: site selection, growth strategy, location intelligence — for tenants, landlords, investors &amp; developers.</p></div>
+    <div class="card"><h3>Baum Revision</h3><p>David Baum's development company (baumrevision.com). <strong>Separate</strong> from BRG and BAM.</p>
+      <div class="warn" style="margin-top:8px;"><p>⚠️ David's email is <span class="mono gold">david@baumrevision.com</span> — not @baumrealty.com.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DIVIDER 2 ============ -->
+<section class="divider" data-auto-animate>
+  <div class="center">
+    <div class="divnum">02</div>
+    <p class="kicker" style="margin-top:6px;">Section Two</p>
+    <h1>IT Systems &amp; Security</h1>
+    <p class="tagchips"><span class="chip all">All Roles</span></p>
+    <p class="lead">One login. One portal. Real guardrails.</p>
+  </div>
+</section>
+
+<!-- SSO -->
+<section>
+  <p class="kicker">2.1 — Single Sign-On (Microsoft Entra)</p>
+  <h2>One password. Everything.</h2>
+  <div class="accentbar"></div>
+  <div class="ssoflow">
+    <div class="node"><div class="ring on">🔑</div><p class="mini" style="text-align:center;">Your SSO<br>password</p></div>
+    <div class="arr">→</div>
+    <div class="node"><div class="ring on">📱</div><p class="mini" style="text-align:center;">Authenticator<br>2FA</p></div>
+    <div class="arr">→</div>
+    <div class="node"><div class="ring on" style="font-size:1.4em;">✅</div><p class="mini" style="text-align:center;">All company<br>systems</p></div>
+  </div>
+  <div class="grid g3" style="margin-top:18px;">
+    <div class="card"><p><strong>2FA is required.</strong> Pops every 5–6 days or on IP change. It's annoying. It keeps us safe.</p></div>
+    <div class="card"><p><strong>Geo-blocking is on.</strong> Logins from unexpected locations get flagged.</p></div>
+    <div class="card"><p><strong>Two entry points:</strong> <span class="mono gold">myapps.microsoft.com</span> &amp; <span class="mono gold">baum.tools</span> — bookmark both.</p></div>
+  </div>
+</section>
+
+<!-- baum.tools + ETS + security -->
+<section>
+  <p class="kicker">2.2 – 2.4 — Portal, Support &amp; Security</p>
+  <h2>Where to start &amp; who to call</h2>
+  <div class="accentbar"></div>
+  <div class="grid g3">
+    <div class="card"><span class="ic">🧭</span><h3>baum.tools</h3><p>Quick-access portal, any browser/device. Links to CORE, your broker ledger, internal tools &amp; the AI tools at baumagents.com. Lost? Start here.</p></div>
+    <div class="card"><span class="ic">🎫</span><h3>ETS (IT Support)</h3><p>Outsourced IT. <strong>Always email ETS</strong> — not Jacob directly — so a ticket is created. No ticket, no coverage. Critical for remote workers.</p></div>
+    <div class="card"><span class="ic">🛡️</span><h3>Security Posture</h3><p>Enterprise spam, anti-phishing, AV/malware. <strong>Box</strong> = our secure storage; all files live there. <strong>Dropbox</strong> only if a client requires it.</p></div>
+  </div>
+  <div class="warn" style="margin-top:14px;"><p>🔎 Full audit trail on everything. If someone snoops, they'll get caught. (Not that anyone does.)</p></div>
+</section>
+
+<!-- ============ DIVIDER 3 ============ -->
+<section class="divider" data-auto-animate>
+  <div class="center">
+    <div class="divnum">03</div>
+    <p class="kicker" style="margin-top:6px;">Section Three</p>
+    <h1>CORE CRM</h1>
+    <p class="tagchips"><span class="chip broker">Broker</span><span class="chip acct">Admin / Acctg</span></p>
+    <p class="lead">Our proprietary brain. Map-driven by default.</p>
+  </div>
+</section>
+
+<!-- what core is + live map -->
+<section>
+  <p class="kicker">3.1 — What CORE Is &nbsp;·&nbsp; core.baumrealty.com</p>
+  <h2>Built in-house. Better than Salesforce.</h2>
+  <div class="accentbar"></div>
+  <div class="frame">
+    <div class="bar"><i class="dot-r"></i><i class="dot-y"></i><i class="dot-g"></i><span class="u">https://core.baumrealty.com</span></div>
+    <div class="coremap">
+      <div class="searchbar">🔍 Search contacts, properties, comps, representations… <span class="cur">&nbsp;875 N Rush St|</span></div>
+      <div class="road" style="top:140px;left:0;right:0;height:6px;"></div>
+      <div class="road" style="top:0;bottom:0;left:300px;width:6px;"></div>
+      <div class="road" style="top:230px;left:0;right:0;height:5px;"></div>
+      <div class="pin s" style="top:120px;left:180px;"></div><div class="pulse" style="top:120px;left:180px;"></div>
+      <div class="pin s" style="top:200px;left:430px;"></div><div class="pulse" style="top:200px;left:430px; animation-delay:.7s;"></div>
+      <div class="pin c" style="top:90px;left:520px;"></div>
+      <div class="pin v" style="top:250px;left:240px;"></div>
+      <div class="pin s" style="top:170px;left:610px;"></div><div class="pulse" style="top:170px;left:610px; animation-delay:1.3s;"></div>
+      <div class="pin c" style="top:60px;left:340px;"></div>
+      <div class="maptip pulse-tip" style="top:96px;left:210px;"><b>875 N Rush St</b><br>Sales volume: $4.2M/yr<br><span style="color:#7fe0b3;">Source: GM (direct)</span></div>
+      <div class="legend"><i style="background:#37b27a;"></i>Sales volume &nbsp; <i style="background:#4f8fe0;"></i>Comp &nbsp; <i style="background:#e0625e;"></i>Representation</div>
+    </div>
+  </div>
+  <p class="mini" style="margin-top:10px;">Built by <strong>James Kosharsky</strong> on XAF / DevExpress. Map view by default, dashboard optional. The search bar is your fastest path to anything.</p>
+</section>
+
+<!-- what's in core -->
+<section>
+  <p class="kicker">3.2 — What's Inside</p>
+  <h2>Five things CORE holds</h2>
+  <div class="accentbar"></div>
+  <div class="grid g3">
+    <div class="card"><span class="ic">👥</span><h3>Contacts</h3><p>Firm-wide shared database. Geri maintains quality &amp; prevents duplicates.</p></div>
+    <div class="card"><span class="ic">📊</span><h3>Comps</h3><p>Internal + external. Often <strong>more accurate than CoStar</strong> — straight from deal parties.</p></div>
+    <div class="card"><span class="ic">🍽️</span><h3>Sales Volumes</h3><p>Tens of thousands of retail records, mapped. Retailers &amp; landlords love it.</p></div>
+    <div class="card"><span class="ic">📨</span><h3>Marketing Touches</h3><p>Who opened e-blasts, clicked Crexi, viewed a property. Tied to representations.</p></div>
+    <div class="card"><span class="ic">💵</span><h3>Broker Ledger</h3><p>Your personal tracker: paid, pending, and coming.</p></div>
+    <div class="card" style="border-color:rgba(200,166,78,.4);"><span class="ic">🔎</span><h3>Search-first</h3><p>One bar finds contacts, properties, comps, reps &amp; your ledger.</p></div>
+  </div>
+</section>
+
+<!-- contacts process -->
+<section>
+  <p class="kicker">3.2 — Contacts: The Process</p>
+  <h2>Meet someone? <span class="gold">Email Geri.</span></h2>
+  <div class="accentbar"></div>
+  <div class="two">
+    <div>
+      <p>Send contact info to <span class="mono gold">Geri@baumrealty.com</span> as close to real-time as possible. Don't wait for a stack of 50 cards.</p>
+      <ul class="clean">
+        <li>Checks for duplicates → creates or updates</li>
+        <li>Enriches via third-party data (People Data Labs coming)</li>
+        <li>Ties contact to properties, reps &amp; groups</li>
+        <li>Marks private if it's from an NDA/confidential source</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>This isn't residential</h3>
+      <p>Contacts are <strong>shared firm-wide by default.</strong> No value in hoarding — we can always filter by creator to show "your" contacts. You can mark things private, but nobody does, and we discourage it.</p>
+      <p class="mini" style="margin-top:10px;">Geri's instincts for dedup &amp; enrichment beat any automated tool.</p>
+    </div>
+  </div>
+</section>
+
+<!-- sales volumes -->
+<section>
+  <p class="kicker">3.2 — Sales Volumes on the Map</p>
+  <h2>Stand on the sidewalk. <span class="gold">Pull the numbers.</span></h2>
+  <div class="accentbar"></div>
+  <div class="two">
+    <div>
+      <p>From your laptop or phone in front of a property, pull every sales volume we have nearby. <strong>Retailers love this. Landlords love this.</strong></p>
+      <p><strong>Accuracy hierarchy:</strong></p>
+      <ul class="clean">
+        <li>Direct from a general manager <span class="gold">— best</span></li>
+        <li>Offering memorandum</li>
+        <li>Restaurant Trends — directional, ±10%</li>
+      </ul>
+    </div>
+    <div class="warn">
+      <p>🚫 <strong>We do NOT share this data externally.</strong> Everyone asks. The answer is always no.</p>
+      <p style="margin-top:8px;">NDA-sourced volume? Tell Geri to mark it private — still in your reports, just not visible to others.</p>
+    </div>
+  </div>
+</section>
+
+<!-- core accounting -->
+<section>
+  <p class="kicker">3.3 — CORE for Accounting</p>
+  <h2>Where brokerage money moves</h2>
+  <p class="tagchips"><span class="chip acct">Admin / Acctg</span></p>
+  <div class="accentbar"></div>
+  <div class="grid g3">
+    <div class="warn"><p>🔒 <strong>Split confidentiality.</strong> Never share anything that lets someone calculate another broker's split. Restricted to Mike, Geri &amp; the DB admin.</p></div>
+    <div class="good"><p>⚡ <strong>Next-business-day pay.</strong> We pay brokers the day after funds arrive. It's a recruiting differentiator — we take it seriously.</p></div>
+    <div class="card"><p>📈 <strong>Split thresholds.</strong> Most splits step up at a <span class="gold">$200,000</span> revenue threshold (other tranches exist too).</p></div>
+  </div>
+  <p class="mini" style="margin-top:14px;">Flow: broker submits Excel deal report → Geri creates the deal in CORE → invoice → payment via QuickBooks &amp; bill.com. (Full pipeline in Section 11.)</p>
+</section>
+
+<!-- ============ DIVIDER 4 ============ -->
+<section class="divider" data-auto-animate>
+  <div class="center">
+    <div class="divnum">04</div>
+    <p class="kicker" style="margin-top:6px;">Section Four</p>
+    <h1>Box — File Management</h1>
+    <p class="tagchips"><span class="chip all">All Roles</span></p>
+    <p class="lead">Everything lives here. No local storage.</p>
+  </div>
+</section>
+
+<section>
+  <p class="kicker">4.1 — Box Essentials</p>
+  <h2>Four tools, then forget about it</h2>
+  <div class="accentbar"></div>
+  <div class="grid g4">
+    <div class="card"><span class="ic">💻</span><h3>Box Desktop</h3><p>Box appears as a folder in Finder/Explorer. <strong>Install first.</strong></p></div>
+    <div class="card"><span class="ic">✏️</span><h3>Box Edit</h3><p>Open from Box in Office, edit, save back — no re-upload.</p></div>
+    <div class="card"><span class="ic">📷</span><h3>Box Capture</h3><p>iPhone photos straight to a Box folder, skipping your camera roll. Essential on tours.</p></div>
+    <div class="card"><span class="ic">⭐</span><h3>Favorites</h3><p>Shortcuts to frequent folders. Hard to find things otherwise.</p></div>
+  </div>
+  <div class="grid g2" style="margin-top:14px;">
+    <div class="good"><p>📂 <strong>Sharing &gt; attachments.</strong> Share any file/folder, internal or external — and turn it off anytime. Cut off clients when you stop working together.</p></div>
+    <div class="card"><p>🗄️ <strong>The Collateral folder</strong> is the firm's filing cabinet: forms, templates, marketing, W-9s, lien waivers, trackers. <em>BRG Information</em> holds logos, org charts &amp; signature blocks.</p></div>
+  </div>
+</section>
+
+<!-- ============ DIVIDER 5 ============ -->
+<section class="divider" data-auto-animate>
+  <div class="center">
+    <div class="divnum">05</div>
+    <p class="kicker" style="margin-top:6px;">Section Five</p>
+    <h1>Communication Tools</h1>
+    <p class="tagchips"><span class="chip all">All Roles</span></p>
+  </div>
+</section>
+
+<section>
+  <p class="kicker">5.1 / 5.2 — Phones &amp; Email</p>
+  <h2>How we talk to each other</h2>
+  <div class="accentbar"></div>
+  <div class="two">
+    <div class="card"><h3>📞 RingCentral</h3><p>Our VoIP system — calls, text &amp; video (Zoom under the hood). <strong>Integrated with CORE:</strong> click a number or email in a record to call, text, or email and log the activity. Video can be RingCentral, Zoom, Teams, or Meet — no mandate.</p></div>
+    <div>
+      <ul class="clean">
+        <li><strong>Marketing:</strong> <span class="mono gold">work@baumrealty.com</span> (Krista &amp; Lindsay share it)</li>
+        <li><strong>IT:</strong> email ETS — never Jacob directly</li>
+        <li><strong>Contacts / data / comps:</strong> email Geri</li>
+        <li><strong>Broker meetings:</strong> recurring invite. First 25 min is lunch/social — content starts ~12:30</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DIVIDER 6 ============ -->
+<section class="divider" data-auto-animate>
+  <div class="center">
+    <div class="divnum">06</div>
+    <p class="kicker" style="margin-top:6px;">Section Six</p>
+    <h1>External Research<br>&amp; Data Tools</h1>
+    <p class="tagchips"><span class="chip broker">Broker</span></p>
+    <p class="lead">The stack — and the truth about each tool.</p>
+  </div>
+</section>
+
+<!-- CoStar -->
+<section>
+  <p class="kicker">6.1 — CoStar</p>
+  <h2>The industry standard <span class="gold">(with an asterisk)</span></h2>
+  <div class="accentbar"></div>
+  <div class="frame">
+    <div class="bar"><i class="dot-r"></i><i class="dot-y"></i><i class="dot-g"></i><span class="u">costar.com — property research</span></div>
+    <div style="background:#fff;color:#16284a;padding:16px 18px;display:grid;grid-template-columns:1.3fr 1fr;gap:16px;">
+      <div>
+        <div style="font-size:11px;font-weight:800;color:#16284a;">875 N RUSH ST · CHICAGO, IL 60611</div>
+        <div style="font-size:9px;color:#7b88a0;margin:3px 0 8px;">Retail · 3,495 SF · Rate: Negotiable</div>
+        <div style="height:90px;border-radius:8px;background:linear-gradient(135deg,#cdd8ea,#9fb1cd);position:relative;overflow:hidden;"><div style="position:absolute;inset:0;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.55) 50%,transparent 65%);animation:shine 3s infinite;"></div></div>
+      </div>
+      <div style="font-size:9px;color:#46587a;line-height:1.7;">
+        <div style="border-bottom:1px solid #eef1f6;padding:3px 0;"><b>Dedicated sales rep</b> — assigned</div>
+        <div style="border-bottom:1px solid #eef1f6;padding:3px 0;"><b>Research analyst</b> — assigned</div>
+        <div style="border-bottom:1px solid #eef1f6;padding:3px 0;">Listings kept current by <b>Geri</b></div>
+        <div style="padding:3px 0;color:#c9962a;">⚠ Some data intentionally altered</div>
+      </div>
+    </div>
+  </div>
+  <div class="grid g3" style="margin-top:12px;">
+    <div class="stat"><div class="n" data-count="100" data-prefix="$" data-suffix="K+">0</div><div class="l">Spent per year</div></div>
+    <div class="card"><p>🧑‍💼 You get a <strong>dedicated rep + research analyst</strong> who'll do your homework. They sit idle most of the day. <span class="gold">Use them.</span></p></div>
+    <div class="card"><p>🍴 Attend quarterly <strong>lunch-and-learns</strong> — keeps us in good standing for renewals.</p></div>
+  </div>
+  <p class="mini" style="margin-top:10px;">One expert broker refuses CoStar entirely — phone calls &amp; public records only. Her point: CoStar makes people lazy. Use it, but never as your only source.</p>
+</section>
+
+<!-- Crexi -->
+<section>
+  <p class="kicker">6.2 — Crexi &nbsp;·&nbsp; the engagement engine</p>
+  <h2>See exactly who's interested</h2>
+  <div class="accentbar"></div>
+  <div class="two">
+    <div>
+      <p>Our <strong>best tool for tracking engagement</strong> — who clicked, opened, and viewed. Far more detail than LoopNet or CoStar. <strong>Maria</strong> holds the Crexi Pro account.</p>
+      <div class="good"><p>🔄 Activity feeds <strong>directly into CORE's Marketing Touches</strong> — tied to your representations.</p></div>
+    </div>
+    <div class="card">
+      <div style="font-size:.5em;color:var(--gold2);font-weight:700;margin-bottom:4px;">875 N RUSH ST — LAST 30 DAYS</div>
+      <div class="bars">
+        <div class="barrow"><span class="lab">Listing views</span><div class="bartrack"><div class="barfill" style="--w:92%;"></div></div><span class="val">1,284</span></div>
+        <div class="barrow"><span class="lab">Flyer opens</span><div class="bartrack"><div class="barfill" style="--w:64%;"></div></div><span class="val">312</span></div>
+        <div class="barrow"><span class="lab">Clicked to contact</span><div class="bartrack"><div class="barfill" style="--w:38%;"></div></div><span class="val">47</span></div>
+        <div class="barrow"><span class="lab">Saved / followed</span><div class="bartrack"><div class="barfill" style="--w:22%;"></div></div><span class="val">19</span></div>
+      </div>
+      <p class="mini" style="margin-top:8px;">↳ Synced to CORE Marketing Touches</p>
+    </div>
+  </div>
+</section>
+
+<!-- LoopNet + rest -->
+<section>
+  <p class="kicker">6.3 — LoopNet</p>
+  <h2>Marketing only. <span class="gold">Not research.</span></h2>
+  <div class="accentbar"></div>
+  <div class="two">
+    <div>
+      <p>Data is unreliable — we use LoopNet purely for marketing. We run <strong>50 silver listings that rotate</strong> across properties; Geri manages the rotation.</p>
+      <ul class="clean">
+        <li>No gold/platinum — overpriced &amp; can't be rotated</li>
+        <li>Pausing &amp; restarting degrades performance (their "feature")</li>
+        <li>To landlords we say we use "every tool available"</li>
+      </ul>
+    </div>
+    <div class="card" style="overflow:hidden;">
+      <div style="font-size:.5em;color:var(--gold2);font-weight:700;">50 SILVER LISTINGS · ROTATING</div>
+      <div style="display:flex;gap:6px;margin-top:10px;overflow:hidden;">
+        <div class="rot" style="display:flex;gap:6px;animation:rot 9s linear infinite;">
+          <span class="pill" style="background:#cbd5e6;color:#16284a;padding:4px 9px;border-radius:6px;font-size:8px;white-space:nowrap;">Grand Plaza</span>
+          <span class="pill" style="background:#cbd5e6;color:#16284a;padding:4px 9px;border-radius:6px;font-size:8px;white-space:nowrap;">875 N Rush</span>
+          <span class="pill" style="background:#cbd5e6;color:#16284a;padding:4px 9px;border-radius:6px;font-size:8px;white-space:nowrap;">1122 W Randolph</span>
+          <span class="pill" style="background:#cbd5e6;color:#16284a;padding:4px 9px;border-radius:6px;font-size:8px;white-space:nowrap;">Former School Bldg</span>
+          <span class="pill" style="background:#cbd5e6;color:#16284a;padding:4px 9px;border-radius:6px;font-size:8px;white-space:nowrap;">Grand Plaza</span>
+        </div>
+      </div>
+      <p class="mini" style="margin-top:12px;">We don't get into how we make the sausage.</p>
+    </div>
+  </div>
+  <style>@keyframes rot{0%{transform:translateX(0);}100%{transform:translateX(-220px);}}</style>
+</section>
+
+<!-- other tools -->
+<section>
+  <p class="kicker">6.4 – 6.7 — The Rest of the Stack</p>
+  <h2>Four more, quickly</h2>
+  <div class="accentbar"></div>
+  <div class="grid g2">
+    <div class="card"><h3>💘 Sytes</h3><p>"Bumble for real estate" — matches tenants &amp; sites. Tenant side live; landlord side coming. We'll populate listings programmatically — could be big for deal flow.</p></div>
+    <div class="card"><h3>📇 Apollo / PDL</h3><p>Contact intelligence (~$70/mo vs ZoomInfo's $25K/yr). Finds emails &amp; phones. PDL integrating into CORE. Not firm-wide yet — if a $70 tool makes a deal, talk to Mike.</p></div>
+    <div class="card"><h3>☎️ Intelius</h3><p>Cheap reverse phone lookup. Corporate account. Mediocre data, but handy for "who just called me?"</p></div>
+    <div class="card"><h3>🏘️ MLS</h3><p>Not a party to Chicago MLS (no commercial-only tier). A partner brokerage co-lists for a small fee &amp; searches MLS for residential-adjacent deals.</p></div>
+  </div>
+</section>
+
+<!-- ============ DIVIDER 7 ============ -->
+<section class="divider" data-auto-animate>
+  <div class="center">
+    <div class="divnum">07</div>
+    <p class="kicker" style="margin-top:6px;">Section Seven</p>
+    <h1>GIS, Demographics<br>&amp; Mobile Data</h1>
+    <p class="tagchips"><span class="chip broker">Broker</span><span class="chip mkt">Marketing</span></p>
+  </div>
+</section>
+
+<section>
+  <p class="kicker">7.1 / 7.2 — Placer, SiteZeus &amp; the data behind the maps</p>
+  <h2>Trade areas, not radii</h2>
+  <div class="accentbar"></div>
+  <div class="two">
+    <div>
+      <p><strong>Placer &amp; SiteZeus</strong> are mobile-data aggregators — excellent for macro analysis (trends, traffic, trade areas), weaker at the single-address level.</p>
+      <ul class="clean">
+        <li>Where visitors come from (trade area)</li>
+        <li>What else they shop (cross-shopping)</li>
+        <li>Psychographics: wine drinkers, gym-goers, NASCAR fans</li>
+        <li>Day-of-week &amp; time-of-day patterns</li>
+      </ul>
+      <p class="mini">You don't use Placer directly — <strong>Lindsay &amp; Krista</strong> pull it &amp; build the visuals. They're better at it. Just ask.</p>
+    </div>
+    <div class="card">
+      <div style="font-size:.5em;color:var(--gold2);font-weight:700;margin-bottom:8px;">DRIVE-TIME &gt; RADIUS</div>
+      <svg viewBox="0 0 240 150" width="100%">
+        <circle cx="120" cy="78" r="60" fill="rgba(79,143,224,.10)" stroke="rgba(79,143,224,.35)" stroke-dasharray="4 4"/>
+        <path d="M120 78 C 70 30, 60 70, 50 55 C 95 35, 120 20, 175 45 C 200 70, 185 110, 150 120 C 110 130, 80 115, 120 78 Z" fill="rgba(200,166,78,.22)" stroke="var(--gold2)" stroke-width="1.6"><animate attributeName="opacity" values="0;1" dur="1.2s" fill="freeze"/></path>
+        <circle cx="120" cy="78" r="5" fill="#fff"/>
+        <text x="120" y="145" fill="#9fb0cc" font-size="8" text-anchor="middle" font-family="Inter">"20 min from Lincoln Park" beats "5 miles"</text>
+      </svg>
+      <p class="mini">Sources: MCI PopStats (&gt; Census), ESRI/ArcGIS, custom satellite imagery, traffic counts, social behavioral overlays.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DIVIDER 8 ============ -->
+<section class="divider" data-auto-animate>
+  <div class="center">
+    <div class="divnum">08</div>
+    <p class="kicker" style="margin-top:6px;">Section Eight</p>
+    <h1>Marketing Team<br>&amp; Deliverables</h1>
+    <p class="tagchips"><span class="chip broker">Broker</span><span class="chip mkt">Marketing</span></p>
+  </div>
+</section>
+
+<section>
+  <p class="kicker">8.1 — The Team &amp; How to Work With Them</p>
+  <h2>Lindsay &amp; Krista</h2>
+  <div class="accentbar"></div>
+  <div class="two">
+    <div class="grid" style="gap:12px;">
+      <div class="card"><h3>Lindsay — GIS Analyst</h3><p>Senior veteran. All mapping, geographic analysis &amp; data viz.</p></div>
+      <div class="card"><h3>Krista — Graphic Designer</h3><p>20+ years. Pitch books, BOVs, tour books, tenant profiles. <span class="gold">Two industry awards.</span></p></div>
+      <p class="mini">Contact: <span class="mono gold">work@baumrealty.com</span> — always the shared mailbox. In office Thursdays.</p>
+    </div>
+    <div class="card">
+      <h3>The rules of engagement</h3>
+      <ul class="clean">
+        <li>They love <strong>email</strong> — a written record, not phone instructions</li>
+        <li>Use the <strong>map request template</strong></li>
+        <li>Give <strong>honest deadlines</strong> — fake ones damage the relationship</li>
+        <li>Timelines change? Tell them <strong>immediately</strong></li>
+        <li>Feedback should be specific: "here's what I'd prefer instead"</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <p class="kicker">8.2 — What They Produce</p>
+  <h2>"As good as anyone in the country"</h2>
+  <div class="accentbar"></div>
+  <div class="grid g4">
+    <div class="card"><span class="ic">🗺️</span><h3>Custom Maps</h3><p>Hand-placed logos (ray-traced), satellite/aerial, traffic, tenant mix, school overlays. ArcGIS + Illustrator. AI gets 50%; the team does the other 50%.</p></div>
+    <div class="card"><span class="ic">📕</span><h3>Tour Books</h3><p>Physical &amp; digital for site visits. You provide content &amp; <strong>property order</strong> (the drive flow). Spiral-bound in-house; FlipStack for remote.</p></div>
+    <div class="card"><span class="ic">📘</span><h3>Pitch Books / BOVs</h3><p>Custom-designed with photography, drone, renderings, branded premiums. <strong>No PowerPoint — Krista would rather quit.</strong></p></div>
+    <div class="card"><span class="ic">📄</span><h3>Tenant Profiles</h3><p>One-pagers from the landlord's view: why care about this tenant? Great for newer brands.</p></div>
+  </div>
+  <p class="mini" style="margin-top:12px;">Tour books &amp; pitch books are among the few tangible things we hand a client. Quality matters. Don't delegate the property ordering.</p>
+</section>
+
+<!-- ============ DIVIDER 9 ============ -->
+<section class="divider" data-auto-animate>
+  <div class="center">
+    <div class="divnum">09</div>
+    <p class="kicker" style="margin-top:6px;">Section Nine</p>
+    <h1>Daily News &amp;<br>Industry Intelligence</h1>
+    <p class="tagchips"><span class="chip broker">Broker</span></p>
+    <p class="lead">Scan headlines daily. Know it before clients ask.</p>
+  </div>
+</section>
+
+<section>
+  <p class="kicker">Section 9 — The Daily Scan</p>
+  <h2>Thirteen sources to skim</h2>
+  <div class="accentbar"></div>
+  <div class="news">
+    <div class="nlogo"><b>Crain's Chicago</b><small>Chicago biz/RE</small></div>
+    <div class="nlogo"><b>BisNow Chicago</b><small>CRE industry</small></div>
+    <div class="nlogo"><b>Block Club</b><small>Neighborhood news</small></div>
+    <div class="nlogo"><b>The Real Deal</b><small>Deals &amp; transactions</small></div>
+    <div class="nlogo"><b>Chain Store Age</b><small>National retail</small></div>
+    <div class="nlogo"><b>Connect Chicago</b><small>CRE deal flow</small></div>
+    <div class="nlogo"><b>Eater Chicago</b><small>Restaurant openings</small></div>
+    <div class="nlogo"><b>MJBiz Daily</b><small>Cannabis</small></div>
+    <div class="nlogo"><b>Cannabis Biz Times</b><small>Cultivation &amp; retail</small></div>
+    <div class="nlogo"><b>Nation's Rest. News</b><small>Restaurant trends</small></div>
+    <div class="nlogo"><b>Franchise Times</b><small>Franchise expansion</small></div>
+    <div class="nlogo"><b>The Infatuation</b><small>Food culture</small></div>
+    <div class="nlogo"><b>Plate Magazine</b><small>Culinary trends</small></div>
+    <div class="nlogo" style="border-color:rgba(200,166,78,.4);background:rgba(200,166,78,.08);"><b class="gold">The Habit</b><small>See it 3–4× before a client asks</small></div>
+  </div>
+</section>
+
+<!-- ============ DIVIDER 10 ============ -->
+<section class="divider" data-auto-animate>
+  <div class="center">
+    <div class="divnum">10</div>
+    <p class="kicker" style="margin-top:6px;">Section Ten</p>
+    <h1>Document Hygiene</h1>
+    <p class="tagchips"><span class="chip broker">Broker</span><span class="chip acct">Admin / Acctg</span></p>
+  </div>
+</section>
+
+<section>
+  <p class="kicker">10.1 / 10.2 — Track Changes &amp; Metadata</p>
+  <h2>The mistake that's bitten us before</h2>
+  <div class="accentbar"></div>
+  <div class="two">
+    <div class="card"><h3>📝 Track Changes</h3><p>For LOIs, listing agreements &amp; deal docs. <span class="mono gold">Review ▸ Track Changes</span>. Everything becomes a redline; accept/reject individually or all at once.</p><p class="mini" style="margin-top:8px;">Be careful accepting changes to spaces, formatting, or dates — easy to approve something unintended.</p></div>
+    <div class="warn">
+      <h3 style="color:#fff;">⚠️ Metadata is a real risk</h3>
+      <p>Every Word doc carries hidden author, company, comments &amp; revision history. Reuse an LOI and the metadata may still name <strong>another broker — or a competitor.</strong> This has happened.</p>
+      <p style="margin-top:8px;">Before sending externally: <span class="mono gold">File ▸ Info ▸ Check for Issues ▸ Inspect Document</span>. Remove properties &amp; personal info. Keep headers/footers/watermarks.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DIVIDER 11 ============ -->
+<section class="divider" data-auto-animate>
+  <div class="center">
+    <div class="divnum">11</div>
+    <p class="kicker" style="margin-top:6px;">Section Eleven</p>
+    <h1>Accounting &amp;<br>Payment Processing</h1>
+    <p class="tagchips"><span class="chip acct">Admin / Acctg</span><span class="chip pm">Property Mgmt</span></p>
+  </div>
+</section>
+
+<section>
+  <p class="kicker">11.1 — Deal-to-Payment Pipeline</p>
+  <h2>From closed deal to <span class="gold">next-day pay</span></h2>
+  <div class="accentbar"></div>
+  <div class="pipe">
+    <div class="pstep"><div class="b"><span class="ic">📑</span><h4>Deal Report</h4><p>Broker submits Excel to Geri</p></div><div class="flowdot"></div><span class="arrow">›</span></div>
+    <div class="pstep"><div class="b"><span class="ic">🗃️</span><h4>CORE</h4><p>Geri creates deal + invoice</p></div><span class="arrow">›</span></div>
+    <div class="pstep"><div class="b"><span class="ic">💵</span><h4>Payment In</h4><p>Client funds received</p></div><span class="arrow">›</span></div>
+    <div class="pstep"><div class="b"><span class="ic">➗</span><h4>Split Calc</h4><p>CORE computes the split</p></div><span class="arrow">›</span></div>
+    <div class="pstep"><div class="b"><span class="ic">🏦</span><h4>bill.com</h4><p>Payable routed out</p></div><span class="arrow">›</span></div>
+    <div class="pstep"><div class="b" style="border-color:var(--green);"><span class="ic">✅</span><h4>Paid</h4><p>Next business day</p></div></div>
+  </div>
+  <div class="grid g3" style="margin-top:18px;">
+    <div class="card"><p><strong>QuickBooks</strong> — accounting system of record</p></div>
+    <div class="card"><p><strong>bill.com</strong> — outbound payments</p></div>
+    <div class="card"><p><strong>CORE</strong> — source of truth for deal data &amp; splits</p></div>
+  </div>
+</section>
+
+<section>
+  <p class="kicker">11.2 / 11.3 — BAM Accounting &amp; Remote Setup</p>
+  <h2>How BAM keeps the books</h2>
+  <div class="accentbar"></div>
+  <div class="two">
+    <div class="card"><h3>📒 Appfolio</h3><p>Property-management accounting &amp; work orders. Philippines bookkeeping team — <strong>Crystal, Angel, April</strong> — handles daily transactions. <strong>Arnaud Leplomb</strong> is Accounting Manager.</p><p class="mini" style="margin-top:8px;">Monthly utility billbacks via the AppFolio Billback spreadsheet (processed by Genevah). See the "AppFolio Billbacks How To" in Box.</p></div>
+    <div class="card"><h3>🌐 Remote Worker Setup</h3><p>Overseas/remote staff connect via <strong>virtual machines through Entra SSO.</strong> Connectivity can be unreliable — audio &amp; VM latency are known issues. RingCentral for comms; add each extension to the CORE directory.</p></div>
+  </div>
+</section>
+
+<!-- ============ DIVIDER 12 ============ -->
+<section class="divider" data-auto-animate>
+  <div class="center">
+    <div class="divnum">12</div>
+    <p class="kicker" style="margin-top:6px;">Section Twelve</p>
+    <h1>Property Management<br><span class="gold serif" style="font-weight:600;">BAM-Specific</span></h1>
+    <p class="tagchips"><span class="chip pm">Property Mgmt</span></p>
+  </div>
+</section>
+
+<section>
+  <p class="kicker">12.1 / 12.2 — Who's Who</p>
+  <h2>The BAM team</h2>
+  <div class="accentbar"></div>
+  <div class="two">
+    <div>
+      <table class="tbl">
+        <tr><th>Name</th><th>Role</th></tr>
+        <tr><td><b>Mike Demetriou</b></td><td>President · Co-founder</td></tr>
+        <tr><td><b>Jacqueline Martin</b></td><td>Principal (BRG + BAM)</td></tr>
+        <tr><td><b>Rachel Knopp</b></td><td>VP, Property Management</td></tr>
+        <tr><td>Drew Trammell</td><td>Senior PM</td></tr>
+        <tr><td>Katelynn Thurm</td><td>Senior PM</td></tr>
+        <tr><td>Erin Woods · Chris Valega</td><td>Property Managers</td></tr>
+        <tr><td>Anna Haynam</td><td>Project Manager</td></tr>
+        <tr><td>James Cooper Sr.</td><td>Dir. of Engineering</td></tr>
+        <tr><td>Arnaud Leplomb</td><td>Accounting Mgr (new)</td></tr>
+        <tr><td>Gerilyn Alebich</td><td>Insurance Manager</td></tr>
+      </table>
+    </div>
+    <div>
+      <div class="card"><h3>🔧 Maintenance (Mixed Use)</h3>
+        <table class="tbl" style="margin-top:6px;">
+          <tr><td><b>Sydney Wagner</b></td><td>Facilities Mgr (incoming)</td></tr>
+          <tr><td><b>Mike Vazquez</b></td><td>Maint. Superintendent</td></tr>
+          <tr><td>Santiago · Delgado</td><td>Technicians</td></tr>
+          <tr><td>Maldonado · Pike</td><td>Technicians</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <p class="kicker">12.3 — Systems &amp; the AI Vision</p>
+  <h2>Appfolio today, <span class="gold">Keystone tomorrow</span></h2>
+  <div class="accentbar"></div>
+  <div class="two">
+    <div>
+      <p><strong>Appfolio</strong> runs work orders, tenant comms &amp; accounting. The team is skilled but not digitally native.</p>
+      <p><strong>Known gaps:</strong> field documentation, time tracking, quality-control analytics, cost visibility.</p>
+    </div>
+    <div class="good">
+      <h3 style="color:#fff;">David's AI vision</h3>
+      <p>Build AI to augment Appfolio: workload monitoring, QC metrics, <strong>predictive tooling</strong> (know the parts &amp; tools needed before arriving), staffing optimization &amp; billing accuracy.</p>
+      <p style="margin-top:8px;" class="gold"><strong>Keystone is coming.</strong></p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DIVIDER 13 / contacts ============ -->
+<section>
+  <p class="kicker">Section 13 — Key Contacts</p>
+  <h2>Who to email for what</h2>
+  <p class="tagchips"><span class="chip all">All Roles</span></p>
+  <div class="accentbar"></div>
+  <div class="two">
+    <table class="tbl">
+      <tr><th>Need</th><th>Who</th></tr>
+      <tr><td>Add/update a contact</td><td><b>Geri</b></td></tr>
+      <tr><td>Add a comp or sales volume</td><td><b>Geri</b></td></tr>
+      <tr><td>Update CoStar listings</td><td><b>Geri</b></td></tr>
+      <tr><td>IT / SSO issues</td><td><b>ETS</b> (ticket)</td></tr>
+      <tr><td>Map / tour book / design</td><td><b>work@baumrealty.com</b></td></tr>
+      <tr><td>GIS / demographics</td><td><b>Lindsay</b></td></tr>
+    </table>
+    <table class="tbl">
+      <tr><th>Need</th><th>Who</th></tr>
+      <tr><td>Graphic design / pitch book</td><td><b>Krista</b></td></tr>
+      <tr><td>Commission questions</td><td><b>Mike Demetriou</b></td></tr>
+      <tr><td>Crexi Pro access</td><td><b>Maria Franco</b></td></tr>
+      <tr><td>CORE system issues</td><td><b>James Kosharsky</b></td></tr>
+      <tr><td>BAM accounting</td><td><b>Arnaud Leplomb</b></td></tr>
+      <tr><td>Send Adobe Sign docs</td><td><b>Geri</b></td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- closing -->
+<section data-auto-animate>
+  <div class="center" style="align-items:flex-start;">
+    <div class="logo" style="margin-bottom:24px;">
+      <svg class="mark" viewBox="0 0 64 64"><ellipse class="orbit" cx="32" cy="32" rx="26" ry="11" stroke="#c8a64e" stroke-width="2.4"/><ellipse class="orbit2" cx="32" cy="32" rx="11" ry="26" stroke="#4f8fe0" stroke-width="2.4"/><circle cx="32" cy="32" r="5.5" fill="#fff"/></svg>
+      <div class="wm"><b>BAUM</b><span>REALTY GROUP</span></div>
+    </div>
+    <p class="kicker">You've got the map</p>
+    <h1>Welcome to <span class="gold serif" style="font-weight:600;">Baum.</span></h1>
+    <p class="lead" style="margin-top:14px;">This is a living document — sections grow as we do. Questions? You now know exactly who to email.</p>
+    <p class="subtle" style="margin-top:22px;">Synthesized from live training by Mike Demetriou · Baum Realty Group &amp; Baum Asset Management</p>
+  </div>
+</section>
+
+</div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.js"></script>
+<script>
+Reveal.initialize({
+  hash:true, slideNumber:'c/t', transition:'slide', transitionSpeed:'default',
+  backgroundTransition:'fade', controls:true, progress:true, center:false,
+  width:1280, height:720, margin:0.04, minScale:0.2, maxScale:1.6
+});
+
+// animate engagement bars + count-ups when a slide becomes visible
+function runCounters(slide){
+  slide.querySelectorAll('.barfill').forEach(b=>{b.classList.add('run');});
+  slide.querySelectorAll('.n[data-count]').forEach(el=>{
+    if(el.dataset.done) return; el.dataset.done=1;
+    const tgt=parseFloat(el.dataset.count), dec=parseInt(el.dataset.dec||0),
+          pre=el.dataset.prefix||'', suf=el.dataset.suffix||'';
+    let t0=null, dur=1200;
+    function step(ts){ if(!t0)t0=ts; const p=Math.min((ts-t0)/dur,1);
+      const v=(tgt*(0.2+0.8*p*(2-p))); // easeOut-ish
+      el.textContent=pre+(p<1?(tgt*p).toFixed(dec):tgt.toFixed(dec))+suf;
+      if(p<1) requestAnimationFrame(step); else el.textContent=pre+tgt.toFixed(dec)+suf;
+    }
+    requestAnimationFrame(step);
+  });
+}
+document.querySelector('.reveal').classList.add('present');
+Reveal.on('ready', e=>runCounters(e.currentSlide));
+Reveal.on('slidechanged', e=>runCounters(e.currentSlide));
+</script>
+</body>
+</html>
