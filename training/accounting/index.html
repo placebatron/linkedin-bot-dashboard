@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- BaumAgents Entra SSO gate + accounting allowlist -->
+<script src="https://unpkg.com/@azure/msal-browser@2.38.3/lib/msal-browser.min.js"></script>
+<script src="../../auth.js"></script>
+<script>
+document.documentElement.style.visibility = 'hidden';
+(function () {
+  var ALLOW = ['mike@baumrealty.com','jacqueline@baumrealty.com','jacqueline@baumam.com','nayeli@baumam.com','cfo@baumrealty.com'];
+  function denied(email) {
+    document.body.innerHTML = '<div style="font-family:Segoe UI,system-ui,sans-serif;max-width:540px;margin:18vh auto;text-align:center;color:#1a2233;padding:0 20px"><h2 style="margin-bottom:10px">Restricted module</h2><p>This training module is limited to the accounting team. You are signed in as <b>' + email + '</b>.</p><p style="margin-top:16px"><a href="https://baumagents.com/training/" style="color:#2e6da4">&larr; Back to the Training Library</a></p></div>';
+  }
+  BaumAuth.requireAuth().then(function (user) {
+    if (!user) return; // redirecting to Microsoft login
+    var go = function () {
+      var email = (user.email || '').toLowerCase();
+      if (ALLOW.indexOf(email) === -1 && !user.isAdmin) denied(email);
+      document.documentElement.style.visibility = '';
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
+  });
+})();
+</script>
+<title>BRG / BAM — The Baum Operating System · Accounting Edition</title>
+<style>
+  :root{
+    --navy:#0f1e35; --navy2:#16294a; --ink:#1a2233; --paper:#f7f8fa;
+    --gold:#c9a45c; --teal:#2e8b8b; --red:#c0504d; --green:#3f7d4e;
+    --chip-acct:#2e6da4; --muted:#6b7486; --line:#e3e7ee;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:var(--ink);background:var(--paper);line-height:1.55}
+  .wrap{max-width:960px;margin:0 auto;padding:0 24px}
+  header.site{background:var(--navy);color:#fff;padding:14px 0;font-size:14px;letter-spacing:.04em}
+  header.site .wrap{display:flex;justify-content:space-between;align-items:center}
+  .brand b{font-weight:800}.brand{font-weight:300}
+  .hero{background:linear-gradient(160deg,var(--navy) 0%,var(--navy2) 100%);color:#fff;padding:72px 0 64px}
+  .hero .kicker{color:var(--gold);text-transform:uppercase;letter-spacing:.18em;font-size:12px;margin-bottom:14px}
+  .hero h1{font-size:44px;line-height:1.1;font-weight:800;margin-bottom:18px}
+  .hero p.lede{font-size:19px;color:#c8d2e2;max-width:640px}
+  .hero .meta{margin-top:26px;font-size:13px;color:#8fa0ba}
+  .chip{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 10px;border-radius:20px;margin-right:6px;color:#fff}
+  .chip.acct{background:var(--chip-acct)} .chip.all{background:var(--teal)} .chip.new{background:var(--gold);color:var(--navy)}
+  section.block{padding:56px 0;border-bottom:1px solid var(--line)}
+  section.block:nth-of-type(even){background:#fff}
+  .secnum{font-size:13px;font-weight:700;color:var(--gold);letter-spacing:.2em;text-transform:uppercase}
+  h2{font-size:32px;font-weight:800;margin:6px 0 8px}
+  h3{font-size:20px;font-weight:700;margin:28px 0 10px}
+  p.sub{color:var(--muted);font-size:16px;margin-bottom:8px}
+  .grid{display:grid;gap:16px;margin-top:22px}
+  .g2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+  .g3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px 20px;box-shadow:0 1px 2px rgba(15,30,53,.05)}
+  section.block:nth-of-type(even) .card{background:var(--paper)}
+  .card h4{font-size:15px;font-weight:700;margin-bottom:6px}
+  .card p, .card li{font-size:14px;color:#3c465a}
+  .card .emoji{font-size:22px;display:block;margin-bottom:8px}
+  table{width:100%;border-collapse:collapse;margin-top:18px;font-size:14px;background:#fff}
+  th{background:var(--navy);color:#fff;text-align:left;padding:9px 12px;font-size:12px;letter-spacing:.05em;text-transform:uppercase}
+  td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:nth-child(even) td{background:#fbfcfe}
+  .tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;white-space:nowrap}
+  .tag.daily{background:#e8f0fb;color:#2e6da4}.tag.semi{background:#f3ecdf;color:#8a6d2f}
+  .tag.monthly{background:#e7f2ea;color:#3f7d4e}.tag.quarterly{background:#f6e8e8;color:#a04442}
+  .tag.adhoc{background:#eee9f5;color:#6a4fa0}
+  .callout{border-left:4px solid var(--gold);background:#fdf9f0;padding:14px 18px;border-radius:0 10px 10px 0;margin:20px 0;font-size:15px}
+  .callout.warn{border-color:var(--red);background:#fdf3f2}
+  .callout.go{border-color:var(--green);background:#f1f8f3}
+  a{color:#2e6da4;text-decoration:none} a:hover{text-decoration:underline}
+  .flow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:20px}
+  .flow .step{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 16px;font-size:13px;text-align:center;flex:1;min-width:110px}
+  .flow .step b{display:block;font-size:14px}
+  .flow .arr{color:var(--gold);font-weight:800}
+  .phase{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:16px;background:#fff}
+  .phase .head{background:var(--navy2);color:#fff;padding:12px 18px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+  .phase .head span.goal{font-weight:400;font-size:13px;color:#c8d2e2}
+  .phase ul{padding:14px 18px 14px 36px;font-size:14px}
+  .phase li{margin:5px 0}
+  footer{background:var(--navy);color:#c8d2e2;padding:56px 0;text-align:center}
+  footer h2{color:#fff}
+  ul.clean{list-style:none} ul.clean li{padding-left:1.4em;position:relative;margin:6px 0;font-size:14px}
+  ul.clean li:before{content:"→";position:absolute;left:0;color:var(--gold);font-weight:700}
+  .toc{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:24px}
+  .toc a{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:10px 14px;color:#dfe7f2;font-size:13px;display:block}
+  .toc a:hover{background:rgba(255,255,255,.14);text-decoration:none}
+  @media(max-width:640px){.hero h1{font-size:32px}h2{font-size:26px}}
+</style>
+</head>
+<body>
+
+
+<header class="site"><div class="wrap">
+  <div class="brand"><b>BAUM</b>REALTY GROUP</div>
+  <div>Training &amp; Institutional Knowledge</div>
+</div></header>
+
+<div class="hero"><div class="wrap">
+  <div class="kicker">Onboarding · Accounting Team Edition</div>
+  <h1>The Baum<br>Operating System</h1>
+  <p class="lede">Everything the accounting team needs — the companies, the systems, the money flows, the SOP library, and the operating rhythm of a Senior Accounting Lead at Baum.</p>
+  <div class="meta">
+    <span class="chip acct">Accounting / Finance</span>
+    <span class="chip all">BRG + BAM</span>
+    <span class="chip new">New · 2026</span>
+    <div style="margin-top:14px">Companion to the all-roles deck at <a href="https://baumagents.com/training/onboarding/" style="color:var(--gold)">baumagents.com/training/onboarding</a> · Updated July 2026</div>
+  </div>
+  <div class="toc">
+    <a href="#s1">01 · Company Overview</a>
+    <a href="#s2">02 · Your Role &amp; the Team</a>
+    <a href="#s3">03 · Week One &amp; Systems Access</a>
+    <a href="#s4">04 · IT, Security &amp; Remote Setup</a>
+    <a href="#s5">05 · The Money Systems Map</a>
+    <a href="#s6">06 · The Operating Rhythm</a>
+    <a href="#s7">07 · CORE &amp; the Deal-to-Payment Pipeline</a>
+    <a href="#s8">08 · The SOP Library</a>
+    <a href="#s9">09 · Daily Reporting (SOD / EOD)</a>
+    <a href="#s10">10 · Your 30 / 60 / 90</a>
+    <a href="#s11">11 · Key Contacts</a>
+    <a href="#s12">12 · Document Hygiene</a>
+  </div>
+</div></div>
+
+<section class="block" id="s1"><div class="wrap">
+  <div class="secnum">01 · Section One</div>
+  <h2>Company Overview</h2>
+  <p class="sub">Four related companies, one ecosystem. You touch the books of two of them — and bill work to a third.</p>
+  <div class="grid g2">
+    <div class="card"><span class="emoji">🏙️</span><h4>Baum Realty Group (BRG)</h4>
+      <p>Chicago's premier retail real estate firm since 1991, founded by <b>David Baum</b> (CEO). Brokerage: tenant rep, landlord rep, investment sales, national services. ~20+ contractor brokers. <b>You keep BRG's corporate books</b> — broker commissions are the heartbeat.</p></div>
+    <div class="card"><span class="emoji">🏢</span><h4>Baum Asset Management (BAM)</h4>
+      <p>Third-party commercial property management, co-founded by David &amp; <b>Mike Demetriou</b> (President) in 2017. 2.5MM+ sq ft, Chicagoland + select national markets. <b>You keep BAM's corporate books</b> and coordinate with property-level bookkeeping.</p></div>
+    <div class="card"><span class="emoji">📍</span><h4>Strategic Location Advisors</h4>
+      <p>Mike's location-consulting venture (2023). Light accounting footprint — know it exists.</p></div>
+    <div class="card"><span class="emoji">🛠️</span><h4>Baum Revision</h4>
+      <p>David's development company — <b>separate</b> from BRG and BAM, but you'll issue billback invoices to it (e.g., shared-services time). ⚠️ David's email is <b>@baumrevision.com</b>, not @baumrealty.com.</p></div>
+  </div>
+  <div class="callout">💡 <b>The intercompany web is the job.</b> Money moves constantly between BRG, BAM, Baum Revision, and properties — rent, insurance, payroll, bank fees, shared services. Getting entity and class coding right is most of the battle.</div>
+</div></section>
+
+<section class="block" id="s2"><div class="wrap">
+  <div class="secnum">02 · Section Two</div>
+  <h2>Your Role &amp; the Team Around You</h2>
+  <p class="sub">Senior Accounting Lead — the corporate accounting owner for BRG and BAM.</p>
+  <h3>What you own</h3>
+  <ul class="clean">
+    <li>Both entities' QuickBooks Online files — coding, reconciliation, close, and reporting</li>
+    <li>The broker commission cycle in BRG (deposit → split → next-business-day payment)</li>
+    <li>Accounts payable through Bill.com for both entities</li>
+    <li>Semi-monthly payroll (Paylocity) + contractor payments</li>
+    <li>The monthly billback engine: AppFolio, Ramp, rent, insurance, shared services</li>
+    <li>Month-end close and the financial packages management reviews</li>
+  </ul>
+  <h3>Who's around you</h3>
+  <table>
+    <tr><th>Person</th><th>Role</th><th>What it means for you</th></tr>
+    <tr><td><b>Mike Demetriou</b></td><td>President (BRG + BAM)</td><td>Your primary approver — Bill.com approvals, payroll sign-off, escalations, bank access (Wintrust, Chase)</td></tr>
+    <tr><td><b>Bill Gundlach</b></td><td>CFO</td><td>Your reviewer and firewall; leads your accounting training sessions; technical accounting resource</td></tr>
+    <tr><td><b>Jackie (Jacqueline Martin)</b></td><td>Principal, BRG + BAM</td><td>BAM onboarding, QuickBooks (BAM), AppFolio, Ramp; BAM-side reviews</td></tr>
+    <tr><td><b>Rachel Knopp</b></td><td>VP Property Management</td><td>AppFolio access; property-ops questions</td></tr>
+    <tr><td><b>Anna Haynam</b></td><td>Project Manager</td><td>Ramp expense spreadsheets, FNBO access, billback exception partner</td></tr>
+    <tr><td><b>Geri (Gerilyn Alebich)</b></td><td>Insurance Manager / CORE data</td><td>Deal creation in CORE, insurance coordination</td></tr>
+    <tr><td><b>Philippines bookkeeping team</b></td><td>Crystal, Angel, April (+ Genevah)</td><td>BAM property-level daily transactions in AppFolio. <b>They cover BAM property books only</b> — corporate accounting for both entities is yours</td></tr>
+    <tr><td><b>James Kosharsky</b></td><td>Database lead (CORE)</td><td>Enables your CORE accounting access; system issues</td></tr>
+    <tr><td><b>Maria Franco</b></td><td>Data specialist</td><td>HubStaff setup, misc. tool access</td></tr>
+    <tr><td><b>ETS</b></td><td>Outsourced IT</td><td>Everything IT — always by email so a ticket is created</td></tr>
+  </table>
+  <div class="callout">📚 <b>Institutional memory:</b> your predecessor's full daily work log (March–July 2026) lives in Notion and Trello, and the SOP library in Section 08 came out of it. When you hit a task nobody can explain, the history is searchable — ask Mike or ask Claude.</div>
+</div></section>
+
+<section class="block" id="s3"><div class="wrap">
+  <div class="secnum">03 · Section Three</div>
+  <h2>Week One &amp; Systems Access</h2>
+  <p class="sub">The onboarding sequence, then the full access checklist — with the gotchas we learned the hard way.</p>
+  <div class="flow">
+    <div class="step"><b>Jacob (ETS)</b>General onboarding</div><div class="arr">→</div>
+    <div class="step"><b>Mike</b>Software &amp; login walkthrough, Day 1</div><div class="arr">→</div>
+    <div class="step"><b>Bill</b>Accounting walkthrough + Bill.com</div><div class="arr">→</div>
+    <div class="step"><b>Jackie</b>BAM ramp, mid-week</div>
+  </div>
+  <table>
+    <tr><th>System</th><th>Purpose</th><th>Access via</th><th>Gotcha</th></tr>
+    <tr><td><b>QuickBooks Online ×2</b></td><td>Corporate GL, BRG + BAM</td><td>Mike (BRG) / Jackie (BAM)</td><td>Two separate company files; align user profile settings with Jackie's</td></tr>
+    <tr><td><b>Bill.com</b></td><td>AP + payments, both entities</td><td>Mike / Bill</td><td>"Authorized user" status requires a US postal address — start early, it takes days</td></tr>
+    <tr><td><b>Paylocity</b></td><td>Payroll BRG + BAM</td><td>HR / Mike</td><td>Separate BRG and BAM access; support cases go through their portal</td></tr>
+    <tr><td><b>Ramp</b></td><td>Corporate credit cards</td><td>Jackie</td><td>QBO sync can silently disconnect — check it monthly before coding</td></tr>
+    <tr><td><b>AppFolio</b></td><td>BAM property accounting</td><td>Jackie / Rachel</td><td>GX Property Owner access level</td></tr>
+    <tr><td><b>CORE</b> (core.baumrealty.com)</td><td>Broker deals &amp; commissions</td><td>James</td><td>Accounting section is not visible by default — James must enable the role</td></tr>
+    <tr><td><b>Chase · Wintrust · FNBO</b></td><td>Banking</td><td>Mike (Chase, Wintrust) / Anna (FNBO)</td><td>Approval required before granting; token renewals happen — know the path</td></tr>
+    <tr><td><b>AvidXchange</b></td><td>AP for select properties</td><td>Jackie</td><td>Occasional invoices arrive here, not Bill.com</td></tr>
+    <tr><td><b>accounting@baumrealty.com</b></td><td>Shared accounting inbox</td><td>ETS</td><td>Triage daily — broker payment questions land here</td></tr>
+    <tr><td><b>Box</b></td><td>All files, SOP library, training videos</td><td>ETS</td><td>Mirror the senior-accounting folder permissions</td></tr>
+    <tr><td><b>Notion</b></td><td>SOD/EOD reporting, knowledge base</td><td>Mike</td><td>Confirm edit access to the EOD &amp; SOD workspace on day 1</td></tr>
+    <tr><td><b>RingCentral</b></td><td>Phone / 2FA</td><td>ETS</td><td>Needed for bank and system 2FA; can reuse predecessor's line</td></tr>
+    <tr><td><b>TransactionPro</b></td><td>QBO import tool</td><td>Mike</td><td>Confirm needed for your workflow</td></tr>
+  </table>
+</div></section>
+
+<section class="block" id="s4"><div class="wrap">
+  <div class="secnum">04 · Section Four</div>
+  <h2>IT, Security &amp; Remote Setup</h2>
+  <p class="sub">One login. One portal. Real guardrails.</p>
+  <div class="grid g3">
+    <div class="card"><span class="emoji">🔑</span><h4>SSO (Microsoft Entra)</h4><p>One password, everything. 2FA via Authenticator, pops every 5–6 days or on IP change. Entry points: <b>myapps.microsoft.com</b> and <b>baum.tools</b> — bookmark both.</p></div>
+    <div class="card"><span class="emoji">🎫</span><h4>ETS = IT</h4><p><b>Always email ETS</b>, never Jacob directly — no ticket, no coverage. Critical for remote workers.</p></div>
+    <div class="card"><span class="emoji">🗄️</span><h4>Box, not local</h4><p>All files live in Box. The <b>Collateral</b> folder is the firm's filing cabinet — W-9s, lien waivers, templates, trackers.</p></div>
+    <div class="card"><span class="emoji">🌐</span><h4>Remote / VM</h4><p>Remote staff connect via Microsoft VM through Entra SSO. Known VM latency/disconnect issues — ETS ticket if persistent. HubStaff runs on the VM (Maria coordinates).</p></div>
+    <div class="card"><span class="emoji">🛡️</span><h4>Security posture</h4><p>Enterprise spam/anti-phishing; strict filters (may block legitimate international mail). Full audit trail on everything.</p></div>
+    <div class="card"><span class="emoji">🔐</span><h4>Credentials</h4><p>System credentials (e.g., insurance portals) are documented in Notion — never in personal notes or email. Ask Mike where before creating any new account.</p></div>
+  </div>
+</div></section>
+
+<section class="block" id="s5"><div class="wrap">
+  <div class="secnum">05 · Section Five</div>
+  <h2>The Money Systems Map</h2>
+  <p class="sub">Seven systems, one flow of funds. Know which system is the source of truth for what.</p>
+  <table>
+    <tr><th>System</th><th>Source of truth for</th><th>Feeds / syncs</th></tr>
+    <tr><td><b>QBO — BRG</b></td><td>BRG general ledger, financials</td><td>← Bill.com sync, bank feeds, Ramp</td></tr>
+    <tr><td><b>QBO — BAM</b></td><td>BAM corporate GL, property classes, billbacks</td><td>← Bill.com, bank feeds, AppFolio (manual recon)</td></tr>
+    <tr><td><b>CORE</b></td><td>Deal data, commission splits, broker ledger</td><td>→ drives BRG invoices &amp; broker payables</td></tr>
+    <tr><td><b>Bill.com</b></td><td>AP workflow &amp; payment execution, both entities</td><td>↔ QBO two-way sync (watch for breaks)</td></tr>
+    <tr><td><b>AppFolio</b></td><td>BAM property-level books (bookkeeper team)</td><td>→ monthly billbacks into QBO BAM</td></tr>
+    <tr><td><b>Ramp</b></td><td>Card transactions + receipts</td><td>→ QBO; monthly property allocation template</td></tr>
+    <tr><td><b>Paylocity</b></td><td>Payroll of record</td><td>→ payroll JEs into both QBO files</td></tr>
+  </table>
+  <div class="callout warn">⚠️ <b>Sync breaks are your problem to catch.</b> The Bill.com↔QBO and Ramp→QBO connections have both silently failed before (system access changes are the usual trigger). After any user is added or removed, verify the syncs.</div>
+</div></section>
+
+<section class="block" id="s6"><div class="wrap">
+  <div class="secnum">06 · Section Six</div>
+  <h2>The Operating Rhythm</h2>
+  <p class="sub">Reconstructed from five months of real daily logs. This is the actual job, by cadence.</p>
+  <table>
+    <tr><th style="width:110px">Cadence</th><th>Task</th><th>Entity</th></tr>
+    <tr><td><span class="tag daily">Daily</span></td><td>Broker commission cycle — record deposits, review splits in CORE, create broker bills, pay next business day</td><td>BRG</td></tr>
+    <tr><td><span class="tag daily">Daily</span></td><td>Bank transaction coding (Chase, Wintrust, FNBO)</td><td>BRG</td></tr>
+    <tr><td><span class="tag daily">Daily</span></td><td>Bank coding + property deposit allocation; reconcile AppFolio receipts to QBO</td><td>BAM</td></tr>
+    <tr><td><span class="tag daily">Daily</span></td><td>Bill.com AP — inbox, invoice entry, approval routing, payments</td><td>Both</td></tr>
+    <tr><td><span class="tag daily">Daily</span></td><td>Cash position monitoring — flag negative balances to management same-day</td><td>Both</td></tr>
+    <tr><td><span class="tag daily">Daily</span></td><td>Accounting inbox triage + SOD/EOD log in Notion</td><td>Both</td></tr>
+    <tr><td><span class="tag semi">Semi-monthly</span></td><td>Payroll — prep, management approval, submit via Paylocity; post payroll JEs in both QBO files</td><td>Both</td></tr>
+    <tr><td><span class="tag semi">Semi-monthly</span></td><td>Contractor payments (invoices via Bill.com)</td><td>Both</td></tr>
+    <tr><td><span class="tag monthly">Monthly</span></td><td>Bank reconciliations — all accounts, both entities (incl. Bill.com clearing)</td><td>Both</td></tr>
+    <tr><td><span class="tag monthly">Monthly</span></td><td>Financial statement packages — BS, P&amp;L, GL, Budget-vs-Actual; distribute for management review and resolve follow-ups</td><td>Both</td></tr>
+    <tr><td><span class="tag monthly">Monthly</span></td><td>AppFolio billback invoices in QBO</td><td>BAM</td></tr>
+    <tr><td><span class="tag monthly">Monthly</span></td><td>Ramp coding + property billback template + exception resolution with property mgmt</td><td>Both</td></tr>
+    <tr><td><span class="tag monthly">Monthly</span></td><td>Intercompany billbacks — rent, BCBS health, Guardian dental/vision (BAM→BRG); shared-services time (→Baum Revision)</td><td>Both</td></tr>
+    <tr><td><span class="tag monthly">Monthly</span></td><td>Billback distribution + unpaid-balance follow-up</td><td>Both</td></tr>
+    <tr><td><span class="tag quarterly">Quarterly</span></td><td>Bank fee billbacks; front desk / office manager payroll reimbursements</td><td>Both</td></tr>
+    <tr><td><span class="tag adhoc">Ad hoc</span></td><td>Intercompany transfer analysis &amp; classification (loans, sweeps) — get management guidance before booking</td><td>Both</td></tr>
+    <tr><td><span class="tag adhoc">Ad hoc</span></td><td>Insurance payments &amp; renewals (Travelers, Hanover, BCBS, Guardian) — check payment history before paying to avoid duplicates</td><td>Both</td></tr>
+    <tr><td><span class="tag adhoc">Ad hoc</span></td><td>Employee &amp; broker expense reimbursements (allocation rules vary — ask when unclear)</td><td>Both</td></tr>
+    <tr><td><span class="tag adhoc">Ad hoc</span></td><td>Paylocity admin — direct deposit changes, terminations, W-2s</td><td>Both</td></tr>
+    <tr><td><span class="tag adhoc">Ad hoc</span></td><td>Vendor onboarding (W-9, ACH) and user access changes — then verify the syncs</td><td>Both</td></tr>
+    <tr><td><span class="tag adhoc">Ad hoc</span></td><td>QBO GL &amp; class maintenance; CAM reconciliation support; 1099/W-9/W-2 admin</td><td>Both</td></tr>
+  </table>
+  <div class="callout go">✅ <b>Month-end target:</b> BAM close has been landing mid-month for the prior month (recs → statements → review → follow-ups). BRG close runs alongside. The full close calendar is in the Responsibility Matrix workbook in Box.</div>
+</div></section>
+
+<section class="block" id="s7"><div class="wrap">
+  <div class="secnum">07 · Section Seven</div>
+  <h2>CORE &amp; the Deal-to-Payment Pipeline</h2>
+  <p class="sub">Where brokerage money moves. Three rules are sacred.</p>
+  <div class="flow">
+    <div class="step"><b>📑 Deal Report</b>Broker submits Excel to Geri</div><div class="arr">›</div>
+    <div class="step"><b>🗃️ CORE</b>Geri creates deal + invoice</div><div class="arr">›</div>
+    <div class="step"><b>💵 Payment In</b>Client funds received</div><div class="arr">›</div>
+    <div class="step"><b>➗ Split Calc</b>CORE computes the split</div><div class="arr">›</div>
+    <div class="step"><b>🏦 bill.com</b>Payable routed out</div><div class="arr">›</div>
+    <div class="step"><b>✅ Paid</b>Next business day</div>
+  </div>
+  <div class="grid g3">
+    <div class="card"><span class="emoji">🔒</span><h4>Split confidentiality</h4><p>Never share anything that lets someone calculate another broker's split. Restricted to Mike, Geri &amp; the DB admin.</p></div>
+    <div class="card"><span class="emoji">⚡</span><h4>Next-business-day pay</h4><p>We pay brokers the day after funds arrive. It's a recruiting differentiator — treat it as a hard SLA.</p></div>
+    <div class="card"><span class="emoji">📈</span><h4>Split thresholds</h4><p>Most splits step up at a $200,000 revenue threshold (other tranches exist). CORE computes it — you verify against the approved split before paying.</p></div>
+  </div>
+  <div class="callout warn">⚠️ <b>Common exceptions</b> (all real): split % in CORE differs from what was approved · returned or duplicate deposits · deposits that don't match any invoice · outside-broker fees needing W-9/vendor setup first. When in doubt, hold the payment and ask Mike.</div>
+</div></section>
+
+<section class="block" id="s8"><div class="wrap">
+  <div class="secnum">08 · Section Eight</div>
+  <h2>The SOP Library</h2>
+  <p class="sub">Twelve SOPs exist today — in Box, indexed in Notion. Writing the missing ones is part of the role.</p>
+  <h3>Corporate</h3>
+  <ul class="clean">
+    <li><a href="https://baumrealty.box.com/s/o9ljp54giewdni001fwh6y1q0lkzuecg">Commission deposits &amp; broker commission payments (BRG)</a></li>
+    <li><a href="https://baumrealty.box.com/s/menm5gfmgaoxw68dcvnmkjzr1zb7ix7s">Payroll — Paylocity</a></li>
+    <li><a href="https://baumrealty.box.com/s/hrtqqm7b6tou8fij01xeig4frlxce4wf">BAM reimbursements to BRG</a></li>
+    <li><a href="https://baumrealty.box.com/s/ilekbr0pncwj6p6tk93izewlneaoahh8">QBO BAM — AppFolio billbacks</a></li>
+    <li><a href="https://baumrealty.box.com/s/rwv4g41hxxlmkzpyyj6yu3aodzfe9dzw">Advisory time billback process</a></li>
+    <li><a href="https://baumrealty.box.com/s/d8u8ez8qjqlhbky4wu6j8zqlbs3vx8yr">General view</a></li>
+  </ul>
+  <h3>Reporting</h3>
+  <ul class="clean">
+    <li><a href="https://baumrealty.box.com/s/s07k318j49nyt12lsauupe9e1f99qj7b">Budget vs Actual — management fees</a></li>
+    <li><a href="https://baumrealty.box.com/s/gf07avpgruqkaymswlvqjgyqatsyyosc">Budget vs Actual — work orders</a></li>
+  </ul>
+  <h3>AppFolio (bookkeeper-side, BAM properties)</h3>
+  <ul class="clean">
+    <li><a href="https://baumrealty.box.com/s/ri71g1iqpk5x780wl0waa3bvrx12whph">Adding a new tenant</a></li>
+    <li><a href="https://baumrealty.box.com/s/ab4hgcdgf1oyqoqrw52y2f8ppy4309pe">Adding a tenant deposit</a></li>
+    <li><a href="https://baumrealty.box.com/s/szagdu8onzq83i1h84x6l9egx95d2gst">Manual management fees</a></li>
+    <li><a href="https://baumrealty.box.com/s/ecrth9lx0j328fvwvsnwm60as48hpr5u">Recording a utility bill</a></li>
+  </ul>
+  <div class="callout">📝 <b>The SOP debt list.</b> The highest-priority undocumented processes — bank coding (both entities), Bill.com end-to-end, monthly recs, the close package, Ramp billbacks, commission exceptions, intercompany policy, and the access map — are tracked in the gap list (Responsibility Matrix workbook, Box). Expect to author one SOP per week as you learn each process: document as you go, while it's fresh.</div>
+</div></section>
+
+<section class="block" id="s9"><div class="wrap">
+  <div class="secnum">09 · Section Nine</div>
+  <h2>Daily Reporting — SOD / EOD</h2>
+  <p class="sub">Every working day, two short logs in the Notion EOD &amp; SOD database. Non-negotiable.</p>
+  <div class="grid g2">
+    <div class="card"><span class="emoji">🌅</span><h4>Start of Day (SOD)</h4><p>One to three bullets: today's priorities. Thirty seconds, first thing.</p></div>
+    <div class="card"><span class="emoji">🌙</span><h4>End of Day (EOD)</h4><p>Bulleted list of what you actually did — specific enough that someone else could pick up the thread (names, entities, amounts, systems).</p></div>
+  </div>
+  <h3>Why we're strict about this</h3>
+  <ul class="clean">
+    <li>It's how management stays out of your way — visible progress means no check-in meetings</li>
+    <li>It becomes SOPs, training material, and institutional memory (this very deck was built from EOD history)</li>
+    <li>It justifies property/entity billbacks for shared time</li>
+    <li>It feeds our AI tooling — searchable answers to "how did we handle X last time?"</li>
+  </ul>
+  <div class="callout">✍️ Write EODs in plain, specific language. "Processed 2 commission deposits and related broker payments; flagged split discrepancy on X to Mike" beats "worked on commissions."</div>
+</div></section>
+
+<section class="block" id="s10"><div class="wrap">
+  <div class="secnum">10 · Section Ten</div>
+  <h2>Your 30 / 60 / 90</h2>
+  <p class="sub">Based on how this role actually ramped last time — compressed where documentation now exists.</p>
+  <div class="phase">
+    <div class="head">Days 1–10 · Access &amp; orientation <span class="goal">Goal: every system live, rhythm observed</span></div>
+    <ul>
+      <li>Complete all Section 03 access (start Bill.com authorized-user + bank access immediately — longest lead times)</li>
+      <li>Sessions: Jacob → Mike (software walkthrough) → Bill (accounting) → Jackie (BAM)</li>
+      <li>Read all 12 SOPs; watch the training video library in Box</li>
+      <li>Begin SOD/EOD logging on day 1</li>
+      <li>Shadow the live broker commission cycle and Bill.com day</li>
+    </ul>
+  </div>
+  <div class="phase">
+    <div class="head">Days 11–30 · Own the daily rhythm <span class="goal">Goal: daily tasks run without help</span></div>
+    <ul>
+      <li>Own: commission cycle, bank coding (both entities), Bill.com AP, cash monitoring, inbox</li>
+      <li>Run one full payroll cycle with review</li>
+      <li>Checkpoint (day 30): daily work independent; escalation judgment calibrated with Mike</li>
+    </ul>
+  </div>
+  <div class="phase">
+    <div class="head">Days 31–60 · Own the month-end <span class="goal">Goal: one full close, hands on keyboard</span></div>
+    <ul>
+      <li>Run the monthly close with support: recs → financial packages → management review → follow-ups</li>
+      <li>Run the billback engine: AppFolio, Ramp (with exceptions), rent/insurance intercompany</li>
+      <li>Author first 4 SOPs from the gap list (bank coding ×2, Bill.com, recs)</li>
+      <li>Checkpoint (day 60): close delivered; billbacks issued; review questions handled directly</li>
+    </ul>
+  </div>
+  <div class="phase">
+    <div class="head">Days 61–90 · Own the judgment layer <span class="goal">Goal: full scope, documented</span></div>
+    <ul>
+      <li>Quarterly billbacks; intercompany analysis with management guidance loop; insurance renewals</li>
+      <li>Close the P1 SOP gap list; propose process improvements</li>
+      <li>Checkpoint (day 90): second close fully independent; SOP library covers every recurring task you run</li>
+    </ul>
+  </div>
+</div></section>
+
+<section class="block" id="s11"><div class="wrap">
+  <div class="secnum">11 · Section Eleven</div>
+  <h2>Key Contacts — Accounting Edition</h2>
+  <table>
+    <tr><th>Need</th><th>Who</th></tr>
+    <tr><td>Bill.com approvals, escalations, BRG QuickBooks, Wintrust/Chase access</td><td><b>Mike Demetriou</b></td></tr>
+    <tr><td>Accounting/technical questions, day-1 walkthrough</td><td><b>Bill Gundlach</b> (CFO)</td></tr>
+    <tr><td>BAM QuickBooks, AppFolio, Ramp, BAM reviews</td><td><b>Jackie Martin</b></td></tr>
+    <tr><td>FNBO access, Ramp expense detail, billback exceptions</td><td><b>Anna Haynam</b></td></tr>
+    <tr><td>Deal creation in CORE, comps/contacts, Adobe Sign</td><td><b>Geri</b></td></tr>
+    <tr><td>CORE system issues / accounting role access</td><td><b>James Kosharsky</b></td></tr>
+    <tr><td>Property-level bookkeeping (BAM)</td><td><b>Crystal, Angel, April</b> (Philippines team)</td></tr>
+    <tr><td>IT, VM, email, system access</td><td><b>ETS</b> (email = ticket)</td></tr>
+    <tr><td>HubStaff, tool access coordination</td><td><b>Maria Franco</b></td></tr>
+    <tr><td>Insurance questions</td><td><b>Geri (Gerilyn Alebich)</b></td></tr>
+  </table>
+</div></section>
+
+<section class="block" id="s12"><div class="wrap">
+  <div class="secnum">12 · Section Twelve</div>
+  <h2>Document Hygiene</h2>
+  <p class="sub">The mistake that's bitten us before.</p>
+  <div class="grid g2">
+    <div class="card"><span class="emoji">📝</span><h4>Track Changes</h4><p>For any agreement or deal doc: Review ▸ Track Changes. Accept/reject deliberately — easy to approve an unintended date or number.</p></div>
+    <div class="card"><span class="emoji">⚠️</span><h4>Metadata</h4><p>Word docs carry hidden authors, comments, and revision history. Before sending externally: File ▸ Info ▸ Check for Issues ▸ Inspect Document.</p></div>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <div class="brand" style="margin-bottom:18px"><b>BAUM</b>REALTY GROUP</div>
+  <div class="secnum" style="margin-bottom:8px">You've got the map</div>
+  <h2>Welcome to Baum.</h2>
+  <p style="max-width:560px;margin:14px auto 0">This is a living document — it was built from real daily work logs and it grows as we do. Questions? You now know exactly who to email.</p>
+  <p style="margin-top:26px;font-size:13px;color:#8fa0ba">Companion to the all-roles Baum Operating System deck · Synthesized from live training and five months of operating history · Baum Realty Group &amp; Baum Asset Management</p>
+</div></footer>
+
+</body>
+</html>
